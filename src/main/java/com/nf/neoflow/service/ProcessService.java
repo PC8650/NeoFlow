@@ -70,14 +70,14 @@ public class ProcessService {
         log.info("变更流程启用状态{} -->  {}", form.getName(), form.getActive());
         boolean getLock = false;
         try {
-            getLock = lockManager.getActiveVersionLock(form.getName());
+            getLock = lockManager.getProcessStatusLock(form.getName());
             UserBaseInfo userBaseInfo = userChoose.user(form.getUpdateBy());
             if (userBaseInfo != null) {
                 form.setUpdateBy(userBaseInfo.getId());
             }
             return processRepository.changActive(form.getName(), form.getActive(), form.getUpdateBy(), LocalDateTime.now());
         }finally {
-            lockManager.releaseActiveVersionLock(form.getName(), getLock);
+            lockManager.releaseProcessStatusLock(form.getName(), getLock);
         }
 
     }
@@ -91,7 +91,7 @@ public class ProcessService {
         log.info("变更流程启用版本{} -->  {}", form.getName(), form.getActiveVersion());
         boolean getLock = false;
         try {
-            getLock = lockManager.getActiveVersionLock(form.getName());
+            getLock = lockManager.getProcessStatusLock(form.getName());
             UserBaseInfo userBaseInfo = userChoose.user(form.getUpdateBy(), form.getUpdateByName());
             if (userBaseInfo != null) {
                 form.setUpdateBy(userBaseInfo.getId());
@@ -104,7 +104,7 @@ public class ProcessService {
             String history = JacksonUtils.toJson(dto);
             return processRepository.changeActiveVersion(form.getName(), form.getActiveVersion(), form.getUpdateBy(), form.getUpdateByName(), time, history);
         }finally {
-            lockManager.releaseActiveVersionLock(form.getName(), getLock);
+            lockManager.releaseProcessStatusLock(form.getName(), getLock);
         }
     }
 
