@@ -8,6 +8,22 @@ package com.nf.neoflow.interfaces;
 public interface CustomizationLock {
 
     /**
+     * 获取启用版本锁
+     * 用于更改流程启用状态、更改流程启用版本
+     * @param processName 流程名称
+     * @return
+     */
+    Boolean addAndGetActiveVersionLock(String processName);
+
+    /**
+     * 释放启用版本锁
+     * 用于更改流程启用状态、更改流程启用版本
+     * @param processName 流程名称
+     * @return
+     */
+    Boolean releaseActiveVersionLock(String processName);
+
+    /**
      * 获取版本创建锁
      * @param processName 流程名称
      * @return

@@ -1,6 +1,7 @@
 package com.nf.neoflow.service;
 
 import com.nf.neoflow.component.BaseUserChoose;
+import com.nf.neoflow.component.LockManager;
 import com.nf.neoflow.dto.process.*;
 import com.nf.neoflow.dto.user.UserBaseInfo;
 import com.nf.neoflow.exception.NeoProcessException;
@@ -8,6 +9,7 @@ import com.nf.neoflow.models.Process;
 import com.nf.neoflow.repository.ProcessRepository;
 import com.nf.neoflow.utils.JacksonUtils;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,13 +19,14 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
-
+@Slf4j
 @Service
 @AllArgsConstructor
 public class ProcessService {
 
     private final ProcessRepository processRepository;
     private final BaseUserChoose userChoose;
+    private final LockManager lockManager;
 
     /**
      * 创建流程
@@ -64,12 +67,19 @@ public class ProcessService {
      * @return ProcessActiveStatusDto 流程启用状态
      */
     public ProcessActiveStatusDto changeActive(ProcessChangeActiveForm form) {
-        UserBaseInfo userBaseInfo = userChoose.user(form.getUpdateBy());
-        if (userBaseInfo != null) {
-            form.setUpdateBy(userBaseInfo.getId());
+        log.info("变更流程启用状态{} -->  {}", form.getName(), form.getActive());
+        boolean getLock = false;
+        try {
+            getLock = lockManager.getActiveVersionLock(form.getName());
+            UserBaseInfo userBaseInfo = userChoose.user(form.getUpdateBy());
+            if (userBaseInfo != null) {
+                form.setUpdateBy(userBaseInfo.getId());
+            }
+            return processRepository.changActive(form.getName(), form.getActive(), form.getUpdateBy(), LocalDateTime.now());
+        }finally {
+            lockManager.releaseActiveVersionLock(form.getName(), getLock);
         }
 
-        return processRepository.changActive(form.getName(), form.getActive(), form.getUpdateBy(), LocalDateTime.now());
     }
 
     /**
@@ -78,18 +88,24 @@ public class ProcessService {
      * @return 变更记录数
      */
     public Integer changeActiveVersion(ProcessChangeVersionForm form) {
-        UserBaseInfo userBaseInfo = userChoose.user(form.getUpdateBy(), form.getUpdateByName());
-        if (userBaseInfo != null) {
-            form.setUpdateBy(userBaseInfo.getId());
-            form.setUpdateByName(userBaseInfo.getName());
+        log.info("变更流程启用版本{} -->  {}", form.getName(), form.getActiveVersion());
+        boolean getLock = false;
+        try {
+            getLock = lockManager.getActiveVersionLock(form.getName());
+            UserBaseInfo userBaseInfo = userChoose.user(form.getUpdateBy(), form.getUpdateByName());
+            if (userBaseInfo != null) {
+                form.setUpdateBy(userBaseInfo.getId());
+                form.setUpdateByName(userBaseInfo.getName());
+            }
+            LocalDateTime time = LocalDateTime.now();
+            ActiveVersionHistoryDto dto = new ActiveVersionHistoryDto(
+                    form.getActiveVersion(), form.getUpdateBy(), form.getUpdateByName(), time
+            );
+            String history = JacksonUtils.toJson(dto);
+            return processRepository.changeActiveVersion(form.getName(), form.getActiveVersion(), form.getUpdateBy(), form.getUpdateByName(), time, history);
+        }finally {
+            lockManager.releaseActiveVersionLock(form.getName(), getLock);
         }
-        LocalDateTime time = LocalDateTime.now();
-        ActiveVersionHistoryDto dto = new ActiveVersionHistoryDto(
-                form.getActiveVersion(), form.getUpdateBy(), form.getUpdateByName(), time
-        );
-        String history = JacksonUtils.toJson(dto);
-        System.out.println(history);
-        return processRepository.changeActiveVersion(form.getName(), form.getActiveVersion(), form.getUpdateBy(), form.getUpdateByName(), time, history);
     }
 
     /**

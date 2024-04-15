@@ -99,10 +99,10 @@ public class VersionService {
     public void createVersion(VersionModelCreateForm form) {
         log.info("{}创建新版本", form.getProcessName());
         int version;
+        boolean getLock = false;
         try {
             // 加锁，避免版本号并发重复
-            lockManager.getVersionCreateLock(form.getProcessName());
-
+            getLock = lockManager.getVersionCreateLock(form.getProcessName());
             //获取用户信息
             UserBaseInfo user = userChoose.user(form.getCreateBy(), form.getCreateByName());
             if (user != null) {
@@ -125,7 +125,7 @@ public class VersionService {
                     LocalDateTime.now()
             );
         } finally {
-            lockManager.releaseVersionCreateLock(form.getProcessName());
+            lockManager.releaseVersionCreateLock(form.getProcessName(), getLock);
         }
 
         log.info("{}创建新版本成功，版本号{}", form.getProcessName(), version);
