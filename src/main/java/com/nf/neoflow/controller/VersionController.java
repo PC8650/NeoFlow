@@ -40,6 +40,6 @@ public class VersionController {
     @PostMapping("/create")
     public ResponseEntity<String> createVersion(@Valid @RequestBody VersionModelCreateForm form) {
         versionService.createVersion(form);
-        return ResponseEntity.ok("创建成功");
+        return ResponseEntity.ok(null);
     }
 }
