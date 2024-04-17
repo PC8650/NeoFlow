@@ -4,6 +4,7 @@ import com.nf.neoflow.component.BaseUserChoose;
 import com.nf.neoflow.component.LockManager;
 import com.nf.neoflow.dto.process.*;
 import com.nf.neoflow.dto.user.UserBaseInfo;
+import com.nf.neoflow.enums.LockEnums;
 import com.nf.neoflow.exception.NeoProcessException;
 import com.nf.neoflow.models.Process;
 import com.nf.neoflow.repository.ProcessRepository;
@@ -69,15 +70,16 @@ public class ProcessService {
     public ProcessActiveStatusDto changeActive(ProcessChangeActiveForm form) {
         log.info("变更流程启用状态{} -->  {}", form.getName(), form.getActive());
         boolean getLock = false;
+        LockEnums lockEnum = LockEnums.PROCESS_STATUS;
         try {
-            getLock = lockManager.getProcessStatusLock(form.getName());
+            getLock = lockManager.getLock(form.getName(), lockEnum);
             UserBaseInfo userBaseInfo = userChoose.user(form.getUpdateBy());
             if (userBaseInfo != null) {
                 form.setUpdateBy(userBaseInfo.getId());
             }
             return processRepository.changActive(form.getName(), form.getActive(), form.getUpdateBy(), LocalDateTime.now());
-        }finally {
-            lockManager.releaseProcessStatusLock(form.getName(), getLock);
+        } finally {
+            lockManager.releaseLock(form.getName(), getLock, lockEnum);
         }
 
     }
@@ -90,8 +92,9 @@ public class ProcessService {
     public Integer changeActiveVersion(ProcessChangeVersionForm form) {
         log.info("变更流程启用版本{} -->  {}", form.getName(), form.getActiveVersion());
         boolean getLock = false;
+        LockEnums lockEnum = LockEnums.PROCESS_STATUS;
         try {
-            getLock = lockManager.getProcessStatusLock(form.getName());
+            getLock = lockManager.getLock(form.getName(), lockEnum);
             UserBaseInfo userBaseInfo = userChoose.user(form.getUpdateBy(), form.getUpdateByName());
             if (userBaseInfo != null) {
                 form.setUpdateBy(userBaseInfo.getId());
@@ -103,8 +106,8 @@ public class ProcessService {
             );
             String history = JacksonUtils.toJson(dto);
             return processRepository.changeActiveVersion(form.getName(), form.getActiveVersion(), form.getUpdateBy(), form.getUpdateByName(), time, history);
-        }finally {
-            lockManager.releaseProcessStatusLock(form.getName(), getLock);
+        } finally {
+            lockManager.releaseLock(form.getName(), getLock, lockEnum);
         }
     }
 

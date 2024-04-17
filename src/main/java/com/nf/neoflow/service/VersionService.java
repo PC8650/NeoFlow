@@ -4,6 +4,7 @@ import com.nf.neoflow.component.BaseUserChoose;
 import com.nf.neoflow.component.LockManager;
 import com.nf.neoflow.dto.user.UserBaseInfo;
 import com.nf.neoflow.dto.version.*;
+import com.nf.neoflow.enums.LockEnums;
 import com.nf.neoflow.exception.NeoProcessException;
 import com.nf.neoflow.repository.VersionRepository;
 import com.nf.neoflow.utils.JacksonUtils;
@@ -99,10 +100,11 @@ public class VersionService {
     public void createVersion(VersionModelCreateForm form) {
         log.info("{}创建新版本", form.getProcessName());
         int version;
+        LockEnums lockEnum = LockEnums.VERSION_CREATE;
         boolean getLock = false;
         try {
             // 加锁，避免版本号并发重复
-            getLock = lockManager.getVersionCreateLock(form.getProcessName());
+            getLock = lockManager.getLock(form.getProcessName(), lockEnum);
             //获取用户信息
             UserBaseInfo user = userChoose.user(form.getCreateBy(), form.getCreateByName());
             if (user != null) {
@@ -125,7 +127,7 @@ public class VersionService {
                     LocalDateTime.now()
             );
         } finally {
-            lockManager.releaseVersionCreateLock(form.getProcessName(), getLock);
+            lockManager.releaseLock(form.getProcessName(), getLock, lockEnum);
         }
 
         log.info("{}创建新版本成功，版本号{}", form.getProcessName(), version);

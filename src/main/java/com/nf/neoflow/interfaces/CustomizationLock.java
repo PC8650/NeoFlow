@@ -3,37 +3,22 @@ package com.nf.neoflow.interfaces;
 /**
  * 自定义流程新建模型或执行时的加锁解锁方法
  * 需要实现接口，并重写服务方法，手动注入spring容器
+ * 再由 {@link com.nf.neoflow.component.LockManager LockManager} 统一处理，保证在得到锁的情况才释放锁
  * @author PC8650
  */
 public interface CustomizationLock {
 
     /**
-     * 获取流程状态锁
-     * 用于更改流程启用状态、更改流程启用版本
-     * @param processName 流程名称
-     * @return
+     * 获取锁
+     * @param key 唯一key
+     * @return Boolean
      */
-    Boolean addAndGetProcessStatusLock(String processName);
+    Boolean addAndGetLock(String key);
 
     /**
-     * 释放流程状态锁
-     * 用于更改流程启用状态、更改流程启用版本
-     * @param processName 流程名称
-     * @return
+     * 释放锁
+     * @param key 唯一key
+     * @return Boolean
      */
-    Boolean releaseProcessStatusLock(String processName);
-
-    /**
-     * 获取版本创建锁
-     * @param processName 流程名称
-     * @return
-     */
-    Boolean addAndGetVersionCreateLock(String processName);
-
-    /**
-     * 释放版本创建锁
-     * @param processName 流程名称
-     * @return
-     */
-    Boolean releaseVersionCreateLock(String processName);
+    Boolean releaseLock(String key);
 }
