@@ -58,7 +58,7 @@ public class NeoFlowConfig {
     private Boolean enableCache = true;
 
     /**
-     * 是否缓存空值，防止缓存穿透
+     * 默认缓存策略是否缓存空值，防止缓存穿透
      */
     private Boolean cacheNull = false;
 
