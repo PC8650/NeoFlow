@@ -4,16 +4,12 @@ import com.nf.neoflow.config.NeoFlowConfig;
 import com.nf.neoflow.enums.LockEnums;
 import com.nf.neoflow.exception.NeoProcessException;
 import com.nf.neoflow.interfaces.CustomizationLock;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -24,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class LockManager {
+public class NeoLockManager {
 
     private final NeoFlowConfig config;
 
@@ -32,19 +28,11 @@ public class LockManager {
     @Lazy
     private CustomizationLock customizationLock;
 
-
-    private Map<String,ConcurrentHashMap.KeySetView<String, Boolean>> LOCK_MAP;
-
-    @PostConstruct
-    public void lockInit() {
-        if (!config.getCustomizationLock()) {
-            List<String> locks = LockEnums.allLockNames();
-            LOCK_MAP = new HashMap<>(locks.size());
-            for (String lock : locks) {
-                LOCK_MAP.put(lock, ConcurrentHashMap.newKeySet());
-            }
-        }
-    }
+    /**
+     * 锁集合
+     * 实际维护的是ConcurrentHashMap，KeySetView进行add，ConcurrentHashMap会put对应的key-value，value为一个缓存的共享值
+     */
+    private ConcurrentHashMap.KeySetView<String, Boolean> LOCK_MAP = ConcurrentHashMap.newKeySet();
 
     /**
      * 获取锁
@@ -54,10 +42,12 @@ public class LockManager {
     public Boolean getLock(String key, LockEnums lockEnum) {
         boolean getLock;
         String thread = Thread.currentThread().getName();
+        String lockName = lockEnum.getName();
+        key = lockName + ":" + key;
         if (config.getCustomizationLock()) {
-            getLock = customizationLock.addAndGetLock(key);
+            getLock = customizationLock.addAndGetLock(key, lockName);
         }else {
-            getLock = LOCK_MAP.get(lockEnum.getName()).add(key);
+            getLock = LOCK_MAP.add(key);
         }
 
         if (!getLock) {
@@ -83,10 +73,12 @@ public class LockManager {
 
         boolean releaseLock;
         String thread = Thread.currentThread().getName();
+        String lockName = lockEnum.getName();
+        key = lockName + ":" + key;
         if (config.getCustomizationLock()) {
-            releaseLock = customizationLock.releaseLock(key);
+            releaseLock = customizationLock.releaseLock(key, lockName);
         }else {
-            releaseLock = LOCK_MAP.get(lockEnum.getName()).remove(key);
+            releaseLock = LOCK_MAP.remove(key);
         }
         log.info("{}，释放锁：{}-{}-{}", lockEnum.getMsg(), key, thread, releaseLock);
     }

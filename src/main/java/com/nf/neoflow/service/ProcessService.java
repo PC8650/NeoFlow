@@ -1,7 +1,9 @@
 package com.nf.neoflow.service;
 
 import com.nf.neoflow.component.BaseUserChoose;
-import com.nf.neoflow.component.LockManager;
+import com.nf.neoflow.component.NeoCacheManager;
+import com.nf.neoflow.component.NeoLockManager;
+import com.nf.neoflow.constants.CacheType;
 import com.nf.neoflow.dto.process.*;
 import com.nf.neoflow.dto.user.UserBaseInfo;
 import com.nf.neoflow.enums.LockEnums;
@@ -27,7 +29,8 @@ public class ProcessService {
 
     private final ProcessRepository processRepository;
     private final BaseUserChoose userChoose;
-    private final LockManager lockManager;
+    private final NeoLockManager lockManager;
+    private final NeoCacheManager cacheManager;
 
     /**
      * 创建流程
@@ -117,7 +120,15 @@ public class ProcessService {
      * @return List<ActiveVersionHistoryDto>
      */
     public List<ActiveVersionHistoryDto> activeVersionHistory(String name) {
-        return processRepository.activeVersionHistory(name);
+        NeoCacheManager.CacheValue<List> value = cacheManager.getCache(CacheType.P_A_V_H, name, List.class);
+        if (value.filter() || value.value() != null) {
+            return value.value();
+        }
+
+        List<ActiveVersionHistoryDto> activeVersionHistoryDtos = processRepository.activeVersionHistory(name);
+
+        cacheManager.setCache(CacheType.P_A_V_H, name, activeVersionHistoryDtos);
+        return activeVersionHistoryDtos;
     }
 
 }

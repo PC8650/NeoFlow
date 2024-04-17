@@ -1,7 +1,10 @@
 package com.nf.neoflow.service;
 
 import com.nf.neoflow.component.BaseUserChoose;
-import com.nf.neoflow.component.LockManager;
+import com.nf.neoflow.component.NeoCacheManager;
+import com.nf.neoflow.component.NeoLockManager;
+import com.nf.neoflow.constants.CacheType;
+import com.nf.neoflow.constants.NodeLocationType;
 import com.nf.neoflow.dto.user.UserBaseInfo;
 import com.nf.neoflow.dto.version.*;
 import com.nf.neoflow.enums.LockEnums;
@@ -23,8 +26,6 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.nf.neoflow.enums.NodeLocationEnum.*;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -32,7 +33,8 @@ public class VersionService {
 
     private final VersionRepository versionRepository;
     private final BaseUserChoose userChoose;
-    private final LockManager lockManager;
+    private final NeoLockManager lockManager;
+    private final NeoCacheManager cacheManager;
 
 
     /**
@@ -57,11 +59,20 @@ public class VersionService {
      * @return VersionModelViewDto
      */
     public VersionModelViewDto versionView(VersionViewQueryForm form) {
-        //todo 缓存策略
+        String cacheKey = cacheManager.mergeKey(form.getProcessName(), form.getVersion().toString());
+
+        NeoCacheManager.CacheValue<VersionModelViewDto> value =cacheManager.getCache(CacheType.V_M, cacheKey, VersionModelViewDto.class);
+        if (value.filter()) {
+            throw new NeoProcessException("流程版本模型不存在");
+        }else if (value.value() != null) {
+            return value.value();
+        }
+
         VersionModelViewDto dto;
         if (form.getVersion() != null) {
             dto = versionRepository.queryVersionView(form.getProcessName(), form.getVersion());
             if (dto == null) {
+                cacheManager.setCache(CacheType.V_M, cacheKey, null);
                 throw new NeoProcessException("流程版本模型不存在");
             }
         }else {
@@ -69,6 +80,7 @@ public class VersionService {
             dto.setProcessName(form.getProcessName());
         }
         dto.setComponentModel(componentModelInit());
+        cacheManager.setCache(CacheType.V_M, cacheKey, dto);
         return dto;
     }
 
@@ -77,20 +89,29 @@ public class VersionService {
      * @param form 查询表单
      */
     public Object versionIterateTree(IterateTreeQueryForm form) {
-        //todo 缓存策略
+        String cacheKey = cacheManager.mergeKey(form.getProcessName(), form.getType().toString());
+
+        NeoCacheManager.CacheValue<Object> value = cacheManager.getCache(CacheType.V_I_T, cacheKey, Object.class);
+        if (value.filter() || value.value() != null) {
+            return value.value();
+        }
+
+        Object result;
         switch (form.getType()) {
             case 1 -> {
-                return versionRepository.queryVersionIterateTree(form.getProcessName());
+                result = versionRepository.queryVersionIterateTree(form.getProcessName());
             }
             case 2 -> {
-                List<IterateTreeNode> list = versionRepository.queryVersionIterateTreeNested(form.getProcessName());
-                return treeNested(list);
+                result = versionRepository.queryVersionIterateTreeNested(form.getProcessName());
             }
             case 3 -> {
-                return versionRepository.queryVersionIterateTreeGraphic(form.getProcessName());
+                result = versionRepository.queryVersionIterateTreeGraphic(form.getProcessName());
             }
             default -> throw new NeoProcessException("参数错误");
         }
+
+        cacheManager.setCache(CacheType.V_I_T, cacheKey, result);
+        return result;
     }
 
     /**
@@ -126,6 +147,9 @@ public class VersionService {
                     form.getProcessName(), form.getIterateFrom(), form.getCycle(), form.getCreateBy(), form.getCreateByName(),
                     LocalDateTime.now()
             );
+
+            //删除迭代树缓存
+            deleteIterateTreeCache(form.getProcessName());
         } finally {
             lockManager.releaseLock(form.getProcessName(), getLock, lockEnum);
         }
@@ -160,11 +184,11 @@ public class VersionService {
             node.check();
 
             //特殊节点数量
-            if (Objects.equals(node.getLocation(), BEGIN.getCode())) {
+            if (Objects.equals(node.getLocation(), NodeLocationType.BEGIN)) {
                 startCount++;
-            } else if (Objects.equals(node.getLocation(), COMPLETE.getCode())) {
+            } else if (Objects.equals(node.getLocation(), NodeLocationType.COMPLETE)) {
                 completeCount++;
-            } else if (Objects.equals(node.getLocation(), TERMINATE.getCode())) {
+            } else if (Objects.equals(node.getLocation(), NodeLocationType.TERMINATE)) {
                 terminateCount++;
             }
 
@@ -207,11 +231,11 @@ public class VersionService {
             //校验结构
             startNode = nodeMap.get(edge.getStartNode());
             endNode = nodeMap.get(edge.getEndNode());
-            if (Objects.equals(endNode.getLocation(), BEGIN.getCode())) {
+            if (Objects.equals(endNode.getLocation(), NodeLocationType.BEGIN)) {
                 throw new NeoProcessException("不能指向开始节点");
             }
-            if (Objects.equals(startNode.getLocation(), COMPLETE.getCode())
-                    || Objects.equals(startNode.getLocation(), TERMINATE.getCode())) {
+            if (Objects.equals(startNode.getLocation(), NodeLocationType.COMPLETE)
+                    || Objects.equals(startNode.getLocation(), NodeLocationType.TERMINATE)) {
                 throw new NeoProcessException("完成、终止 节点不能有后续");
             }
 
@@ -257,6 +281,19 @@ public class VersionService {
         }
 
         return topNodes;
+    }
+
+    /**
+     * 删除迭代树缓存
+     * @param ProcessName 缓存名称
+     */
+    private void deleteIterateTreeCache(String ProcessName) {
+        List<String> cacheKeys = new ArrayList<>(){{
+            add(cacheManager.mergeKey(ProcessName, "1"));
+            add(cacheManager.mergeKey(ProcessName, "2"));
+            add(cacheManager.mergeKey(ProcessName, "3"));
+        }};
+        cacheManager.deleteCache(CacheType.V_I_T, cacheKeys);
     }
 
     /**
