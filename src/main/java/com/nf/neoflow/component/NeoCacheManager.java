@@ -52,7 +52,7 @@ public class NeoCacheManager {
                 .initialCapacity(config.getInitCacheCount())
                 //最大容量
                 .maximumSize(config.getMaxCapacityCount())
-                //10分钟内没被 读/写 则过期
+                //单位时间内没被 读/写 则过期
                 .expireAfterAccess(config.getExpire(), TimeUnit.MINUTES)
                 //开启统计
                 .recordStats());
@@ -67,7 +67,7 @@ public class NeoCacheManager {
     public void setCache(String cacheType, String cacheKey, Object value) {
         if (config.getEnableCache()) {
             //自定义策略
-            if (!config.getCustomizationCache()) {
+            if (config.getCustomizationCache()) {
                 cacheKey = mergeKey(cacheType, cacheKey);
                 customizationCache.setCache(cacheType, cacheKey, value);
                 return;
