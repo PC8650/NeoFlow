@@ -27,7 +27,7 @@ public interface CustomizationCache {
      * @param cacheKey 缓存类型+分隔符+业务key
      * @return   缓存值
      */
-    <T> NeoCacheManager.CacheValue<T> getCache  (String cacheType, String cacheKey, Class<T> clazz);
+    <T> NeoCacheManager.CacheValue<T> getCache(String cacheType, String cacheKey, Class<T> clazz);
 
     /**
      * 删除缓存

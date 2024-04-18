@@ -104,8 +104,15 @@ public class NeoCacheManager {
         }
 
         //默认策略
-        Object value = cacheManager.getCache(cacheType).get(cacheKey);
-        return value instanceof NullFlag? new CacheValue<T>(true, null) : new CacheValue<T>(false, (T) value);
+        Cache cache = cacheManager.getCache(cacheType);
+        if (cache != null) {
+            Cache.ValueWrapper valueWrapper = cache.get(cacheKey);
+            if (valueWrapper != null) {
+                Object value = valueWrapper.get();
+                return value instanceof NullFlag? new CacheValue<T>(true) : new CacheValue<T>(false, (T) value);
+            }
+        }
+        return new CacheValue<T>(false);
     }
 
     /**
@@ -206,6 +213,12 @@ public class NeoCacheManager {
      * @param value 缓存值，在filter为true时，统一为null
      * @param <T>
      */
-    public record CacheValue<T>(Boolean filter, T value) {}
+    public record CacheValue<T>(Boolean filter, T value) {
+
+        public CacheValue(Boolean filter) {
+            this(filter, null);
+        }
+
+    }
 
 }
