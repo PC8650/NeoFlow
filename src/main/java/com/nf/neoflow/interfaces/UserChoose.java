@@ -19,11 +19,12 @@ public interface UserChoose {
     UserBaseInfo getUser();
 
     /**
-     * 用于获取流程实例中下一节点的候选人
-     * @param obj 候选人策略信息
+     * 根据模型节点获取实际候选人
+     * @param operationType 节点操作类型
+     * @param modelCandidateInfo 模型节点候选人信息，根据设置可能为null
      * @return List<UserBaseInfo>
      */
-    List<UserBaseInfo> getCandidateUsers(Object obj);
+    List<UserBaseInfo> getCandidateUsers(Integer operationType, List<UserBaseInfo> modelCandidateInfo);
 
     /**
      * 定义流程模型时，获取候选人列表

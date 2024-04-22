@@ -26,6 +26,10 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * 版本服务
+ * @author PC8650
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -144,8 +148,8 @@ public class VersionService {
             validateModel(form.getNodes(), form.getEdges(), nodes, edges);
             //创建模型
             version = versionRepository.createVersion(nodes, edges,
-                    form.getProcessName(), form.getIterateFrom(), form.getCycle(), form.getCreateBy(), form.getCreateByName(),
-                    LocalDateTime.now()
+                    form.getProcessName(), form.getIterateFrom(), form.getCycle(), form.getTerminatedMethod(),
+                    form.getCreateBy(), form.getCreateByName(), LocalDateTime.now()
             );
 
             //删除迭代树缓存
@@ -179,9 +183,14 @@ public class VersionService {
     private void validateNodes(Set<ModelNodeDto> nodes, Map<String,ModelNodeDto> nodeMap, Set<Map<String,Object>> nodesSet){
         int startCount = 0, completeCount = 0, terminateCount = 0;
         Map<String,Object> dtoMap;
+        Set<String> nodeUidSet = new HashSet<>(nodes.size());
         for (ModelNodeDto node : nodes) {
             //自检基本属性
             node.check();
+
+            if (!nodeUidSet.add(node.getNodeUid())) {
+                throw new NeoProcessException(String.format("节点uid重复：%s", node.getNodeUid()));
+            }
 
             //特殊节点数量
             if (Objects.equals(node.getLocation(), NodeLocationType.BEGIN)) {
@@ -217,13 +226,10 @@ public class VersionService {
         ModelNodeDto endNode;
         Set<String> includeNodes = new HashSet<>(nodeMap.size());
         for (ProcessNodeEdge edge : edges) {
-            //校验空值
-            if (StringUtils.isBlank(edge.getStartNode()) || StringUtils.isBlank(edge.getEndNode())) {
-                throw new NeoProcessException("边端点不能为空");
-            }
-            if (edge.getCondition() == null) {
-                throw new NeoProcessException("边条件不能为空");
-            }
+            //自检基本属性
+            edge.check();
+
+            //校验节点存在性
             if (!nodeMap.containsKey(edge.getStartNode()) || !nodeMap.containsKey(edge.getEndNode())) {
                 throw new NeoProcessException(String.format("边端点不存在 (%s)-->(%s)", edge.getStartNode(), edge.getEndNode()));
             }

@@ -75,6 +75,11 @@ public class JacksonUtils {
         return null;
     }
 
+    /**
+     * obj => Map
+     * @param obj
+     * @return
+     */
     public static Map objToMap(Object obj){
         if (ObjectUtils.isEmpty(obj)){
             return null;
@@ -83,6 +88,24 @@ public class JacksonUtils {
             return MAPPER.convertValue(obj,Map.class);
         }catch (IllegalArgumentException e) {
             log.error(String.format("obj=[%s]",obj.toString()),e);
+        }
+        return null;
+    }
+
+    /**
+     * map => obj
+     * @param map
+     * @param clazz
+     * @return
+     */
+    public static <T> T mapToObj(Map map, Class<T> clazz){
+       if (map == null || map.isEmpty()) {
+           return null;
+       }
+        try {
+            return MAPPER.convertValue(map,clazz);
+        }catch (IllegalArgumentException e) {
+            log.error(String.format("map=[%s]",map.toString()),e);
         }
         return null;
     }

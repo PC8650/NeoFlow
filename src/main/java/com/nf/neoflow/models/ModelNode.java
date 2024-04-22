@@ -1,15 +1,10 @@
 package com.nf.neoflow.models;
 
-import com.nf.neoflow.dto.user.UserBaseInfo;
-import com.nf.neoflow.exception.NeoProcessException;
-import com.nf.neoflow.utils.JacksonUtils;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
 import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
-import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -47,6 +42,9 @@ public class ModelNode {
     @ApiModelProperty("节点操作方法，对应的@ProcessMethod")
     private String operationMethod;
 
+    @ApiModelProperty("是否只通过才执行方法")
+    private Boolean onlyPassExecute;
+
     @ApiModelProperty("自动执行间隔，只精确到日期（x 天后，x <= 0 立即自动执行），有值将忽略操作类型和候选人")
     private Integer autoInterval;
 
@@ -58,5 +56,19 @@ public class ModelNode {
 
     @ApiModelProperty("y坐标")
     private Double y;
+
+    /**
+     * 复制忽略属性
+     * @return String[]
+     */
+    public String[] ignoreCopyPropertyList() {
+        return new String[]{
+                "id","nodeUid",
+                "operationCandidate",
+                "operationCandidateInfo",
+                "autoInterval",
+                "x","y"
+        };
+    }
 
 }

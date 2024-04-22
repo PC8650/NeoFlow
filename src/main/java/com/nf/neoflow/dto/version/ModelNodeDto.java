@@ -34,6 +34,9 @@ public class ModelNodeDto {
     @ApiModelProperty("节点操作方法，对应的@ProcessMethod")
     private String operationMethod;
 
+    @ApiModelProperty("是否只通过才执行方法，默认为true")
+    private Boolean onlyPassExecute = true;
+
     @ApiModelProperty("自动执行间隔，只精确到日期（x 天后，x <= 0 立即自动执行），有值将忽略操作类型和候选人")
     private Integer autoInterval;
 
@@ -71,7 +74,7 @@ public class ModelNodeDto {
             }
         }
         if (x == null || y == null) {
-            throw new NeoProcessException("屏幕坐标不能为空");
+            throw new NeoProcessException("节点坐标不能为空");
         }
     }
 

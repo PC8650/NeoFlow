@@ -15,7 +15,8 @@ import java.util.List;
 public enum LockEnums {
 
     PROCESS_STATUS("process_status","变更流程状态","流程状态变更中，请稍后重试","用于更改流程启用状态、更改流程启用版本，建议流程名称为key"),
-    VERSION_CREATE("version_create","创建流程模型","流程模型创建中，请稍后重试","用于创建版本，建议流程名称为key");
+    VERSION_CREATE("version_create","创建流程模型","流程模型创建中，请稍后重试","用于创建版本，建议流程名称为key"),
+    FLOW_EXECUTE("flow_execute","流程执行","流程执行中，请稍后重试","用于流程执行，建议businessKey为key");
 
     private final String name;
     private final String msg;

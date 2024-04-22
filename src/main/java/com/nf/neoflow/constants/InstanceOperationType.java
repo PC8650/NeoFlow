@@ -1,15 +1,15 @@
 package com.nf.neoflow.constants;
 
 /**
- * 流程实例节点状态
+ * 流程实例操作类型
  * @author PC8650
  */
-public class InstanceNodeStatus {
+public class InstanceOperationType {
 
     /**
-     * 待处理
+     * 发起
      */
-    public static final Integer PENDING = 1;
+    public static final Integer INITIATE = 1;
 
     /**
      * 同意
@@ -30,5 +30,4 @@ public class InstanceNodeStatus {
      * 终止
      */
     public static final Integer TERMINATED = 5;
-
 }

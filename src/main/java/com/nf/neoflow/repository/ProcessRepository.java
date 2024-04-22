@@ -99,6 +99,11 @@ public interface ProcessRepository extends Neo4jRepository<Process,Long> {
     """)
     Integer changeActiveVersion(String name, Integer activeVersion, String updateBy, String updateByName, LocalDateTime updateTime, String history);
 
+    /**
+     * 查询流程激活历史
+     * @param name 流程名称
+     * @return 流程激活历史
+     */
     @Query("""
         match (p:Process{name: $name})
         where p.activeHistory is not null and size(p.activeHistory) > 0

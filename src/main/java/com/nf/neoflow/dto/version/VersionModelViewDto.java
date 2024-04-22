@@ -29,6 +29,9 @@ public class VersionModelViewDto {
     @ApiModelProperty("允许退回发起的次数")
     private Integer cycle;
 
+    @ApiModelProperty("终止方法，对应的@ProcessMethod")
+    private String terminatedMethod;
+
     @ApiModelProperty("组件模型")
     private Map<String,Object> componentModel;
 

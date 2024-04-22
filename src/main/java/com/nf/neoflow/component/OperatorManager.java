@@ -3,7 +3,7 @@ package com.nf.neoflow.component;
 import com.nf.neoflow.annotation.ProcessMethod;
 import com.nf.neoflow.annotation.ProcessOperator;
 import com.nf.neoflow.config.NeoFlowConfig;
-import com.nf.neoflow.dto.InstanceNodeForm;
+import com.nf.neoflow.dto.execute.ExecuteForm;
 import com.nf.neoflow.exception.NeoFlowConfigException;
 import com.nf.neoflow.exception.NeoProcessAnnotationException;
 import jakarta.annotation.PostConstruct;
@@ -32,7 +32,7 @@ public class OperatorManager {
 
     private final NeoFlowConfig config;
 
-    private final Map<String,Map<String, Function<InstanceNodeForm, InstanceNodeForm>>> operatorMap = new HashMap<>();
+    private final Map<String,Map<String, Function<ExecuteForm, ExecuteForm>>> operatorMap = new HashMap<>();
 
     private Integer ProcessOperatorCount = 0;
 
@@ -40,19 +40,25 @@ public class OperatorManager {
 
     /**
      * 执行流程
-     * @param process 流程名称
-     * @param method 方法名称
-     * @param arg 参数
+     * @param form 实例表单
      * @return 执行结果
      */
-    public Object operate(String process, String method, InstanceNodeForm arg) {
-       if (!operatorMap.containsKey(process)) {
-           throw new NeoProcessAnnotationException(String.format("未找到%s对应的@ProcessOperator", process));
-       }else if (!operatorMap.get(process).containsKey(method)) {
-           throw new NeoProcessAnnotationException(String.format("未找到%s对应的@ProcessMethod", method));
-       }
+    public ExecuteForm operate(ExecuteForm form) {
+        String process = form.getProcessName();
+        String method = form.getOperationMethod();
 
-       return operatorMap.get(process).get(method).apply(arg);
+        if (StringUtils.isBlank(method)) {
+            return form;
+        }
+
+        if (!operatorMap.containsKey(process)) {
+           throw new NeoProcessAnnotationException(String.format("未找到%s对应的@ProcessOperator", process));
+        }
+        if (!operatorMap.get(process).containsKey(method)) {
+           throw new NeoProcessAnnotationException(String.format("未找到%s对应的@ProcessMethod", method));
+        }
+
+        return operatorMap.get(process).get(method).apply(form);
     }
 
     /**
@@ -77,7 +83,7 @@ public class OperatorManager {
         while (resources.hasMoreElements()) {
              resource= resources.nextElement();
              directory= new File(resource.getPath());
-            scanDirectory(directory,scanPackage);
+             scanDirectory(directory,scanPackage);
         }
         log.info("扫描完成，有效@ProcessOperator {} 个，有效@ProcessMethod {} 个", ProcessOperatorCount, ProcessMethodCount);
     }
@@ -127,7 +133,7 @@ public class OperatorManager {
         }
 
         //获取Operator的方法，处理@ProcessMethod
-        Map<String, Function<InstanceNodeForm, InstanceNodeForm>> operatorMethodMap = new HashMap<>();
+        Map<String, Function<ExecuteForm, ExecuteForm>> operatorMethodMap = new HashMap<>();
         Object instance = clazz.getDeclaredConstructor().newInstance();
         int pmc = 0;
         for (Method method : clazz.getDeclaredMethods()) {
@@ -140,10 +146,10 @@ public class OperatorManager {
                 throw new NeoProcessAnnotationException(String.format("%s 中的 @ProcessMethod(name = \"%s\")  重复定义", className, pm.name()));
             }
             //创建Function保存方法调用行为
-            Function<InstanceNodeForm, InstanceNodeForm> function = (InstanceNodeForm x) ->  {
+            Function<ExecuteForm, ExecuteForm> function = (ExecuteForm x) ->  {
                 try {
                     method.setAccessible(true);
-                    return (InstanceNodeForm) method.invoke(instance, x);
+                    return (ExecuteForm) method.invoke(instance, x);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }

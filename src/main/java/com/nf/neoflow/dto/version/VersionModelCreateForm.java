@@ -24,6 +24,9 @@ public class VersionModelCreateForm {
     @ApiModelProperty("拒绝后退回至发起的次数")
     private Integer cycle = 0;
 
+    @ApiModelProperty("终止方法，对应的@ProcessMethod")
+    private String terminatedMethod;
+
     @ApiModelProperty("创建人标识")
     private String createBy;
 

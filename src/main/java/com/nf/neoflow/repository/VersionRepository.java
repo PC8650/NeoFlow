@@ -53,7 +53,7 @@ public interface VersionRepository extends Neo4jRepository<Version,Long> {
         unwind relationships(path) as rels
         unwind rels as rel
         with p, i, v, nm, {operationCandidateInfo:apoc.convert.fromJsonList(nm.operationCandidate)} as oc, rel
-        return p.name as processName, i.version as iterateFrom, v.version as version, v.cycle as cycle,
+        return p.name as processName, i.version as iterateFrom, v.version as version, v.cycle as cycle, v.terminatedMethod as terminatedMethod,
         collect(distinct apoc.map.merge(apoc.map.removeKeys(nm, ['operationCandidate']),oc)) as versionNodes,
         collect(distinct {startNode: startNode(rel).nodeUid, endNode: endNode(rel).nodeUid, condition: rel.condition}) as versionEdges
     """)
@@ -69,12 +69,13 @@ public interface VersionRepository extends Neo4jRepository<Version,Long> {
         optional match (v)-[:ITERATE]->(i:Version)
         with v, i order by v.version, i.version
         with v, collect(i) as iterate
-        return v.version as version, v.cycle as cycle,
+        return v.version as version, v.cycle as cycle, v.terminatedMethod as terminatedMethod,
         v.createBy as createBy, v.createByName as createByName, v.createTime as createTime,
         size(iterate) as iterateCount, [x in iterate | x.version] as iterateVersion,
         [x in iterate | {
                 version: x.version,
                 cycle: x.cycle,
+                terminatedMethod: x.terminatedMethod,
                 createBy: x.createBy,
                 createByName: x.createByName,
                 createTime: x.createTime
@@ -94,7 +95,7 @@ public interface VersionRepository extends Neo4jRepository<Version,Long> {
         with v, i, case when ir is null then true else false end as top
         order by v.version, i.version
         with v, collect(i) as iterate, top
-        return v.version as version, v.cycle as cycle, top,
+        return v.version as version, v.cycle as cycle, v.terminatedMethod as terminatedMethod, top,
         v.createBy as createBy, v.createByName as createByName, v.createTime as createTime,
         size(iterate) as iterateCount, [x in iterate | x.version] as iterateVersion, [] as iterate
     """)
@@ -120,6 +121,7 @@ public interface VersionRepository extends Neo4jRepository<Version,Long> {
         {
             version: v.version,
             cycle: v.cycle,
+            terminatedMethod: v.terminatedMethod,
             createBy: v.createBy,
             createByName: v.createByName,
             createTime: v.createTime,
@@ -172,10 +174,13 @@ public interface VersionRepository extends Neo4jRepository<Version,Long> {
         {p:p, IterateFrom:IterateFrom, nextVer:nextVer}
     ) yield value
     with value.newVer as newVer, nextVer, p
-    set newVer.version = nextVer, newVer.cycle = $cycle,
+    set newVer.version = nextVer, newVer.cycle = $cycle, newVer.terminatedMethod = $terminatedMethod,
     newVer.createTime = $createTime, newVer.createBy = $createBy, newVer.createByName = $createByName
+    //创建实例节点
     with newVer, nextVer
+    create (newVer)-[:INSTANCE]->(:Instance{name:'instance'})
     //创建模型节点
+    with newVer, nextVer
     unwind $nodes as node
     create (n:ModelNode)
     set n += node
@@ -187,17 +192,17 @@ public interface VersionRepository extends Neo4jRepository<Version,Long> {
         {newVer:newVer, n:n}
     ) yield value as newNode
     with collect(n) as newNodes, nextVer
-    
     //创建NEXT条件关系
     unwind $edges as edge
     with newNodes, nextVer, edge,
     [x in newNodes where x.nodeUid = edge.startNode][0] as startNode,
     [x in newNodes where x.nodeUid = edge.endNode][0] as endNode
-    merge (startNode)-[c:NEXT]->(endNode) on create set c.condition = edge.condition
-    
+    merge (startNode)-[c:NEXT]->(endNode)
+    on create set c.condition = edge.condition,
+    c.startLocation = edge.startLocation, c.endLocation = edge.endLocation
     return distinct nextVer
     """)
     Integer createVersion(Set<Map<String,Object>> nodes, Set<Map<String,Object>> edges,
-                          String processName, Integer IterateFrom, Integer cycle, String createBy,
-                          String createByName, LocalDateTime createTime);
+                          String processName, Integer IterateFrom, Integer cycle, String terminatedMethod,
+                          String createBy, String createByName, LocalDateTime createTime);
 }

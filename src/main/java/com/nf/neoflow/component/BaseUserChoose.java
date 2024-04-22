@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -27,7 +28,36 @@ public class BaseUserChoose {
     private UserChoose userChooseService;
 
     /**
-     * 获取或校验用户信息
+     * 根据模型节点获取实际候选人
+     * @param operationType 节点操作类型
+     * @param modelCandidateInfo 模型节点候选人信息
+     * @return List<UserBaseInfo>
+     */
+    public List<UserBaseInfo> getCandidateUsers(Integer operationType, List<UserBaseInfo> modelCandidateInfo) {
+        return userChooseService.getCandidateUsers(operationType, modelCandidateInfo);
+    }
+
+    /**
+     * 获取或校验当前用户信息
+     * @param userBaseInfo
+     * @return
+     */
+    public UserBaseInfo user(UserBaseInfo userBaseInfo) {
+        if (config.getBaseUserChoose()) {
+            return getUser();
+        }
+
+        if (userBaseInfo == null
+                || StringUtils.isBlank(userBaseInfo.getId())
+                || StringUtils.isBlank(userBaseInfo.getName())
+        ) {
+            throw new NeoUserException("用户信息缺失");
+        }
+        return userBaseInfo;
+    }
+
+    /**
+     * 获取或校验当前用户信息
      * @param params
      * @return
      */

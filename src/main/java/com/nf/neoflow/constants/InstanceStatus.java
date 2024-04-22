@@ -9,23 +9,23 @@ public class InstanceStatus {
     /**
      * 进行中
      */
-    private static final Integer PENDING = 1;
+    public static final Integer PENDING = 1;
 
     /**
      * 已完成
      * 通过
      */
-    private static final Integer COMPLETE = 1;
+    public static final Integer COMPLETE = 2;
 
     /**
      * 已拒绝
      * 未通过
      */
-    private static final Integer REJECTED = 1;
+    public static final Integer REJECTED = 3;
 
     /**
      * 已终止
      * 意外终止
      */
-    private static final Integer TERMINATED = 1;
+    public static final Integer TERMINATED = 4;
 }
