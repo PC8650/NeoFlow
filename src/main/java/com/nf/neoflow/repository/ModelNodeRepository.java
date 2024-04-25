@@ -35,9 +35,39 @@ public interface ModelNodeRepository extends Neo4jRepository<ModelNode, Long> {
     @Query("""
         match (p:Process{name:$0})
         optional match (p)-[:VERSION]->(v:Version{version:$1})-[:MODEL]->(f:ModelNode) where f is not null
-        optional match (f)-[:NEXT*0..]->(c:ModelNode{nodeUid:$2})
+        with f, [(f)-[:NEXT*0..]->(c:ModelNode{nodeUid:$2}) | c][0] as c
         optional match (c)-[:NEXT{condition:$3}]->(n:ModelNode)
         return n
     """)
     ModelNode queryNextModelNode(String processName, Integer version, String nodeUid, Integer condition);
+
+    /**
+     * 查询中间节点是否可拒绝
+     * @param processName 流程名称
+     * @param version 版本
+     * @param nodeUid 节点uid
+     * @return ModelNode
+     */
+    @Query("""
+        match (p:Process{name:$0})
+        optional match (p)-[:VERSION]->(v:Version{version:$1})-[:MODEL]->(f:ModelNode) where f is not null
+        with f, [(f)-[:NEXT*]->(c:ModelNode{nodeUid:$2}) | c][0] as c
+        optional match (c)-[:NEXT]->(t:ModelNode{location:4})
+        return t
+    """)
+    ModelNode MiddleNodeCanReject(String processName, Integer version, String nodeUid);
+
+    /**
+     * 查询模型终止节点
+     * @param processName 流程名称
+     * @param version 版本
+     * @return ModelNode
+     */
+    @Query("""
+        match (p:Process{name:$0})
+        optional match (p)-[:VERSION]->(v:Version{version:$1})-[:MODEL]->(f:ModelNode) where f is not null
+        with f, [(f)-[:NEXT*]->(t:ModelNode{location:4}) | t][0] as t
+        return t
+    """)
+    ModelNode queryModelTerminateNode(String processName, Integer version);
 }

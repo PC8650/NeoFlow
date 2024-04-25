@@ -14,7 +14,11 @@ public class CacheType {
                 V_M,
                 V_I_T,
                 F_I_E,
-                N_M_N
+                N_M_N,
+                M_C_T,
+                M_T_N,
+                F_I_C,
+                I_I_N
         ));
     }
 
@@ -52,5 +56,33 @@ public class CacheType {
      * 自定义策略：n_m_n+分隔符+流程名称+分隔符+版本+分隔符+当前模型节点uid+分隔符+跳转条件
      */
     public static final String N_M_N = "n_m_n";
+
+    /**
+     * 中间节点能否拒绝
+     * 默认策略：流程名称+分隔符+版本+分隔符+当前节点对应模型节点uid
+     * 自定义策略：m_c_t+分隔符+流程名称+分隔符+版本+分隔符+当前节点对应模型节点uid
+     */
+    public static final String M_C_T = "m_c_t";
+
+    /**
+     * 模型终止节点
+     * 默认策略：流程名称+分隔符+版本
+     * 自定义策略：m_t_n+分隔符+流程名称+分隔符+版本
+     */
+    public static final String M_T_N = "m_t_n";
+
+    /**
+     * 流程实例能否退回循环
+     * 默认策略：业务key
+     * 自定义策略：f_i_c+分隔符+业务key
+     */
+    public static final String F_I_C = "f_i_c";
+
+    /**
+     * 实例发起节点
+     * 默认策略：业务key
+     * 自定义策略：i_i_n+分隔符+业务key
+     */
+    public static final String I_I_N = "i_i_n";
 
 }

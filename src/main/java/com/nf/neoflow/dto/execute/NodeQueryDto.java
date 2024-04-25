@@ -19,9 +19,6 @@ public class NodeQueryDto<T> {
     @ApiModelProperty("上一节点状态")
     private Boolean before;
 
-    @ApiModelProperty("节点与参数位置是否匹配")
-    private Boolean match;
-
     @ApiModelProperty("版本")
     Integer version;
 

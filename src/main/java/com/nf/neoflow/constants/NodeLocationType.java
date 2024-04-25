@@ -10,7 +10,7 @@ public class NodeLocationType {
      * 开始
      * 发起
      */
-    public static final Integer BEGIN = 1;
+    public static final Integer Initiate = 1;
 
     /**
      * 中间

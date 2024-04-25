@@ -31,12 +31,13 @@ public class NeoFlowConfig {
 
     /**
      * 自动节点执行类型
-     * 1-只执行当天，2-执行当天及以前
+     * 1-只执行当天（默认），2-执行当天及以前
      */
     private Integer autoType = AutoType.TODAY;
 
     /**
      * 自带接口基路径配置
+     * 默认 /neo
      */
     private String prefix;
 
@@ -77,7 +78,6 @@ public class NeoFlowConfig {
      */
     private Integer expire = 10;
 
-
     /**
      * 多段缓存key分隔符，默认 ':'
      */
@@ -89,4 +89,48 @@ public class NeoFlowConfig {
      * 默认使用本地缓存
      */
     private Boolean customizationCache = false;
+
+    /**
+     * 自动节点线程池核心线程池大小
+     * 默认2 * CPU核数
+     */
+    private int corePoolSize = Runtime.getRuntime().availableProcessors() * 2;
+
+    /**
+     * 自动节点线程池最大线程池大小
+     * 默认3 * CPU核数
+     */
+    private int maxPoolSize = Runtime.getRuntime().availableProcessors() * 3;
+
+    /**
+     * 自动节点线程池队列容量
+     * 默认100
+     */
+    private int queueCapacity = 100;
+
+    /**
+     * 自动节点线程池线程存活时间，单位：秒
+     * 默认 60
+     */
+    private int keepAliveTime = 60;
+
+    /**
+     * 自动节点线程池队列类型
+     * 默认 linked
+     * array: ArrayBlockingQueue
+     * linked: LinkedBlockingQueue
+     * synchronous: SynchronousQueue(设置不公平)
+     * priority: PriorityBlockingQueue
+     */
+    private String queueType = "linked";
+
+    /**
+     * 自动节点线程池拒绝策略
+     * 默认 caller-runs
+     * abort：AbortPolicy，丢弃任务并抛出RejectedExecutionException异常
+     * caller-runs：CallerRunsPolicy，由调用线程处理该任务
+     * discard：DiscardPolicy，丢弃任务，但是不抛出异常
+     * discard-oldest：DiscardOldestPolicy，丢弃队列中最老的任务
+     */
+    private String rejectionPolicy = "caller-runs";
 }

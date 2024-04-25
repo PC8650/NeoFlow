@@ -13,7 +13,6 @@ import com.nf.neoflow.repository.VersionRepository;
 import com.nf.neoflow.utils.JacksonUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -193,7 +192,7 @@ public class VersionService {
             }
 
             //特殊节点数量
-            if (Objects.equals(node.getLocation(), NodeLocationType.BEGIN)) {
+            if (Objects.equals(node.getLocation(), NodeLocationType.Initiate)) {
                 startCount++;
             } else if (Objects.equals(node.getLocation(), NodeLocationType.COMPLETE)) {
                 completeCount++;
@@ -237,7 +236,7 @@ public class VersionService {
             //校验结构
             startNode = nodeMap.get(edge.getStartNode());
             endNode = nodeMap.get(edge.getEndNode());
-            if (Objects.equals(endNode.getLocation(), NodeLocationType.BEGIN)) {
+            if (Objects.equals(endNode.getLocation(), NodeLocationType.Initiate)) {
                 throw new NeoProcessException("不能指向开始节点");
             }
             if (Objects.equals(startNode.getLocation(), NodeLocationType.COMPLETE)

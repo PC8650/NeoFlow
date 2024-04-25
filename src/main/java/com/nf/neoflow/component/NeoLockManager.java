@@ -32,7 +32,7 @@ public class NeoLockManager {
      * 锁集合
      * 实际维护的是ConcurrentHashMap，KeySetView进行add，ConcurrentHashMap会put对应的key-value，value为一个缓存的共享值
      */
-    private ConcurrentHashMap.KeySetView<String, Boolean> LOCK_MAP = ConcurrentHashMap.newKeySet();
+    private final ConcurrentHashMap.KeySetView<String, Boolean> LOCK_MAP = ConcurrentHashMap.newKeySet();
 
     /**
      * 获取锁
