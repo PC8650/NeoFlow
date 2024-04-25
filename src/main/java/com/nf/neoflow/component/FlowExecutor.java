@@ -67,6 +67,7 @@ public class FlowExecutor {
             case "array" -> queue = new java.util.concurrent.ArrayBlockingQueue<>(config.getQueueCapacity());
             case "linked" -> queue = new java.util.concurrent.LinkedBlockingQueue<>(config.getQueueCapacity());
             case "synchronous" -> queue = new java.util.concurrent.SynchronousQueue<>(false);
+            case "priority" -> queue = new java.util.concurrent.PriorityBlockingQueue<>(config.getQueueCapacity());
             default -> throw new NeoFlowConfigException(String.format("队列类型错误，%s", config.getQueueType()));
         }
 

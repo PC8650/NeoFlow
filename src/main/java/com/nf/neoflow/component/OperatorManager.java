@@ -85,7 +85,7 @@ public class OperatorManager {
              directory= new File(resource.getPath());
              scanDirectory(directory,scanPackage);
         }
-        log.info("扫描完成，有效@ProcessOperator {} 个，有效@ProcessMethod {} 个", ProcessOperatorCount, ProcessMethodCount);
+        log.info("扫描完成，{}有效@ProcessOperator，{}有效@ProcessMethod", ProcessOperatorCount, ProcessMethodCount);
     }
 
     /**
