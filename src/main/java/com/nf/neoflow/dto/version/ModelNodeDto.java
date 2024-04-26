@@ -1,5 +1,6 @@
 package com.nf.neoflow.dto.version;
 
+import com.nf.neoflow.constants.NodeLocationType;
 import com.nf.neoflow.dto.user.UserBaseInfo;
 import com.nf.neoflow.exception.NeoProcessException;
 import io.swagger.annotations.ApiModelProperty;
@@ -8,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 流程模型节点
@@ -72,6 +74,9 @@ public class ModelNodeDto {
                     throw new NeoProcessException("节点候选人信息缺失");
                 }
             }
+        }
+        if (Objects.equals(location, NodeLocationType.Initiate) && !Objects.equals(autoInterval, 0)) {
+            throw new NeoProcessException("发起节点只能设置为[立即自动执行]");
         }
         if (x == null || y == null) {
             throw new NeoProcessException("节点坐标不能为空");

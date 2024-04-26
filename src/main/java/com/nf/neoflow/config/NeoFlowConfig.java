@@ -30,10 +30,16 @@ public class NeoFlowConfig {
     private String autoCorn = "0 0 5 * * ?";
 
     /**
+     * 自动节点每次执行数量，0则扫描并执行所有
+     * 默认 0
+     */
+    private int autoCount = 0;
+
+    /**
      * 自动节点执行类型
      * 1-只执行当天（默认），2-执行当天及以前
      */
-    private Integer autoType = AutoType.TODAY;
+    private int autoType = AutoType.TODAY;
 
     /**
      * 自带接口基路径配置
@@ -66,17 +72,17 @@ public class NeoFlowConfig {
     /**
      * 默认缓存策略初始化容量
      */
-    private Integer initCacheCount = 50;
+    private int initCacheCount = 50;
 
     /**
      * 默认缓存策略最大容量
      */
-    private Integer maxCapacityCount = 500;
+    private int maxCapacityCount = 500;
 
     /**
      * 默认缓存策略过期时间，单位：分钟
      */
-    private Integer expire = 10;
+    private int expire = 10;
 
     /**
      * 多段缓存key分隔符，默认 ':'
@@ -133,6 +139,18 @@ public class NeoFlowConfig {
      * discard-oldest：DiscardOldestPolicy，丢弃队列中最老的任务
      */
     private String rejectionPolicy = "caller-runs";
+
+    /**
+     * 自动节点线程池使用虚拟线程（将只支持最大线程数的配置）
+     * 默认 false
+     */
+    private Boolean enableVirtual = false;
+
+    /**
+     * 虚拟线程池达到上线后，新任务等待时间，单位：秒
+     * 默认 5
+     */
+    private int virtualAwaitTime = 5;
 
     /**
      * 执行自动节点时的操作人id

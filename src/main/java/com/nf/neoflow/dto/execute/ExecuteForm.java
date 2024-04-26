@@ -9,7 +9,9 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.Range;
+import org.springframework.util.CollectionUtils;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -54,6 +56,12 @@ public class ExecuteForm {
     @ApiModelProperty("业务参数")
     private Map<String, Object> params;
 
+    @ApiModelProperty("转发类型，可选范围[模型节点操作类型]")
+    private Integer forwardOperationType;
+
+    @ApiModelProperty("转发对象")
+    private List<UserBaseInfo> forwardOperator;
+
     public void baseCheck() {
         if (num == null || num < 1) {
             throw new NeoExecuteException("实例节点位置应 >= 1");
@@ -66,6 +74,21 @@ public class ExecuteForm {
         }
         if (StringUtils.isBlank(businessKey)) {
             throw new NeoExecuteException("业务key不能为空");
+        }
+    }
+
+    public void forwardCheck() {
+        baseCheck();
+        if (forwardOperationType == null) {
+            throw new NeoExecuteException("转发类型不能为空");
+        }
+        if (CollectionUtils.isEmpty(forwardOperator)) {
+            throw new NeoExecuteException("转发对象不能为空");
+        }
+        for (UserBaseInfo userBaseInfo : forwardOperator) {
+            if (StringUtils.isBlank(userBaseInfo.getId()) || StringUtils.isBlank(userBaseInfo.getName())) {
+                throw new NeoExecuteException("转发对象参数缺失");
+            }
         }
     }
 

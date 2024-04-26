@@ -68,4 +68,20 @@ public class InstanceNode {
     @ApiModelProperty("节点持续时间：秒")
     private Long during;
 
+    /**
+     * 复制忽略属性
+     * @return String[]
+     */
+    public String[] ignoreCopyPropertyListOfForward() {
+        return new String[]{
+                "id","status",
+                "autoTime",
+                "operationBy",
+                "operationType",
+                "operationCandidate",
+                "operationCandidateInfo",
+                "beginTime", "endTime", "during"
+        };
+    }
+
 }

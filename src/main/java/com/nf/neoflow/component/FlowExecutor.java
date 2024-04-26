@@ -29,9 +29,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
 /**
@@ -55,36 +54,86 @@ public class FlowExecutor {
     private final Map<Integer, BiFunction<ExecuteForm, Boolean, UpdateResult>> excuteMap = Map.of(
             InstanceOperationType.INITIATE, this::initiate,
             InstanceOperationType.PASS, this::pass,
-            InstanceOperationType.REJECTED, this::reject
+            InstanceOperationType.REJECTED, this::reject,
+            InstanceOperationType.FORWARD, this::forward,
+            InstanceOperationType.TERMINATED, this::terminate
     );
 
-    private ThreadPoolExecutor autoNodeExecutor;
+    private ExecutorService autoNodeExecutor;
 
     @PostConstruct
     private void autoNodeExecutorInit() {
-        BlockingQueue queue;
+        BlockingQueue<Runnable> queue;
         switch (config.getQueueType().toLowerCase()) {
-            case "array" -> queue = new java.util.concurrent.ArrayBlockingQueue<>(config.getQueueCapacity());
-            case "linked" -> queue = new java.util.concurrent.LinkedBlockingQueue<>(config.getQueueCapacity());
-            case "synchronous" -> queue = new java.util.concurrent.SynchronousQueue<>(false);
-            case "priority" -> queue = new java.util.concurrent.PriorityBlockingQueue<>(config.getQueueCapacity());
+            case "array" -> queue = new ArrayBlockingQueue<>(config.getQueueCapacity());
+            case "linked" -> queue = new LinkedBlockingQueue<>(config.getQueueCapacity());
+            case "synchronous" -> queue = new SynchronousQueue<>(false);
+            case "priority" -> queue = new PriorityBlockingQueue<>(config.getQueueCapacity());
             default -> throw new NeoFlowConfigException(String.format("队列类型错误，%s", config.getQueueType()));
+        }
+
+        String prefix = "auto-node-executor";
+        if (config.getEnableVirtual()) {
+            //newVirtualThreadPerTaskExecutor()不支持设置参数，自定义ThreadFactory进行控制
+            autoNodeExecutor = Executors.newThreadPerTaskExecutor(
+                    new ThreadFactory() {
+                        //通过信号量控制最大虚拟线程数和等待时间
+                        private final Semaphore semaphore = new Semaphore(config.getMaxPoolSize());
+                        private final AtomicInteger nextId = new AtomicInteger(1);
+                        @Override
+                        public Thread newThread(Runnable r) {
+                            boolean get = false;
+                            try {
+                                get = semaphore.tryAcquire(config.getVirtualAwaitTime(), TimeUnit.SECONDS);
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                return null;
+                            }
+
+                            if (!get) {
+                                return null;
+                            }
+
+                            Thread thread = Thread.ofVirtual().unstarted(() -> {
+                                try {
+                                    r.run();
+                                } finally {
+                                    semaphore.release();
+                                }
+                            });
+                            thread.setName(prefix + "-" + nextId.getAndIncrement());
+                            return thread;
+                        }
+                    }
+            );
+            return;
+        }
+
+        RejectedExecutionHandler rejectedExecutionHandler;
+        switch (config.getRejectionPolicy().toLowerCase()) {
+            case "abort" -> rejectedExecutionHandler = new ThreadPoolExecutor.AbortPolicy();
+            case "caller-runs" -> rejectedExecutionHandler = new ThreadPoolExecutor.CallerRunsPolicy();
+            case "discard" -> rejectedExecutionHandler = new ThreadPoolExecutor.DiscardPolicy();
+            case "discard-oldest" -> rejectedExecutionHandler = new ThreadPoolExecutor.DiscardOldestPolicy();
+            default -> throw new NeoFlowConfigException(String.format("拒绝策略类型错误，%s", config.getRejectionPolicy()));
         }
 
         autoNodeExecutor = new ThreadPoolExecutor(
                 config.getCorePoolSize(),
                 config.getMaxPoolSize(),
                 config.getKeepAliveTime(), TimeUnit.SECONDS,
-                queue
+                queue,
+                new ThreadFactory() {
+                    private final AtomicInteger nextId = new AtomicInteger(1);
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        Thread thread = new Thread(r);
+                        thread.setName(prefix + "-" + nextId.getAndIncrement());
+                        return thread;
+                    }
+                },
+                rejectedExecutionHandler
         );
-
-        switch (config.getRejectionPolicy().toLowerCase()) {
-            case "abort" -> autoNodeExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
-            case "caller-runs" -> autoNodeExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
-            case "discard" -> autoNodeExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
-            case "discard-oldest" -> autoNodeExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy());
-            default -> throw new NeoFlowConfigException(String.format("拒绝策略类型错误，%s", config.getRejectionPolicy()));
-        }
     }
 
     /**
@@ -151,12 +200,10 @@ public class FlowExecutor {
                 getLock = getLockByLast;
             }
 
-            //获取/校验当前用户信息
-            form.setOperator(userChoose.user(form.getOperator())).setNum(1);
-            //获取实例节点
-            NodeQueryDto<InstanceNode> dto = getInstanceNode(form);
-            //执行
-            operateMethod(form, dto.getNode());
+            form.setNum(1);
+
+            //获取当前实例节点并执行节点方法
+            NodeQueryDto<InstanceNode> dto = getCurrentInstanceAndOperateMethod(form, false);
             //若发起时未加锁，此时获得businessKey后加锁
             if (!getLock) {
                 getLock = lockManager.getLock(form.getBusinessKey(), LockEnums.FLOW_EXECUTE);
@@ -200,12 +247,9 @@ public class FlowExecutor {
                 getLock = getLockByLast;
             }
 
-            //获取/校验当前用户信息
-            form.setOperator(userChoose.user(form.getOperator()));
-            //获取实例节点
-            NodeQueryDto<InstanceNode> dto = getInstanceNode(form);
-            //执行
-            operateMethod(form, dto.getNode());
+            //获取当前实例节点并执行节点方法
+            NodeQueryDto<InstanceNode> dto = getCurrentInstanceAndOperateMethod(form, false);
+
             //更新流程
             UpdateResult ur = updateFlowAfterPass(form, dto.getNode(), getLock);
             autoNextRightNow = ur.autoRigNow();
@@ -243,12 +287,8 @@ public class FlowExecutor {
                 getLock = getLockByLast;
             }
 
-            //获取/校验当前用户信息
-            form.setOperator(userChoose.user(form.getOperator()));
-            //获取实例节点
-            NodeQueryDto<InstanceNode> dto = getInstanceNode(form);
-            //执行
-            operateMethod(form, dto.getNode());
+            //获取当前实例节点并执行节点方法
+            NodeQueryDto<InstanceNode> dto = getCurrentInstanceAndOperateMethod(form, false);
 
             //更新流程
             UpdateResult ur = updateFlowAfterReject(form, dto.getNode(), getLock);
@@ -267,17 +307,121 @@ public class FlowExecutor {
     }
 
     /**
+     * 转发
+     * @param form 表单
+     * @param getLockByLast 是否在上个节点获取锁
+     * @return 更新结果
+     */
+    private UpdateResult forward(ExecuteForm form, Boolean getLockByLast) {
+        form.forwardCheck();
+        String processName = form.getProcessName();
+        String businessKey = form.getBusinessKey();
+        boolean getLock = false;
+        boolean autoNextRightNow = false;
+        log.info("转发：流程 {}-版本 {}-key {}- 当前节点位置{}", processName, form.getVersion(), businessKey, form.getNum());
+        try {
+            //获取锁
+            if (!getLockByLast) {
+                getLock = lockManager.getLock(businessKey, LockEnums.FLOW_EXECUTE);
+            }else {
+                getLock = getLockByLast;
+            }
+
+            //获取当前实例节点并执行节点方法
+            NodeQueryDto<InstanceNode> dto = getCurrentInstanceAndOperateMethod(form, false);
+
+            //更新流程
+            UpdateResult ur = updateFlowAfterForward(form, dto.getNode(), getLock);
+            autoNextRightNow = ur.autoRigNow();
+
+            return ur;
+        } catch (Exception e) {
+            lockManager.releaseLock(businessKey, getLock, LockEnums.FLOW_EXECUTE);
+            getLock = false;
+            throw e;
+        } finally {
+            if (!autoNextRightNow) {
+                lockManager.releaseLock(businessKey, getLock, LockEnums.FLOW_EXECUTE);
+            }
+        }
+    }
+
+    /**
+     * 终止
+     * 强行终止流程，如有必要，请确保版本配置的终止方法能回滚对应的业务数据
+     * @param form 表单
+     * @param getLockByLast 是否在上个节点获取锁
+     * @return 更新结果
+     */
+    private UpdateResult terminate(ExecuteForm form, Boolean getLockByLast) {
+        form.baseCheck();
+        String processName = form.getProcessName();
+        String businessKey = form.getBusinessKey();
+        boolean getLock = false;
+        boolean autoNextRightNow = false;
+        log.info("终止：流程 {}-版本 {}-key {}- 当前节点位置{}", processName, form.getVersion(), businessKey, form.getNum());
+        try {
+            //获取锁
+            if (!getLockByLast) {
+                getLock = lockManager.getLock(businessKey, LockEnums.FLOW_EXECUTE);
+            }else {
+                getLock = getLockByLast;
+            }
+
+            //获取当前实例节点并执行节点方法
+            NodeQueryDto<InstanceNode> dto = getCurrentInstanceAndOperateMethod(form, true);
+
+            //更新流程
+            UpdateResult ur = updateFlowAfterTerminate(form, dto.getNode(), getLock);
+            autoNextRightNow = ur.autoRigNow();
+
+            return ur;
+        } catch (Exception e) {
+            lockManager.releaseLock(businessKey, getLock, LockEnums.FLOW_EXECUTE);
+            getLock = false;
+            throw e;
+        } finally {
+            if (!autoNextRightNow) {
+                lockManager.releaseLock(businessKey, getLock, LockEnums.FLOW_EXECUTE);
+            }
+        }
+    }
+
+    /**
+     * 获取当前实例节点并执行节点方法
+     * @param form 表单
+     * @param isTerminated 是否为终止操作
+     * @return 实例节点查询数据
+     */
+    private NodeQueryDto<InstanceNode> getCurrentInstanceAndOperateMethod(ExecuteForm form, Boolean isTerminated) {
+        //获取/校验当前用户信息
+        form.setOperator(userChoose.user(form.getOperator()));
+        //获取实例节点
+        NodeQueryDto<InstanceNode> dto = getInstanceNode(form);
+        //执行
+        operateMethod(form, dto.getNode(), dto.getTerminatedMethod(), isTerminated);
+
+        return dto;
+    }
+
+    /**
      * 执行节点方法
      * @param form 表单
      * @param current 当前实例节点
+     * @param terminatedMethod 终止方法
+     * @param isTerminated 是否为终止操作
      */
-    private void operateMethod(ExecuteForm form, InstanceNode current) {
+    private void operateMethod(ExecuteForm form, InstanceNode current, String terminatedMethod, Boolean isTerminated) {
         //判断候选人身份
-        inCandidate(form, current);
+        inCandidate(form, current, isTerminated);
 
         log.info("流程操作类型：{}", form.getOperationType());
 
-        if (needOperateMethod(form.getOperationType(), current.getOnlyPassExecute())) {
+        //执行节点方法
+        if (config.getIndependence()) {
+            log.info("独立部署，跳过流程方法");
+        } else if ((current.getOnlyPassExecute() && form.getOperationType() < InstanceOperationType.REJECTED)
+                || (!current.getOnlyPassExecute() && form.getOperationType() < InstanceOperationType.FORWARD)) {
             //记录关键数据
             String businessKey = form.getBusinessKey();
             String processName = form.getProcessName();
@@ -303,6 +447,10 @@ public class FlowExecutor {
                 log.error("流程执行失败，关键数据不一致：流程 {}-版本 {}-key {}-当前节点位置 {}", processName, version, businessKey, num);
                 throw new NeoExecuteException("流程执行失败，节点方法后关键数据变更");
             }
+        } else if (isTerminated) {
+            log.info("执行流程终止方法-{}", terminatedMethod);
+            form.setOperationMethod(terminatedMethod);
+            form = operatorManager.operate(form);
         }
 
         //发起、通过 必须有跳转条件
@@ -366,6 +514,11 @@ public class FlowExecutor {
         boolean autoNextRightNow = false;
         if (current.getLocation() <= NodeLocationType.MIDDLE) {
             ModelNode modelNode = findNextModelNode(form, current.getModelNodeUid());
+            if (modelNode == null) {
+                log.error("流程执行失败，未找到下一节点：流程 {}-版本 {}-key {}-当前节点位置 {}",
+                        form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNum());
+                throw new NeoExecuteException("流程执行失败，未找到下一节点");
+            }
             autoNextRightNow = Objects.equals(modelNode.getAutoInterval(), 0);
             next = constructInstanceNode(modelNode);
         }
@@ -382,11 +535,17 @@ public class FlowExecutor {
      * @return UpdateResult
      */
     private UpdateResult updateFlowAfterReject(ExecuteForm form, InstanceNode current, Boolean getLock) {
-        //拒绝时带有跳转条件，且下一个节点不为终止节点，执行通过逻辑
         ModelNode terminateNode = null;
+        //拒绝时带有跳转条件，下一个节点不为终止节点且当前不为发起节点，执行通过逻辑
         if (form.getCondition() != null) {
             terminateNode = findNextModelNode(form, current.getModelNodeUid());
-            if (!Objects.equals(terminateNode.getLocation(), NodeLocationType.TERMINATE)) {
+            if (terminateNode == null) {
+                if (!Objects.equals(current.getLocation(), NodeLocationType.Initiate)) {
+                    log.error("流程执行失败，未找到下一节点：流程 {}-版本 {}-key {}-当前节点位置 {}",
+                            form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNum());
+                    throw new NeoExecuteException("流程执行失败，未找到下一节点");
+                }
+            }else if (!Objects.equals(terminateNode.getLocation(), NodeLocationType.TERMINATE)) {
                 return updateFlowAfterPass(form, current, getLock);
             }
         }
@@ -426,7 +585,22 @@ public class FlowExecutor {
      * @return UpdateResult
      */
     private UpdateResult updateFlowAfterForward(ExecuteForm form, InstanceNode current, Boolean getLock) {
-        return null;
+        LocalDateTime time = LocalDateTime.now();
+        //设置结束时间、实际操作人、状态
+        current.setEndTime(time);
+        current.setOperationBy(JacksonUtils.toJson(form.getOperator()));
+        current.setStatus(operateTypeToNodeStatus(form.getOperationType()));
+        current.setDuring(Duration.between(current.getBeginTime(), current.getEndTime()).getSeconds());
+        //构建下一个实例节点
+        InstanceNode next = new InstanceNode();
+        BeanUtils.copyProperties(current, next, current.ignoreCopyPropertyListOfForward());
+        next.setStatus(InstanceNodeStatus.PENDING);
+        next.setBeginTime(time);
+        next.setOperationType(form.getForwardOperationType());
+        next.setOperationCandidate(JacksonUtils.toJson(form.getForwardOperator()));
+
+        //更新流程
+        return updateInstance(current, next, form, false, getLock);
     }
 
     /**
@@ -437,7 +611,14 @@ public class FlowExecutor {
      * @return UpdateResult
      */
     private UpdateResult updateFlowAfterTerminate(ExecuteForm form, InstanceNode current, Boolean getLock) {
-        return null;
+        //设置结束时间、实际操作人、状态
+        current.setEndTime(LocalDateTime.now());
+        current.setOperationBy(JacksonUtils.toJson(form.getOperator()));
+        current.setStatus(operateTypeToNodeStatus(form.getOperationType()));
+        current.setDuring(Duration.between(current.getBeginTime(), current.getEndTime()).getSeconds());
+
+        //更新
+        return updateInstance(current, null, form, false, getLock);
     }
 
     /**
@@ -586,34 +767,31 @@ public class FlowExecutor {
      * 校验当前用户是否在候选人范围
      * @param form 表单
      * @param instanceNode 实例节点
+     * @param isTerminated 是否为终止操作
      */
-    private void inCandidate(ExecuteForm form, InstanceNode instanceNode) {
-        if (instanceNode.getAutoTime() != null) {
-            return;
+    private void inCandidate(ExecuteForm form, InstanceNode instanceNode, Boolean isTerminated) {
+        String candidateJson;
+        String msg;
+        if (isTerminated) {
+            //获取当前流程发起节点，只有流程发起人能终止流程
+            InstanceNode initNode = getInstanceInitiateNodeToRegression(form);
+            candidateJson = initNode.getOperationCandidate();
+            msg = "流程终止失败，不是发起人";
+        }else {
+            if (instanceNode.getAutoTime() != null) {
+                return;
+            }
+            candidateJson = instanceNode.getOperationCandidate();
+            msg = "流程执行失败，操作人不在候选人中：";
         }
-        UserBaseInfo user = form.getOperator();
-        List<UserBaseInfo> candidate = (List<UserBaseInfo>) JacksonUtils.toObj(instanceNode.getOperationCandidate(), List.class, UserBaseInfo.class);
-        if (!CollectionUtils.isEmpty(candidate)
-                && candidate.stream().noneMatch(x -> x.equals(user))) {
-            log.error("流程执行失败，操作人不在候选人中：流程 {}-版本 {}-key {}-当前位置{}-当前用户{}",
-                    form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNum(), user);
-            throw new NeoExecuteException("流程执行失败，不在候选人中");
-        }
-    }
 
-    /**
-     * 判断是否需要执行节点方法
-     * @param operationType 执行类型
-     * @param onlyPassExecute 是否只通过才执行方法
-     * @return Boolean
-     */
-    private Boolean needOperateMethod(Integer operationType, Boolean onlyPassExecute) {
-        if (config.getIndependence()) {
-            log.info("独立部署，跳过流程方法");
-            return false;
+        UserBaseInfo user = form.getOperator();
+        List<UserBaseInfo> candidate = (List<UserBaseInfo>) JacksonUtils.toObj(candidateJson, List.class, UserBaseInfo.class);
+        if (!CollectionUtils.isEmpty(candidate) && candidate.stream().noneMatch(x -> x.equals(user))) {
+            log.error("{}流程 {}-版本 {}-key {}-当前位置{}-当前用户{}", msg,
+                    form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNum(), user);
+            throw new NeoExecuteException(msg);
         }
-        return (onlyPassExecute && operationType < InstanceOperationType.REJECTED)
-                || (!onlyPassExecute && operationType < InstanceOperationType.FORWARD);
     }
 
     /**
@@ -625,7 +803,6 @@ public class FlowExecutor {
     private ModelNode findNextModelNode(ExecuteForm form, String nodeUid) {
         String processName = form.getProcessName();
         Integer version = form.getVersion();
-        Integer num = form.getNum();
         Integer condition = form.getCondition();
         String conditionKey = condition == null ? "null" : condition.toString();
 
@@ -637,12 +814,6 @@ public class FlowExecutor {
         } else {
             modelNode = modelNodeRepository.queryNextModelNode(processName, version, nodeUid, condition);
             cacheManager.setCache(CacheType.N_M_N, key, modelNode);
-        }
-
-        if (modelNode == null) {
-            log.error("流程执行失败，未找到下一节点：流程 {}-版本 {}-key {}-当前节点位置 {}",
-                    processName, version, form.getBusinessKey(), num);
-            throw new NeoExecuteException("流程执行失败，未找到下一节点");
         }
 
         return modelNode;
@@ -795,6 +966,7 @@ public class FlowExecutor {
           if (Objects.equals(current.getLocation(), NodeLocationType.TERMINATE)) {
               return InstanceStatus.REJECTED;
           }
+          return InstanceStatus.TERMINATED;
         }
 
         return InstanceStatus.PENDING;

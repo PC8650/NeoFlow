@@ -37,6 +37,7 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
         optional match (p)-[:VERSION]->(v:Version{version:$1})-[:INSTANCE]->(:Instance)-[:BUSINESS{key:$2,status:1}]->(f:InstanceNode)
         optional match path = (f)-[:NEXT*0..]->(b:InstanceNode)-[:NEXT]->(c:InstanceNode) where id(c) = $3
         return v.version as version,
+        v.terminatedMethod as terminatedMethod,
         case when b is null then null
         when b.status = 1 then false
         else true end as before,
@@ -67,6 +68,7 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
         with v, last(nodes(path)) as b
         optional match (b)-[:NEXT]->(c:InstanceNode) where id(c) = $3
         return v.version as version,
+        v.terminatedMethod as terminatedMethod,
         case when b is null then null
         when b.status = 1 then false
         else true end as before,

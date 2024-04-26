@@ -22,4 +22,7 @@ public class NodeQueryDto<T> {
     @ApiModelProperty("版本")
     Integer version;
 
+    @ApiModelProperty("版本对应的终止方法")
+    String terminatedMethod;
+
 }
