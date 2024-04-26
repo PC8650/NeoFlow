@@ -133,4 +133,16 @@ public class NeoFlowConfig {
      * discard-oldest：DiscardOldestPolicy，丢弃队列中最老的任务
      */
     private String rejectionPolicy = "caller-runs";
+
+    /**
+     * 执行自动节点时的操作人id
+     * 默认 system
+     */
+    private String autoId = "system";
+
+    /**
+     * 执行自动节点时的操作人名称
+     * 默认 system
+     */
+    private String autoName = "system";
 }

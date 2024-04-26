@@ -17,10 +17,8 @@ public interface ModelNodeRepository extends Neo4jRepository<ModelNode, Long> {
      * @return ModelNodeDto
      */
     @Query("""
-        match (p:Process{name:$0})
-        optional match (p)-[:ACTIVE]->(v:Version)-[:MODEL]->(f:ModelNode) where f is not null
-        return v.version as version,
-        apoc.convert.toJson(apoc.map.merge(properties(f),{id:id(f)})) as nodeJson
+        match (p:Process{name:$0})-[:ACTIVE]->(v:Version)-[:MODEL]->(f:ModelNode)
+        return v.version as version, apoc.convert.toJson(apoc.map.merge(properties(f),{id:id(f)})) as nodeJson
     """)
     NodeQueryDto<ModelNode> queryActiveVersionModelFirstNode(String processName);
 
@@ -33,9 +31,8 @@ public interface ModelNodeRepository extends Neo4jRepository<ModelNode, Long> {
      * @return ModelNode
      */
     @Query("""
-        match (p:Process{name:$0})
-        optional match (p)-[:VERSION]->(v:Version{version:$1})-[:MODEL]->(f:ModelNode) where f is not null
-        with f, [(f)-[:NEXT*0..]->(c:ModelNode{nodeUid:$2}) | c][0] as c
+        match (p:Process{name:$0})-[:VERSION]->(v:Version{version:$1})-[:MODEL]->(f:ModelNode) where f is not null
+        with [(f)-[:NEXT*0..]->(c:ModelNode{nodeUid:$2}) | c][0] as c
         optional match (c)-[:NEXT{condition:$3}]->(n:ModelNode)
         return n
     """)
@@ -49,9 +46,8 @@ public interface ModelNodeRepository extends Neo4jRepository<ModelNode, Long> {
      * @return ModelNode
      */
     @Query("""
-        match (p:Process{name:$0})
-        optional match (p)-[:VERSION]->(v:Version{version:$1})-[:MODEL]->(f:ModelNode) where f is not null
-        with f, [(f)-[:NEXT*]->(c:ModelNode{nodeUid:$2}) | c][0] as c
+        match (p:Process{name:$0})-[:VERSION]->(v:Version{version:$1})-[:MODEL]->(f:ModelNode) where f is not null
+        with [(f)-[:NEXT*]->(c:ModelNode{nodeUid:$2}) | c][0] as c
         optional match (c)-[:NEXT]->(t:ModelNode{location:4})
         return t
     """)
@@ -64,9 +60,8 @@ public interface ModelNodeRepository extends Neo4jRepository<ModelNode, Long> {
      * @return ModelNode
      */
     @Query("""
-        match (p:Process{name:$0})
-        optional match (p)-[:VERSION]->(v:Version{version:$1})-[:MODEL]->(f:ModelNode) where f is not null
-        with f, [(f)-[:NEXT*]->(t:ModelNode{location:4}) | t][0] as t
+        match (p:Process{name:$0})-[:VERSION]->(v:Version{version:$1})-[:MODEL]->(f:ModelNode) where f is not null
+        with [(f)-[:NEXT*]->(t:ModelNode{location:4}) | t][0] as t
         return t
     """)
     ModelNode queryModelTerminateNode(String processName, Integer version);

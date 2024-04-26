@@ -43,8 +43,7 @@ public interface VersionRepository extends Neo4jRepository<Version,Long> {
      * @return VersionModelViewDto
      */
     @Query("""
-        match (p:Process{name:$0})
-        match (p)-[:VERSION]->(v:Version{version:$1})-[:MODEL]->(s:ModelNode) where s is not null
+        match (p:Process{name:$0})-[:VERSION]->(v:Version{version:$1})-[:MODEL]->(s:ModelNode) where s is not null
         match path = (s)-[n:NEXT*1..]->(e:ModelNode) where e.location in [3,4]
         optional match (i:Version)-[:ITERATE]->(v)
         with p, i, v, path

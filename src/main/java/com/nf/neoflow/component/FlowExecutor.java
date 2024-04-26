@@ -140,11 +140,13 @@ public class FlowExecutor {
         boolean autoNextRightNow = false;
         try {
             //判断发起条件和加锁
-            if (StringUtils.isNotBlank(form.getBusinessKey()) && !getLockByLast) {
+            if (StringUtils.isNotBlank(form.getBusinessKey())) {
                 //判断实例是否存在
                 canInitiate(form.getBusinessKey());
                 //加锁
-                getLock = lockManager.getLock(form.getBusinessKey(), LockEnums.FLOW_EXECUTE);
+                if (!getLockByLast) {
+                    getLock = lockManager.getLock(form.getBusinessKey(), LockEnums.FLOW_EXECUTE);
+                }
             } else {
                 getLock = getLockByLast;
             }
@@ -364,11 +366,6 @@ public class FlowExecutor {
         boolean autoNextRightNow = false;
         if (current.getLocation() <= NodeLocationType.MIDDLE) {
             ModelNode modelNode = findNextModelNode(form, current.getModelNodeUid());
-            if (modelNode == null) {
-                log.error("流程执行失败，未找到下一节点：流程 {}-版本 {}-key {}-当前节点位置 {}",
-                        form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNum());
-                throw new NeoExecuteException("流程执行失败，未找到下一节点");
-            }
             autoNextRightNow = Objects.equals(modelNode.getAutoInterval(), 0);
             next = constructInstanceNode(modelNode);
         }
@@ -496,9 +493,9 @@ public class FlowExecutor {
     public NodeQueryDto<InstanceNode> queryCurrentInstanceNode(ExecuteForm form) {
         NodeQueryDto<InstanceNode> dto;
         if (form.getNum() < 5) {
-            dto = instanceNodeRepository.queryCurrentInstanceNode(form.getProcessName(), form.getBusinessKey(), form.getNodeId(), form.getNum());
+            dto = instanceNodeRepository.queryCurrentInstanceNode(form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNodeId());
         }else {
-            dto = instanceNodeRepository.queryCurrentInstanceNodeTooLong(form.getProcessName(), form.getBusinessKey(), form.getNodeId(), form.getNum());
+            dto = instanceNodeRepository.queryCurrentInstanceNodeTooLong(form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNodeId(), form.getNum());
         }
 
         //查询结果校验
@@ -540,7 +537,7 @@ public class FlowExecutor {
      */
     private NodeQueryDto<ModelNode> findActiveVersionModelFirstNode(String processName) {
         NodeQueryDto<ModelNode> dto = modelNodeRepository.queryActiveVersionModelFirstNode(processName);
-        if (dto == null || StringUtils.isBlank(dto.getNodeJson())) {
+        if (dto == null) {
             log.error("流程执行失败，未找到当前流程激活版本的发起节点：{}", processName);
             throw new NeoExecuteException("流程执行失败，未找到当前流程激活版本的发起节点");
         }
@@ -571,6 +568,9 @@ public class FlowExecutor {
             candidates = userChoose.getCandidateUsers(modelNode.getOperationType(), candidates);
             instanceNode.setOperationCandidate(JacksonUtils.toJson(candidates));
         }
+
+        //方法执行条件
+        instanceNode.setOnlyPassExecute(modelNode.getOnlyPassExecute());
 
         //设置状态
         instanceNode.setStatus(InstanceNodeStatus.PENDING);
@@ -811,8 +811,8 @@ public class FlowExecutor {
         long nodeId = result.next().getId();
 
         UserBaseInfo user = new UserBaseInfo();
-        user.setId("system");
-        user.setName("system");
+        user.setId(config.getAutoId());
+        user.setName(config.getAutoName());
 
         ExecuteForm form = new ExecuteForm();
         form.setProcessName(currentForm.getProcessName())

@@ -27,14 +27,15 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
     /**
      * 查询当前实例节点
      * @param processName 流程名称
+     * @param version 版本
      * @param businessKey 业务key
      * @param nodeId 节点id
      * @return NodeQueryDto<InstanceNode>
      */
     @Query("""
         match (p:Process{name:$0})
-        optional match (p)-[:VERSION]->(v:Version)-[:INSTANCE]->(:Instance)-[:BUSINESS{key:$1,status:1}]->(f:InstanceNode)
-        optional match path = (f)-[:NEXT*0..]->(b:InstanceNode)-[:NEXT]->(c:InstanceNode) where id(c) = $2
+        optional match (p)-[:VERSION]->(v:Version{version:$1})-[:INSTANCE]->(:Instance)-[:BUSINESS{key:$2,status:1}]->(f:InstanceNode)
+        optional match path = (f)-[:NEXT*0..]->(b:InstanceNode)-[:NEXT]->(c:InstanceNode) where id(c) = $3
         return v.version as version,
         case when b is null then null
         when b.status = 1 then false
@@ -42,19 +43,21 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
         case when c is null then null
         else apoc.convert.toJson(apoc.map.merge(properties(c),{id:id(c)})) end as nodeJson
     """)
-    NodeQueryDto<InstanceNode> queryCurrentInstanceNode(String processName, String businessKey, Long nodeId, Integer num);
+    NodeQueryDto<InstanceNode> queryCurrentInstanceNode(String processName, Integer version, String businessKey, Long nodeId);
 
     /**
      * 查询当前实例节点
      * @param processName 流程名称
+     * @param version 版本
      * @param businessKey 业务key
      * @param nodeId 节点id
+     * @param num 当前节点位置
      * @return NodeQueryDto<InstanceNode>
      */
     @Query("""
         match (p:Process{name:$0})
-        optional match (p)-[:VERSION]->(v:Version)-[:INSTANCE]->(:Instance)-[:BUSINESS{key:$1,status:1}]->(f:InstanceNode)
-        with v, f, $3-2 as length
+        optional match (p)-[:VERSION]->(v:Version{version:$1})-[:INSTANCE]->(:Instance)-[:BUSINESS{key:$2,status:1}]->(f:InstanceNode)
+        with v, f, $4-2 as length
         call apoc.path.expandConfig(f, {
             relationshipFilter: "NEXT>",
             minLevel: length,
@@ -62,7 +65,7 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
             limit: 1
         }) yield path
         with v, last(nodes(path)) as b
-        optional match (b)-[:NEXT]->(c:InstanceNode) where id(c) = $2
+        optional match (b)-[:NEXT]->(c:InstanceNode) where id(c) = $3
         return v.version as version,
         case when b is null then null
         when b.status = 1 then false
@@ -70,7 +73,7 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
         case when c is null then null
         else apoc.convert.toJson(apoc.map.merge(properties(c),{id:id(c)})) end as nodeJson
     """)
-    NodeQueryDto<InstanceNode> queryCurrentInstanceNodeTooLong(String processName, String businessKey, Long nodeId, Integer num);
+    NodeQueryDto<InstanceNode> queryCurrentInstanceNodeTooLong(String processName, Integer version, String businessKey, Long nodeId, Integer num);
 
     /**
      * 更新流程实例
@@ -188,8 +191,7 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
      */
     @Query("""
         match (p:Process{name:$0})
-        optional match (p)-[:VERSION]->(v:Version{version:$1})-[:INSTANCE]->(i:Instance) where i is not null
-        optional match (i)-[b:BUSINESS{key:$2}]->(f:InstanceNode) where b is not null
+        optional match (p)-[:VERSION]->(v:Version{version:$1})-[:INSTANCE]->(:Instance)-[b:BUSINESS{key:$2}]->(f:InstanceNode) where b is not null
         return coalesce(b.cycle, 0) < v.cycle
     """)
     Boolean canCycle(String processName, Integer version, String businessKey);
@@ -203,8 +205,7 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
      */
     @Query("""
         match (p:Process{name:$0})
-        optional match (p)-[:VERSION]->(v:Version{version:$1})-[:INSTANCE]->(i:Instance) where i is not null
-        optional match (i)-[b:BUSINESS{key:$2}]->(f:InstanceNode) where f is not null
+        optional match (p)-[:VERSION]->(v:Version{version:$1})-[:INSTANCE]->(:Instance)-[b:BUSINESS{key:$2}]->(f:InstanceNode) where f is not null
         with f
         return f.modelNodeUid as modelNodeUid, f.name as name, f.identity as identity,
         1 as status, f.operationType as operationType, f.operationMethod as operationMethod,
