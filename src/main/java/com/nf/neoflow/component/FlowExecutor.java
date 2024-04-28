@@ -6,6 +6,7 @@ import com.nf.neoflow.dto.execute.ExecuteForm;
 import com.nf.neoflow.dto.execute.NodeQueryDto;
 import com.nf.neoflow.dto.execute.UpdateResult;
 import com.nf.neoflow.dto.user.UserBaseInfo;
+import com.nf.neoflow.enums.CacheEnums;
 import com.nf.neoflow.enums.LockEnums;
 import com.nf.neoflow.exception.NeoExecuteException;
 import com.nf.neoflow.exception.NeoFlowConfigException;
@@ -82,7 +83,7 @@ public class FlowExecutor {
                         private final AtomicInteger nextId = new AtomicInteger(1);
                         @Override
                         public Thread newThread(Runnable r) {
-                            boolean get = false;
+                            boolean get;
                             try {
                                 get = semaphore.tryAcquire(config.getVirtualAwaitTime(), TimeUnit.SECONDS);
                             } catch (InterruptedException e) {
@@ -91,6 +92,7 @@ public class FlowExecutor {
                             }
 
                             if (!get) {
+                                log.info("线程池已达配置上限");
                                 return null;
                             }
 
@@ -628,7 +630,8 @@ public class FlowExecutor {
     private void canInitiate(String businessKey) {
         Boolean exist;
         //缓存
-        NeoCacheManager.CacheValue<Boolean> cache = cacheManager.getCache(CacheType.F_I_E, businessKey, Boolean.class);
+        String cacheType = CacheEnums.F_I_E.getType();
+        NeoCacheManager.CacheValue<Boolean> cache = cacheManager.getCache(cacheType, businessKey, Boolean.class);
         if (cache.filter() || cache.value() != null) {
             exist = Objects.equals(cache.value(), true);
         } else {
@@ -637,7 +640,7 @@ public class FlowExecutor {
 
         if (exist) {
             //存在才加入缓存
-            cacheManager.setCache(CacheType.F_I_E, businessKey, exist);
+            cacheManager.setCache(cacheType, businessKey, exist);
             log.error("流程执行失败，业务key已存在，请勿重复发起：{}", businessKey);
             throw new NeoExecuteException("流程执行失败，业务key已存在, 请勿重复发起");
         }
@@ -806,14 +809,15 @@ public class FlowExecutor {
         Integer condition = form.getCondition();
         String conditionKey = condition == null ? "null" : condition.toString();
 
+        String cacheType = CacheEnums.N_M_N.getType();
         String key = cacheManager.mergeKey(processName, version.toString(), nodeUid, conditionKey);
-        NeoCacheManager.CacheValue<ModelNode> cache = cacheManager.getCache(CacheType.N_M_N, key, ModelNode.class);
+        NeoCacheManager.CacheValue<ModelNode> cache = cacheManager.getCache(cacheType, key, ModelNode.class);
         ModelNode modelNode;
         if (cache.filter() || cache.value() != null) {
             modelNode = cache.value();
         } else {
             modelNode = modelNodeRepository.queryNextModelNode(processName, version, nodeUid, condition);
-            cacheManager.setCache(CacheType.N_M_N, key, modelNode);
+            cacheManager.setCache(cacheType, key, modelNode);
         }
 
         return modelNode;
@@ -826,12 +830,13 @@ public class FlowExecutor {
      */
     private InstanceNode getInstanceInitiateNodeToRegression(ExecuteForm form) {
         InstanceNode initiateNode;
-        NeoCacheManager.CacheValue<InstanceNode> cache = cacheManager.getCache(CacheType.I_I_N, form.getBusinessKey(), InstanceNode.class);
+        String cacheType = CacheEnums.I_I_N.getType();
+        NeoCacheManager.CacheValue<InstanceNode> cache = cacheManager.getCache(cacheType, form.getBusinessKey(), InstanceNode.class);
         if (cache.filter() || cache.value() != null) {
             initiateNode =  cache.value();
         } else {
             initiateNode = instanceNodeRepository.queryInstanceInitiateNode(form.getProcessName(), form.getVersion(), form.getBusinessKey());
-            cacheManager.setCache(CacheType.I_I_N, form.getBusinessKey(), initiateNode);
+            cacheManager.setCache(cacheType, form.getBusinessKey(), initiateNode);
         }
 
         if (initiateNode == null) {
@@ -855,8 +860,9 @@ public class FlowExecutor {
         //中间节点，判断节点是否与终止节点相连
         if (NodeLocationType.MIDDLE.equals(current.getLocation())) {
             //缓存-能否拒绝
+            String cacheType = CacheEnums.M_C_T.getType();
             String key = cacheManager.mergeKey(form.getProcessName(), form.getVersion().toString(), current.getModelNodeUid());
-            NeoCacheManager.CacheValue<Boolean> cache = cacheManager.getCache(CacheType.M_C_T, key, Boolean.class);
+            NeoCacheManager.CacheValue<Boolean> cache = cacheManager.getCache(cacheType, key, Boolean.class);
             if (cache.filter() || cache.value() != null) {
                 if (Objects.equals(cache.value(), true)) {
                     log.error("流程拒绝失败，当前节点不能拒绝：流程 {}-版本 {}-key {}- 当前节点位置{}",
@@ -866,23 +872,23 @@ public class FlowExecutor {
             }
             //缓存-模型终止节点
             key = cacheManager.mergeKey(form.getProcessName(), form.getVersion().toString());
-            NeoCacheManager.CacheValue<ModelNode> ct = cacheManager.getCache(CacheType.M_T_N, key, ModelNode.class);
+            NeoCacheManager.CacheValue<ModelNode> ct = cacheManager.getCache(cacheType, key, ModelNode.class);
             ModelNode terminateNode;
             if (ct.filter() || ct.value() != null) {
                 terminateNode = ct.value();
             }else {
                 terminateNode = modelNodeRepository.MiddleNodeCanReject(form.getProcessName(), form.getVersion(), current.getModelNodeUid());
-                cacheManager.setCache(CacheType.M_T_N, key, terminateNode);
+                cacheManager.setCache(cacheType, key, terminateNode);
             }
             //当前节点没与终止节点相连
             if (terminateNode == null) {
-                cacheManager.setCache(CacheType.M_C_T, key, false);
+                cacheManager.setCache(cacheType, key, false);
                 log.error("流程拒绝失败，当前节点不能拒绝：流程 {}-版本 {}-key {}- 当前节点位置{}",
                         form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNum());
                 throw new NeoExecuteException("流程拒绝失败，当前节点不能拒绝");
             }
 
-            cacheManager.setCache(CacheType.M_C_T, key, true);
+            cacheManager.setCache(cacheType, key, true);
             return terminateNode;
         }
 
@@ -894,18 +900,19 @@ public class FlowExecutor {
         }
 
         //发起、完成 节点
+        String cacheType = CacheEnums.M_T_N.getType();
         String key = cacheManager.mergeKey(form.getProcessName(), form.getVersion().toString());
-        NeoCacheManager.CacheValue<ModelNode> ct = cacheManager.getCache(CacheType.M_T_N, key, ModelNode.class);
+        NeoCacheManager.CacheValue<ModelNode> ct = cacheManager.getCache(cacheType, key, ModelNode.class);
         ModelNode terminateNode;
         if (ct.filter() || ct.value() != null) {
             terminateNode = ct.value();
         }else {
             terminateNode = modelNodeRepository.queryModelTerminateNode(form.getProcessName(), form.getVersion());
-            cacheManager.setCache(CacheType.M_T_N, key, terminateNode);
+            cacheManager.setCache(cacheType, key, terminateNode);
         }
 
         if (terminateNode == null) {
-            cacheManager.setCache(CacheType.M_C_T, key, false);
+            cacheManager.setCache(cacheType, key, false);
             log.error("流程拒绝失败，未找到终止节点：流程 {}-版本 {}-key {}- 当前节点位置{}",
                     form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNum());
             throw new NeoExecuteException("流程拒绝失败，未找到终止节点");
@@ -922,13 +929,14 @@ public class FlowExecutor {
      */
     private Boolean canCycle(ExecuteForm form) {
         String key = form.getBusinessKey();
-        NeoCacheManager.CacheValue<Boolean> cache = cacheManager.getCache(CacheType.F_I_C, key, Boolean.class);
+        String cacheType = CacheEnums.F_I_C.getType();
+        NeoCacheManager.CacheValue<Boolean> cache = cacheManager.getCache(cacheType, key, Boolean.class);
         if (cache.filter() || cache.value() != null) {
             return Objects.equals(cache.value(), true);
         }
         Boolean can = instanceNodeRepository.canCycle(form.getProcessName(), form.getVersion(), form.getBusinessKey());
         if (!can) {
-            cacheManager.setCache(CacheType.F_I_C, key, false);
+            cacheManager.setCache(cacheType, key, false);
         }
         return can;
     }

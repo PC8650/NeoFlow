@@ -3,10 +3,10 @@ package com.nf.neoflow.service;
 import com.nf.neoflow.component.BaseUserChoose;
 import com.nf.neoflow.component.NeoCacheManager;
 import com.nf.neoflow.component.NeoLockManager;
-import com.nf.neoflow.constants.CacheType;
 import com.nf.neoflow.constants.NodeLocationType;
 import com.nf.neoflow.dto.user.UserBaseInfo;
 import com.nf.neoflow.dto.version.*;
+import com.nf.neoflow.enums.CacheEnums;
 import com.nf.neoflow.enums.LockEnums;
 import com.nf.neoflow.exception.NeoProcessException;
 import com.nf.neoflow.repository.VersionRepository;
@@ -63,8 +63,8 @@ public class VersionService {
      */
     public VersionModelViewDto versionView(VersionViewQueryForm form) {
         String cacheKey = cacheManager.mergeKey(form.getProcessName(), form.getVersion().toString());
-
-        NeoCacheManager.CacheValue<VersionModelViewDto> value =cacheManager.getCache(CacheType.V_M, cacheKey, VersionModelViewDto.class);
+        String cacheType = CacheEnums.V_M.getType();
+        NeoCacheManager.CacheValue<VersionModelViewDto> value =cacheManager.getCache(cacheType, cacheKey, VersionModelViewDto.class);
         if (value.filter()) {
             throw new NeoProcessException("流程版本模型不存在");
         }else if (value.value() != null) {
@@ -75,7 +75,7 @@ public class VersionService {
         if (form.getVersion() != null) {
             dto = versionRepository.queryVersionView(form.getProcessName(), form.getVersion());
             if (dto == null) {
-                cacheManager.setCache(CacheType.V_M, cacheKey, null);
+                cacheManager.setCache(cacheType, cacheKey, null);
                 throw new NeoProcessException("流程版本模型不存在");
             }
         }else {
@@ -83,7 +83,7 @@ public class VersionService {
             dto.setProcessName(form.getProcessName());
         }
         dto.setComponentModel(componentModelInit());
-        cacheManager.setCache(CacheType.V_M, cacheKey, dto);
+        cacheManager.setCache(cacheType, cacheKey, dto);
         return dto;
     }
 
@@ -93,8 +93,8 @@ public class VersionService {
      */
     public Object versionIterateTree(IterateTreeQueryForm form) {
         String cacheKey = cacheManager.mergeKey(form.getProcessName(), form.getType().toString());
-
-        NeoCacheManager.CacheValue<Object> value = cacheManager.getCache(CacheType.V_I_T, cacheKey, Object.class);
+        String cacheType = CacheEnums.V_I_T.getType();
+        NeoCacheManager.CacheValue<Object> value = cacheManager.getCache(cacheType, cacheKey, Object.class);
         if (value.filter() || value.value() != null) {
             return value.value();
         }
@@ -113,7 +113,7 @@ public class VersionService {
             default -> throw new NeoProcessException("参数错误");
         }
 
-        cacheManager.setCache(CacheType.V_I_T, cacheKey, result);
+        cacheManager.setCache(cacheType, cacheKey, result);
         return result;
     }
 
@@ -298,7 +298,7 @@ public class VersionService {
             add(cacheManager.mergeKey(ProcessName, "2"));
             add(cacheManager.mergeKey(ProcessName, "3"));
         }};
-        cacheManager.deleteCache(CacheType.V_I_T, cacheKeys);
+        cacheManager.deleteCache(CacheEnums.V_I_T.getType(), cacheKeys);
     }
 
     /**

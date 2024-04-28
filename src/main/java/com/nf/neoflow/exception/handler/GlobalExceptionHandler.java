@@ -1,5 +1,6 @@
 package com.nf.neoflow.exception.handler;
 
+import com.nf.neoflow.dto.response.Result;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +30,8 @@ public class GlobalExceptionHandler {
             errorResponse = new ErrorResponse(ex.getMessage());
         }
         log.error(ex.getMessage(),ex);
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+
+        return new ResponseEntity<>(Result.fail(errorResponse), HttpStatus.BAD_REQUEST);
     }
 
     @Data

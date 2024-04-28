@@ -2,21 +2,22 @@ package com.nf.neoflow.component;
 
 
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import com.nf.neoflow.config.NeoFlowConfig;
-import com.nf.neoflow.constants.CacheType;
+import com.nf.neoflow.enums.CacheEnums;
 import com.nf.neoflow.interfaces.CustomizationCache;
+import io.swagger.annotations.ApiModelProperty;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
+import org.springframework.cache.caffeine.CaffeineCache;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -46,7 +47,7 @@ public class NeoCacheManager {
         }
 
         cacheManager = new CaffeineCacheManager();
-        cacheManager.setCacheNames(CacheType.getAllType());
+        cacheManager.setCacheNames(CacheEnums.filterStatistics());
         cacheManager.setCaffeine(Caffeine.newBuilder()
                 //初始容量
                 .initialCapacity(config.getInitCacheCount())
@@ -56,6 +57,16 @@ public class NeoCacheManager {
                 .expireAfterAccess(config.getExpire(), TimeUnit.MINUTES)
                 //开启统计
                 .recordStats());
+
+        //单独处理统计缓存
+        cacheManager.registerCustomCache(
+                CacheEnums.C_S.getType(),
+                Caffeine.newBuilder()
+                .initialCapacity(1)
+                .maximumSize(1)
+                //单位时间没被 写 则过期
+                .expireAfterWrite(config.getStatisticExpire(), TimeUnit.SECONDS)
+                .recordStats().build());
     }
 
     /**
@@ -138,7 +149,7 @@ public class NeoCacheManager {
     /**
      * 删除缓存
      * @param cacheType 缓存分类
-     * @param cacheKeys  缓存key集合
+     * @param cacheKeys  缓存key集合，为空删除分类下的所有缓存
      */
     public void deleteCache(String cacheType, List<String> cacheKeys) {
         if (config.getEnableCache()) {
@@ -152,35 +163,81 @@ public class NeoCacheManager {
             Cache cache = cacheManager.getCache(cacheType);
             if (cache != null) {
                 com.github.benmanes.caffeine.cache.Cache nativeCache = (com.github.benmanes.caffeine.cache.Cache) cache.getNativeCache();
-                nativeCache.invalidateAll(cacheKeys);
+                if (CollectionUtils.isEmpty(cacheKeys)) {
+                    nativeCache.invalidateAll();
+                }else {
+                    nativeCache.invalidateAll(cacheKeys);
+                }
             }
         }
     }
 
     /**
      * 删除缓存
-     * @param prefix 多段key的前缀
-     * @param caches key-缓存分类 value-缓存key集合
+     * @param cacheType 缓存分类
      */
-    public void deleteCache(String prefix, Map<String, List<String>> caches) {
+    public void deleteCache(String... cacheType) {
         if (config.getEnableCache()) {
             //自定义策略
             if (config.getCustomizationCache()) {
-                caches.forEach((cacheType, cacheKeys) -> {
-                    cacheKeys.replaceAll(s -> mergeKey(prefix, s));
-                });
-                customizationCache.deleteCache(caches);
+                customizationCache.deleteCache(cacheType);
                 return;
             }
             //默认策略
-            caches.forEach((cacheType, cacheKeys) -> {
-                 Cache cache = cacheManager.getCache(cacheType);
-                 if (cache != null) {
-                    com.github.benmanes.caffeine.cache.Cache nativeCache = (com.github.benmanes.caffeine.cache.Cache) cache.getNativeCache();
-                    nativeCache.invalidateAll(cacheKeys);
-                 }
-            });
+            if (cacheType == null || cacheType.length == 0) {
+                for (String cacheName : cacheManager.getCacheNames()) {
+                    Cache cache = cacheManager.getCache(cacheName);
+                    if (cache != null) {
+                        cache.clear();
+                    }
+                }
+            } else {
+                for (String type : cacheType) {
+                    Cache cache = cacheManager.getCache(type);
+                    if (cache != null) {
+                        com.github.benmanes.caffeine.cache.Cache nativeCache = (com.github.benmanes.caffeine.cache.Cache) cache.getNativeCache();
+                        nativeCache.invalidateAll();
+                    }
+                }
+            }
         }
+    }
+
+    /**
+     * 获取所有缓存的统计信息
+     * @return Set
+     */
+    public Object cacheStatistics(){
+        if (!config.getEnableCache()) {
+            return null;
+        }
+
+        String type = CacheEnums.C_S.getType();
+        String key = "all";
+        if (config.getCustomizationCache()) {
+            return customizationCache.cacheStatistics();
+        }
+
+        CacheValue<Set> cacheValue = getCache(type, key, Set.class);
+        if (cacheValue.filter() || cacheValue.value() != null) {
+            return cacheValue.value();
+        }
+
+        List<CacheStatistics> cacheStatistics = new ArrayList<>();
+        for (String cacheType : cacheManager.getCacheNames()) {
+            CaffeineCache cache = (CaffeineCache) cacheManager.getCache(cacheType);
+            CacheEnums ce = CacheEnums.getByType(cacheType);
+            if (ce != null) {
+                if (cache == null) {
+                   cacheStatistics.add(new CacheStatistics(ce));
+                } else {
+                    com.github.benmanes.caffeine.cache.Cache<Object, Object> nativeCache = cache.getNativeCache();
+                    cacheStatistics.add(new CacheStatistics(ce, nativeCache.stats(), nativeCache.asMap().keySet()));
+                }
+            }
+        }
+        setCache(type, key, cacheStatistics);
+        return cacheStatistics;
     }
 
     /**
@@ -213,12 +270,71 @@ public class NeoCacheManager {
      * @param value 缓存值，在filter为true时，统一为null
      * @param <T>
      */
-    public record CacheValue<T>(Boolean filter, T value) {
-
+    public record CacheValue<T>(
+            @ApiModelProperty("是否为过滤的空值") Boolean filter,
+            @ApiModelProperty("缓存") T value) {
         public CacheValue(Boolean filter) {
             this(filter, null);
         }
+    }
 
+    /**
+     * 缓存类型
+     * @param type 缓存类型
+     * @param info 信息
+     * @param defaultRule 默认策略规则
+     * @param customRule 自定义策略规则
+     */
+    public record CacheType(
+            @ApiModelProperty("缓存类型") String type,
+            @ApiModelProperty("信息") String info,
+            @ApiModelProperty("默认策略规则") String defaultRule,
+            @ApiModelProperty("自定义策略规则") String customRule) {
+        public CacheType(CacheEnums ce) {
+            this(ce.getType(), ce.getInfo(), ce.getDefaultRule(), ce.getCustomRule());
+        }
+    }
+
+    /**
+     * 缓存统计信息
+     * @param cacheType 缓存类型
+     * @param estimatedSize 估计数量
+     * @param requestCount 请求次数
+     * @param hitRate 命中率
+     * @param missRate 未命中率
+     * @param loadSuccessCount 加载新值成功的次数
+     * @param loadFailureCount 加载新值失败的次数
+     * @param averageLoadPenalty 加载操作的平均时间(ms)
+     * @param evictionCount 驱逐缓存数量
+     * @param estimatedKeys 估计存在的key
+     */
+    public record CacheStatistics(
+            @ApiModelProperty("缓存类型") CacheType cacheType,
+            @ApiModelProperty("估计数量") Long estimatedSize,
+            @ApiModelProperty("请求次数") Long requestCount,
+            @ApiModelProperty("命中率") Double hitRate,
+            @ApiModelProperty("未命中率") Double missRate,
+            @ApiModelProperty("加载新值成功的次数") Long loadSuccessCount,
+            @ApiModelProperty("加载新值失败的次数") Long loadFailureCount,
+            @ApiModelProperty("加载操作的平均时间(ms)") Double averageLoadPenalty,
+            @ApiModelProperty("驱逐缓存数量") Long evictionCount,
+            @ApiModelProperty("估计存在的key") Set<Object> estimatedKeys) {
+
+        public CacheStatistics(CacheEnums ce, CacheStats stats, Set<Object> estimatedKeys) {
+            this(new CacheType(ce), (long) estimatedKeys.size(),
+                    stats.requestCount(), stats.hitRate(), stats.missRate(),
+                    stats.loadSuccessCount(), stats.loadFailureCount(),
+                    stats.averageLoadPenalty()/1000000,
+                    stats.evictionCount(), estimatedKeys);
+        }
+
+        public CacheStatistics(CacheEnums ce) {
+            this(new CacheType(ce), 0L,
+                    0L,0D, 0D,
+                    0L, 0L,
+                    0D,
+                    0L, null);
+        }
     }
 
 }

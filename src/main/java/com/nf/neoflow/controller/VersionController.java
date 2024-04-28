@@ -1,5 +1,6 @@
 package com.nf.neoflow.controller;
 
+import com.nf.neoflow.dto.response.Result;
 import com.nf.neoflow.dto.version.*;
 import com.nf.neoflow.service.VersionService;
 import io.swagger.annotations.Api;
@@ -20,26 +21,26 @@ public class VersionController {
 
     @ApiOperation("查询流程版本列表")
     @GetMapping("/list")
-    public ResponseEntity<Page<VersionListDto>> queryList(@Valid @ModelAttribute VersionListQueryForm form) {
-        return ResponseEntity.ok(versionService.versionList(form));
+    public ResponseEntity<Result<Page<VersionListDto>>> queryList(@Valid @ModelAttribute VersionListQueryForm form) {
+        return ResponseEntity.ok(Result.success(versionService.versionList(form)));
     }
 
     @ApiOperation("查询流程版本视图")
     @GetMapping("/view")
-    public ResponseEntity<VersionModelViewDto> queryList(@Valid @ModelAttribute VersionViewQueryForm form) {
-        return ResponseEntity.ok(versionService.versionView(form));
+    public ResponseEntity<Result<VersionModelViewDto>> queryList(@Valid @ModelAttribute VersionViewQueryForm form) {
+        return ResponseEntity.ok(Result.success(versionService.versionView(form)));
     }
 
     @ApiOperation("查询流程版本迭代")
     @GetMapping("/iterate")
-    public ResponseEntity<?> iterate(@Valid @ModelAttribute IterateTreeQueryForm form) {
-        return ResponseEntity.ok(versionService.versionIterateTree(form));
+    public ResponseEntity<Result<?>> iterate(@Valid @ModelAttribute IterateTreeQueryForm form) {
+        return ResponseEntity.ok(Result.success(versionService.versionIterateTree(form)));
     }
 
     @ApiOperation("创建流程版本模型")
     @PostMapping("/create")
-    public ResponseEntity<String> createVersion(@Valid @RequestBody VersionModelCreateForm form) {
+    public ResponseEntity<Result<?>> createVersion(@Valid @RequestBody VersionModelCreateForm form) {
         versionService.createVersion(form);
-        return ResponseEntity.ok(null);
+        return ResponseEntity.ok(Result.success());
     }
 }

@@ -85,6 +85,11 @@ public class NeoFlowConfig {
     private int expire = 10;
 
     /**
+     * 默认缓存策略下统计缓存过期时间，单位：秒
+     */
+    private long statisticExpire = 30;
+
+    /**
      * 多段缓存key分隔符，默认 ':'
      */
     private char separate = ':';

@@ -3,9 +3,9 @@ package com.nf.neoflow.service;
 import com.nf.neoflow.component.BaseUserChoose;
 import com.nf.neoflow.component.NeoCacheManager;
 import com.nf.neoflow.component.NeoLockManager;
-import com.nf.neoflow.constants.CacheType;
 import com.nf.neoflow.dto.process.*;
 import com.nf.neoflow.dto.user.UserBaseInfo;
+import com.nf.neoflow.enums.CacheEnums;
 import com.nf.neoflow.enums.LockEnums;
 import com.nf.neoflow.exception.NeoProcessException;
 import com.nf.neoflow.models.Process;
@@ -94,9 +94,8 @@ public class ProcessService {
     /**
      * 变更流程启用版本
      * @param form 请求表单
-     * @return 变更记录数
      */
-    public Integer changeActiveVersion(ProcessChangeVersionForm form) {
+    public void changeActiveVersion(ProcessChangeVersionForm form) {
         log.info("变更流程启用版本{} -->  {}", form.getName(), form.getActiveVersion());
         boolean getLock = false;
         LockEnums lockEnum = LockEnums.PROCESS_STATUS;
@@ -112,7 +111,9 @@ public class ProcessService {
                     form.getActiveVersion(), form.getUpdateBy(), form.getUpdateByName(), time
             );
             String history = JacksonUtils.toJson(dto);
-            return processRepository.changeActiveVersion(form.getName(), form.getActiveVersion(), form.getUpdateBy(), form.getUpdateByName(), time, history);
+            int i = processRepository.changeActiveVersion(form.getName(), form.getActiveVersion(), form.getUpdateBy(), form.getUpdateByName(), time, history);
+            log.info("已变更{}启用版本", i);
+            cacheManager.deleteCache(CacheEnums.P_A_V_H.getType(), form.getName());
         } finally {
             lockManager.releaseLock(form.getName(), getLock, lockEnum);
         }
@@ -124,14 +125,14 @@ public class ProcessService {
      * @return List<ActiveVersionHistoryDto>
      */
     public List<ActiveVersionHistoryDto> activeVersionHistory(String name) {
-        NeoCacheManager.CacheValue<List> value = cacheManager.getCache(CacheType.P_A_V_H, name, List.class);
+        NeoCacheManager.CacheValue<List> value = cacheManager.getCache(CacheEnums.P_A_V_H.getType(), name, List.class);
         if (value.filter() || value.value() != null) {
             return value.value();
         }
 
         List<ActiveVersionHistoryDto> activeVersionHistoryDtos = processRepository.activeVersionHistory(name);
 
-        cacheManager.setCache(CacheType.P_A_V_H, name, activeVersionHistoryDtos);
+        cacheManager.setCache(CacheEnums.P_A_V_H.getType(), name, activeVersionHistoryDtos);
         return activeVersionHistoryDtos;
     }
 
