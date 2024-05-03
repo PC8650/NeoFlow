@@ -1,10 +1,13 @@
 package com.nf.neoflow.repository;
 
+import com.nf.neoflow.dto.execute.AutoNodeDto;
 import com.nf.neoflow.dto.execute.NodeQueryDto;
 import com.nf.neoflow.models.InstanceNode;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -97,13 +100,15 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
         call apoc.do.when (
             $nodeId is null,
             'create (i)-[b:BUSINESS{key: businessKey}]->(c:InstanceNode)
-            set b.status = flowStatus, b.beginTime = cMap.beginTime, c += cMap
+            set b.status = flowStatus, b.beginTime = localDateTime(cMap.beginTime), b.num = 1,
+            c += cMap, c.beginTime = localDateTime(cMap.beginTime)
             return c, b',
             'optional match (i)-[b:BUSINESS{key:$businessKey,status:1}]->(f:InstanceNode) where f is not null
             optional match (f)-[:NEXT*0..]->(c:InstanceNode) where id(c) = $nodeId
-            set c.operationBy = cMap.operationBy, c.endTime = cMap.endTime,
+            set c.operationBy = cMap.operationBy, c.endTime = localDateTime(cMap.endTime),
             c.status = cMap.status, c.during = cMap.during,
-            b.status = flowStatus, b.endTime = cMap.endTime
+            b.status = flowStatus, b.endTime = localDateTime(cMap.endTime),
+            b.operationBy = case when cMap.autoTime is null then cMap.operationBy else b.operationBy end
             return c, b',
             {i:i, cMap:$cMap, flowStatus:$flowStatus, businessKey:$businessKey, nodeId:$nodeId}
         ) yield value
@@ -114,8 +119,12 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
             $nMap is null,
             'return null as n',
             'create (c)-[nr:NEXT]->(n:InstanceNode)
-            set n+= nMap, nr.condition = condition,
-            b.cycle = case when n.location = 1 then coalesce(b.cycle, 0) + 1 else b.cycle end
+            set nr.condition = condition,
+            n+= nMap, n.autoTime = date(nMap.autoTime),
+            n.beginTime = localDateTime(nMap.beginTime),
+            b.cycle = case when n.location = 1 then coalesce(b.cycle, 0) + 1 else b.cycle end,
+            b.operationCandidate = case when nMap.autoTime is null then nMap.operationCandidate else b.operationCandidate end,
+            b.num = b.num + 1
             return n',
             {c:c, b:b, nMap:$nMap, condition:$condition}
         ) yield value
@@ -147,7 +156,8 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
         call apoc.do.when (
             $nodeId is null,
             'create (i)-[b:BUSINESS{key: businessKey}]->(c:InstanceNode)
-            set b.status = flowStatus, b.beginTime = cMap.beginTime, c += cMap
+            set b.status = flowStatus, b.beginTime = localDateTime(cMap.beginTime), b.num = 1,
+            c += cMap, c.beginTime = localDateTime(cMap.beginTime)
             return c, b',
             'optional match (i)-[b:BUSINESS{key:$businessKey,status:1}]->(f:InstanceNode) where f is not null
             call apoc.path.expandConfig(f, {
@@ -158,9 +168,10 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
             }) yield path
             with b, last(nodes(path)) as c, cMap, flowStatus, businessKey, nodeId
             where id(c) = $nodeId
-            set c.operationBy = cMap.operationBy, c.endTime = cMap.endTime,
+            set c.operationBy = cMap.operationBy, c.endTime = localDateTime(cMap.endTime),
             c.status = cMap.status, c.during = cMap.during,
-            b.status = flowStatus, b.endTime = cMap.endTime
+            b.status = flowStatus, b.endTime = localDateTime(cMap.endTime),
+            b.operationBy = case when cMap.autoTime is null then cMap.operationBy else b.operationBy end
             return c, b',
             {i:i, l:l, cMap:$cMap, flowStatus:$flowStatus, businessKey:$businessKey, nodeId:$nodeId}
         ) yield value
@@ -171,8 +182,12 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
             $nMap is null,
             'return null as n',
             'create (c)-[nr:NEXT]->(n:InstanceNode)
-            set n+= nMap, nr.condition = condition,
-            b.cycle = case when n.location = 1 then coalesce(b.cycle, 0) + 1 else b.cycle end
+            set nr.condition = condition,
+            n+= nMap, n.autoTime = date(nMap.autoTime),
+            n.beginTime = localDateTime(nMap.beginTime),
+            b.cycle = case when n.location = 1 then coalesce(b.cycle, 0) + 1 else b.cycle end,
+            b.operationCandidate = case when nMap.autoTime is null then nMap.operationCandidate else b.operationCandidate end,
+            b.num = b.num + 1
             return n',
             {c:c, b:b, nMap:$nMap, condition:$condition}
         ) yield value
@@ -215,4 +230,36 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
         '['+f.operationBy+']' as operationCandidate
     """)
     InstanceNode queryInstanceInitiateNode(String processName, Integer version, String businessKey);
+
+    /**
+     * 扫描当天的自动节点
+     * @param date 日期
+     * @return List<AutoNodeDto>
+     */
+    @Query("""
+        match (p:Process)-[:VERSION]->(v:Version)-[:INSTANCE]->(i:Instance),
+        path = (i)-[b:BUSINESS{status:1}]->(:InstanceNode)-[*0..]->(n:InstanceNode{status:1})
+        where n.autoTime = $0
+        return p.name as processName, v.version as version, b.key as businessKey,
+        size(nodes(path))-1 as num, id(n) as nodeId, n.beginTime as beginTime,
+        n.modelNodeUid as modelNodeUid, n.operationMethod as operationMethod,
+        n.location as location, n.defaultPassCondition as defaultPassCondition
+    """)
+    List<AutoNodeDto> queryAutoNodeToDay(LocalDate date);
+
+    /**
+     * 扫描当天及以前的自动节点
+     * @param date 日期
+     * @return List<AutoNodeDto>
+     */
+    @Query("""
+        match (p:Process)-[:VERSION]->(v:Version)-[:INSTANCE]->(i:Instance),
+        path = (i)-[b:BUSINESS{status:1}]->(:InstanceNode)-[*0..]->(n:InstanceNode{status:1})
+        where n.autoTime = $0
+        return p.name as processName, v.version as version, b.key as businessKey,
+        size(nodes(path))-1 as num, id(n) as nodeId, n.beginTime as beginTime,
+        n.modelNodeUid as modelNodeUid, n.operationMethod as operationMethod,
+        n.location as location, n.defaultPassCondition as defaultPassCondition
+    """)
+    List<AutoNodeDto> queryAutoNodeToDayAndBefore(LocalDate date);
 }

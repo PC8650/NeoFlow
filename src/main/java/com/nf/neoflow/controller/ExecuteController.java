@@ -8,10 +8,9 @@ import io.swagger.annotations.ApiOperation;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 
 @Api("执行流程")
 @RestController
@@ -25,6 +24,13 @@ public class ExecuteController {
     @PostMapping("/execute")
     public ResponseEntity<Result<?>> execute(@Valid @RequestBody ExecuteForm form) {
         executeService.execute(form);
+        return ResponseEntity.ok(Result.success());
+    }
+
+    @ApiOperation("执行自动节点")
+    @GetMapping("/auto_execute")
+    public ResponseEntity<Result<?>> autoExecute(@RequestParam(required = false) LocalDate date) {
+        executeService.executeAutoNode(date);
         return ResponseEntity.ok(Result.success());
     }
 

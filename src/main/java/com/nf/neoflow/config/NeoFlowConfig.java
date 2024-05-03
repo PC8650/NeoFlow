@@ -26,14 +26,27 @@ public class NeoFlowConfig {
 
     /**
      * 自动执行节点扫描周期Corn
+     * 默认 0 0 5 * * ?
      */
-    private String autoCorn = "0 0 5 * * ?";
+    private String autoCorn;
 
     /**
      * 自动节点每次执行数量，0则扫描并执行所有
      * 默认 0
      */
     private int autoCount = 0;
+
+    /**
+     * 执行自动节点时的操作人id
+     * 默认 system
+     */
+    private String autoId = "system";
+
+    /**
+     * 执行自动节点时的操作人名称
+     * 默认 system
+     */
+    private String autoName = "system";
 
     /**
      * 自动节点执行类型
@@ -158,14 +171,8 @@ public class NeoFlowConfig {
     private int virtualAwaitTime = 5;
 
     /**
-     * 执行自动节点时的操作人id
-     * 默认 system
+     * 每条线程分配多少个自动节点
+     * 默认 50
      */
-    private String autoId = "system";
-
-    /**
-     * 执行自动节点时的操作人名称
-     * 默认 system
-     */
-    private String autoName = "system";
+    private int autoAssigned = 50;
 }

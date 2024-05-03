@@ -42,6 +42,9 @@ public class ModelNodeDto {
     @ApiModelProperty("自动执行间隔，只精确到日期（x 天后，x <= 0 立即自动执行），有值将忽略操作类型和候选人")
     private Integer autoInterval;
 
+    @ApiModelProperty("默认通过时的跳转条件，跳转条件缺失时默认选择改值，配合自动节点")
+    private Integer defaultPassCondition;
+
     @ApiModelProperty("节点位置：1-开始，2-中间，3-完成，4-终止")
     private Integer location;
 
@@ -74,6 +77,8 @@ public class ModelNodeDto {
                     throw new NeoProcessException("节点候选人信息缺失");
                 }
             }
+        } else if (NodeLocationType.MIDDLE.equals(location) && defaultPassCondition == null) {
+            throw new NeoProcessException("中间自动节点默认通过跳转条件不能为空");
         }
         if (Objects.equals(location, NodeLocationType.Initiate) && !Objects.equals(autoInterval, 0)) {
             throw new NeoProcessException("发起节点只能设置为[立即自动执行]");

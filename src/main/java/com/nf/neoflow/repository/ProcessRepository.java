@@ -111,8 +111,8 @@ public interface ProcessRepository extends Neo4jRepository<Process,Long> {
         with apoc.convert.fromJsonMap(history) as result
         with result
         return result.version as version,
-        result.id as id, result.name as name,
-        localDateTime(replace(result.time, ' ', 'T')) as time
+        result.id as activeId, result.name as activeName,
+        localDateTime(replace(result.time, ' ', 'T')) as activeTime
     """)
     List<ActiveVersionHistoryDto> activeVersionHistory(String name);
 }

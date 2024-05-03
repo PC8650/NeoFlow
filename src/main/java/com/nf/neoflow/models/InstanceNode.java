@@ -53,6 +53,9 @@ public class InstanceNode {
     @ApiModelProperty("自动执行日期，有值将忽略操作类型和候选人")
     private LocalDate autoTime;
 
+    @ApiModelProperty("默认通过时的跳转条件，跳转条件缺失时默认选择改值，配合自动节点")
+    private Integer defaultPassCondition;
+
     @ApiModelProperty("节点位置：1-开始，2-中间，3-完成，4-终止")
     private Integer location;
 

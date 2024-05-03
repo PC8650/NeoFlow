@@ -2,6 +2,7 @@ package com.nf.neoflow.component;
 
 import com.nf.neoflow.config.NeoFlowConfig;
 import com.nf.neoflow.constants.*;
+import com.nf.neoflow.dto.execute.AutoNodeDto;
 import com.nf.neoflow.dto.execute.ExecuteForm;
 import com.nf.neoflow.dto.execute.NodeQueryDto;
 import com.nf.neoflow.dto.execute.UpdateResult;
@@ -20,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.CollectionUtils;
@@ -27,6 +29,7 @@ import org.springframework.util.CollectionUtils;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -60,10 +63,14 @@ public class FlowExecutor {
             InstanceOperationType.TERMINATED, this::terminate
     );
 
+    private UserBaseInfo systemOperator;
+
     private ExecutorService autoNodeExecutor;
 
     @PostConstruct
     private void autoNodeExecutorInit() {
+        systemOperator = new UserBaseInfo(config.getAutoId(), config.getAutoName());
+
         BlockingQueue<Runnable> queue;
         switch (config.getQueueType().toLowerCase()) {
             case "array" -> queue = new ArrayBlockingQueue<>(config.getQueueCapacity());
@@ -164,17 +171,7 @@ public class FlowExecutor {
         //按需自动执行下一节点
         if (updateResult.autoRigNow()) {
             ExecuteForm nextForm = autoNextForm(updateResult);
-            autoNodeExecutor.execute(() -> {
-                transactionTemplate.execute(status -> {
-                    try {
-                        executor(nextForm, updateResult.getLock());
-                    }catch (Exception e) {
-                        status.setRollbackOnly();
-                        throw e;
-                    }
-                    return null;
-                });
-            });
+            autoNodeExecutor.execute(() -> executor(nextForm, updateResult.getLock()));
         }
     }
 
@@ -456,10 +453,15 @@ public class FlowExecutor {
         }
 
         //发起、通过 必须有跳转条件
-        if (form.getOperationType() < InstanceOperationType.REJECTED && current.getLocation() <= NodeLocationType.MIDDLE && form.getCondition() == null) {
-            log.error("流程执行失败，缺失跳转条件：流程 {}-版本 {}-key {}-当前节点位置 {}",
-                    form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNum());
-            throw new NeoExecuteException("流程执行失败，缺失跳转条件");
+        if (form.getOperationType() < InstanceOperationType.REJECTED && current.getLocation() <= NodeLocationType.MIDDLE) {
+            if (form.getCondition() == null) {
+                if (current.getDefaultPassCondition() == null) {
+                    log.error("流程执行失败，缺失跳转条件：流程 {}-版本 {}-key {}-当前节点位置 {}",
+                            form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNum());
+                    throw new NeoExecuteException("流程执行失败，缺失跳转条件");
+                }
+                form.setCondition(current.getDefaultPassCondition());
+            }
         }
     }
 
@@ -474,8 +476,19 @@ public class FlowExecutor {
      */
     public UpdateResult updateInstance(InstanceNode current, InstanceNode next, ExecuteForm form,
                                        Boolean autoNextRightNow, Boolean getLock) {
+        //spring-data-neo4j复杂对象作为参数，需转成map，LocalDateTime、LocalDate会被转成数组，需手动处理
         Map<String, Object> cMap = JacksonUtils.objToMap(current);
+        cMap.replace("beginTime", current.getBeginTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        if (current.getEndTime() != null) {
+            cMap.replace("endTime", current.getEndTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        }
         Map<String, Object> nMap = JacksonUtils.objToMap(next);
+        if (nMap != null) {
+            nMap.replace("beginTime", next.getBeginTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            if (next.getAutoTime() != null) {
+                nMap.replace("autoTime", next.getAutoTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
+            }
+        }
         Integer flowStatus = getFlowStatus(current, next);
         Long nextId;
 
@@ -684,7 +697,7 @@ public class FlowExecutor {
 
         //查询结果校验
         if (dto == null || StringUtils.isBlank(dto.getNodeJson())) {
-            log.error("流程执行失败，未找到当前实例节点：流程 {}-位置 {}-nodeId{}", form.getProcessName(), form.getNum(), form.getNodeId());
+            log.error("流程执行失败，未找到当前实例节点：流程 {}-位置 {}-nodeId {}", form.getProcessName(), form.getNum(), form.getNodeId());
             throw new NeoExecuteException("流程执行失败，未找到当前实例节点");
         }
         //前置节点校验
@@ -742,7 +755,7 @@ public class FlowExecutor {
 
         //设置自动执行日期
         Integer autoInterval = modelNode.getAutoInterval();
-        if (autoInterval != null && autoInterval > 0) {
+        if (autoInterval != null) {
             instanceNode.setAutoTime(LocalDate.now().plusDays(autoInterval));
         }
 
@@ -752,9 +765,6 @@ public class FlowExecutor {
             candidates = userChoose.getCandidateUsers(modelNode.getOperationType(), candidates);
             instanceNode.setOperationCandidate(JacksonUtils.toJson(candidates));
         }
-
-        //方法执行条件
-        instanceNode.setOnlyPassExecute(modelNode.getOnlyPassExecute());
 
         //设置状态
         instanceNode.setStatus(InstanceNodeStatus.PENDING);
@@ -963,7 +973,7 @@ public class FlowExecutor {
     /**
      * 获取更新的流程实例状态
      * @param current 当前流程实例节点
-     * @param next 下一个模型节点
+     * @param next 下一个实例节点
      * @return 流程实例状态
      */
     private Integer getFlowStatus(InstanceNode current, InstanceNode next) {
@@ -990,10 +1000,6 @@ public class FlowExecutor {
         int num = currentForm.getNum() + 1;
         long nodeId = result.next().getId();
 
-        UserBaseInfo user = new UserBaseInfo();
-        user.setId(config.getAutoId());
-        user.setName(config.getAutoName());
-
         ExecuteForm form = new ExecuteForm();
         form.setProcessName(currentForm.getProcessName())
                 .setBusinessKey(currentForm.getBusinessKey())
@@ -1001,10 +1007,181 @@ public class FlowExecutor {
                 .setNum(num)
                 .setNodeId(nodeId)
                 .setOperator(currentForm.getOperator())
-                .setOperator(user)
+                .setOperator(systemOperator)
                 .setOperationType(InstanceOperationType.PASS);
 
         return form;
+    }
+
+    /**
+     * 扫描自动节点
+     * @param date 自动执行日期
+     */
+    public void autoScan(LocalDate date){
+        date = date == null ? LocalDate.now() : date;
+        log.info("开始扫描自动节点 {}", date);
+        autoDeal(date);
+    }
+
+    /**
+     * 扫描自动节点
+     */
+    @Scheduled(cron = "${neo.auto-corn:0 0 5 * * ?}")
+    public void autoScan(){
+        LocalDate date = LocalDate.now();
+        log.info("开始扫描自动节点 {}", date);
+        autoDeal(date);
+    }
+
+    /**
+     * 处理自动节点
+     * @param date 自动执行日期
+     */
+    public void autoDeal(LocalDate date){
+        //扫描
+        List<AutoNodeDto> autoNodes;
+        if (config.getAutoType() == AutoType.TODAY) {
+            autoNodes = instanceNodeRepository.queryAutoNodeToDay(date);
+        } else {
+            autoNodes = instanceNodeRepository.queryAutoNodeToDayAndBefore(date);
+        }
+
+        if (CollectionUtils.isEmpty(autoNodes)) {
+            return;
+        }
+
+        //分配到autoNodeExecutor
+        assigned(autoNodes);
+    }
+
+    /**
+     * 分配自动节点
+     * @param autoNodes 自动节点
+     */
+    private void assigned(List<AutoNodeDto> autoNodes) {
+        int size = autoNodes.size();
+        int assigned;
+        if (size == 0) {
+            return;
+        }else if (size % config.getAutoAssigned() == 0) {
+            assigned = size / config.getAutoAssigned();
+        }else {
+            assigned = size / config.getAutoAssigned() + 1;
+        }
+
+        for (int i = 0; i < assigned; i++) {
+            List<AutoNodeDto> subList;
+            int start = i * config.getAutoAssigned();
+            int end = (i + 1) * config.getAutoAssigned();
+            if (end <= size) {
+                subList = autoNodes.subList(start, end);
+            } else {
+                subList = autoNodes.subList(i * config.getAutoAssigned(), size);
+            }
+            autoNodeExecutor.execute(()->acceptAutoNodes(subList));
+        }
+
+    }
+
+    /**
+     * 接收分配的自动节点
+     * @param autoNodes 自动节点
+     */
+    private void acceptAutoNodes(List<AutoNodeDto> autoNodes) {
+        for (AutoNodeDto autoNode : autoNodes) {
+            autoExecute(autoNode);
+        }
+    }
+
+    /**
+     * 构建自动节点表单
+     * @param autoNode 自动节点
+     * @return ExecuteForm
+     */
+    private ExecuteForm autoForm(AutoNodeDto autoNode) {
+        return new ExecuteForm()
+                .setProcessName(autoNode.processName())
+                .setVersion(autoNode.version())
+                .setBusinessKey(autoNode.businessKey())
+                .setNum(autoNode.location())
+                .setNodeId(autoNode.nodeId())
+                .setOperationMethod(autoNode.operationMethod())
+                .setOperationType(InstanceOperationType.PASS)
+                .setOperator(systemOperator);
+    }
+
+    /**
+     * 构建当前自动实例节点
+     * @param autoNodeDto 自动节点
+     * @return InstanceNode
+     */
+    private InstanceNode autoCurrentNode(AutoNodeDto autoNodeDto) {
+        InstanceNode current = new InstanceNode();
+        current.setId(autoNodeDto.nodeId());
+        current.setModelNodeUid(autoNodeDto.modelNodeUid());
+        current.setStatus(InstanceNodeStatus.PASS);
+        current.setOnlyPassExecute(true);
+        current.setOperationBy(JacksonUtils.toJson(systemOperator));
+        current.setDefaultPassCondition(autoNodeDto.defaultPassCondition());
+        current.setLocation(autoNodeDto.location());
+        current.setBeginTime(autoNodeDto.beginTime());
+        current.setEndTime(LocalDateTime.now());
+        current.setDuring(Duration.between(current.getBeginTime(), current.getEndTime()).getSeconds());
+        return current;
+    }
+
+    /**
+     * 自动节点更新流程实例
+     * @param autoNodeDto 自动节点
+     * @return UpdateResult
+     */
+    private UpdateResult updateAfterAuto(AutoNodeDto autoNodeDto) {
+        //获取锁
+        boolean getLock = lockManager.getLock(autoNodeDto.businessKey(), LockEnums.FLOW_EXECUTE);
+        String businessKey = autoNodeDto.businessKey();
+        boolean autoNextRightNow = false;
+        try {
+            log.info("开始自动节点：流程{} -版本{}- businessKey{}- 当前节点位置{}",
+                    autoNodeDto.processName(), autoNodeDto.version(), businessKey, autoNodeDto.num());
+            ExecuteForm form = autoForm(autoNodeDto);
+            InstanceNode current = autoCurrentNode(autoNodeDto);
+            operateMethod(form, current,null,false);
+            UpdateResult updateResult = updateFlowAfterPass(form, current, getLock);
+            autoNextRightNow = updateResult.autoRigNow();
+            log.info("完成自动节点：流程{} -版本{}- businessKey{}- 当前节点位置{}",
+                    autoNodeDto.processName(), autoNodeDto.version(), businessKey, autoNodeDto.num());
+            return updateResult;
+        } catch (Exception e) {
+            lockManager.releaseLock(businessKey, getLock, LockEnums.FLOW_EXECUTE);
+            getLock = false;
+            throw e;
+        } finally {
+            if (!autoNextRightNow) {
+                lockManager.releaseLock(businessKey, getLock, LockEnums.FLOW_EXECUTE);
+            }
+        }
+    }
+
+    /**
+     * 执行自动节点
+     * @param autoNodeDto 自动节点
+     */
+    public void autoExecute(AutoNodeDto autoNodeDto) {
+        //当前自动节点
+        UpdateResult updateResult = transactionTemplate.execute(status -> {
+            try {
+                return updateAfterAuto(autoNodeDto);
+            }catch (Exception e) {
+                status.setRollbackOnly();
+                throw e;
+            }
+        });
+
+        //按需自动执行下一节点
+        if (updateResult.autoRigNow()) {
+            ExecuteForm nextForm = autoNextForm(updateResult);
+            autoNodeExecutor.execute(() -> executor(nextForm, updateResult.getLock()));
+        }
     }
 
 }

@@ -40,7 +40,7 @@ public class BaseUserChoose {
     /**
      * 获取或校验当前用户信息
      * @param userBaseInfo
-     * @return
+     * @return UserBaseInfo
      */
     public UserBaseInfo user(UserBaseInfo userBaseInfo) {
         if (config.getBaseUserChoose()) {
@@ -59,7 +59,7 @@ public class BaseUserChoose {
     /**
      * 获取或校验当前用户信息
      * @param params
-     * @return
+     * @return UserBaseInfo
      */
     public UserBaseInfo user(String... params) {
         if (config.getBaseUserChoose()) {

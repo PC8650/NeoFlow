@@ -19,12 +19,12 @@ public class ActiveVersionHistoryDto {
     private Integer version;
 
     @ApiModelProperty("启用人标识")
-    private String id;
+    private String activeId;
 
     @ApiModelProperty("启用人名称")
-    private String name;
+    private String activeName;
 
     @ApiModelProperty("启用时间")
     @JsonFormat(pattern = TimeFormat.DATE_TIME)
-    private LocalDateTime time;
+    private LocalDateTime  activeTime;
 }

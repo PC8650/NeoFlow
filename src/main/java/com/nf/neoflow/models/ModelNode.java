@@ -48,6 +48,9 @@ public class ModelNode {
     @ApiModelProperty("自动执行间隔，只精确到日期（x 天后，x <= 0 立即自动执行），有值将忽略操作类型和候选人")
     private Integer autoInterval;
 
+    @ApiModelProperty("默认通过时的跳转条件，跳转条件缺失时默认选择改值，配合自动节点")
+    private Integer defaultPassCondition;
+
     @ApiModelProperty("节点位置：1-开始，2-中间，3-完成，4-终止")
     private Integer location;
 
