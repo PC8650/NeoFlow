@@ -210,7 +210,7 @@ public class FlowExecutor {
             //判断businessKey是否已存在
             canInitiate(form.getBusinessKey());
             //设置流程实例开始时间缓存
-            cacheManager.setCache(CacheEnums.I_B_T.getType(), form.getBusinessKey(), LocalDateTime.now());
+            cacheManager.setCache(CacheEnums.I_B_T.getType(), form.getBusinessKey(), dto.getNode().getBeginTime());
             //更新流程
             UpdateResult ur = updateFlowAfterPass(form, dto.getNode(), getLock);
             autoNextRightNow = ur.autoRigNow();
