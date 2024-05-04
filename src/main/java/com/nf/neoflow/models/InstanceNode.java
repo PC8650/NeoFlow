@@ -68,8 +68,11 @@ public class InstanceNode {
     @ApiModelProperty("节点结束时间")
     private LocalDateTime endTime;
 
-    @ApiModelProperty("节点持续时间：秒")
-    private Long during;
+    @ApiModelProperty("节点持续时间")
+    private String during;
+
+    @ApiModelProperty("流程持续时间")
+    private String ProcessDuring;
 
     /**
      * 复制忽略属性

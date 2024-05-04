@@ -209,6 +209,8 @@ public class FlowExecutor {
             }
             //判断businessKey是否已存在
             canInitiate(form.getBusinessKey());
+            //设置流程实例开始时间缓存
+            cacheManager.setCache(CacheEnums.I_B_T.getType(), form.getBusinessKey(), LocalDateTime.now());
             //更新流程
             UpdateResult ur = updateFlowAfterPass(form, dto.getNode(), getLock);
             autoNextRightNow = ur.autoRigNow();
@@ -476,11 +478,18 @@ public class FlowExecutor {
      */
     public UpdateResult updateInstance(InstanceNode current, InstanceNode next, ExecuteForm form,
                                        Boolean autoNextRightNow, Boolean getLock) {
+        //计算流程持续时间
+        if (!InstanceOperationType.INITIATE.equals(form.getOperationType())) {
+             current.setProcessDuring(getInstanceDuring(form, current.getEndTime()));
+        }
         //spring-data-neo4j复杂对象作为参数，需转成map，LocalDateTime、LocalDate会被转成数组，需手动处理
         Map<String, Object> cMap = JacksonUtils.objToMap(current);
         cMap.replace("beginTime", current.getBeginTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         if (current.getEndTime() != null) {
             cMap.replace("endTime", current.getEndTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        }
+        if (current.getAutoTime() != null) {
+            cMap.replace("autoTime", current.getAutoTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
         }
         Map<String, Object> nMap = JacksonUtils.objToMap(next);
         if (nMap != null) {
@@ -522,7 +531,7 @@ public class FlowExecutor {
         current.setEndTime(LocalDateTime.now());
         current.setOperationBy(JacksonUtils.toJson(form.getOperator()));
         current.setStatus(operateTypeToNodeStatus(form.getOperationType()));
-        current.setDuring(Duration.between(current.getBeginTime(), current.getEndTime()).getSeconds());
+        current.setDuring(getDuring(Duration.between(current.getBeginTime(), current.getEndTime())));
 
         //查询下一模型节点
         InstanceNode next = null;
@@ -574,7 +583,7 @@ public class FlowExecutor {
         current.setEndTime(LocalDateTime.now());
         current.setOperationBy(JacksonUtils.toJson(form.getOperator()));
         current.setStatus(operateTypeToNodeStatus(form.getOperationType()));
-        current.setDuring(Duration.between(current.getBeginTime(), current.getEndTime()).getSeconds());
+        current.setDuring(getDuring(Duration.between(current.getBeginTime(), current.getEndTime())));
         //构建下一个实例节点
         InstanceNode next;
         boolean autoNextRightNow;
@@ -605,7 +614,7 @@ public class FlowExecutor {
         current.setEndTime(time);
         current.setOperationBy(JacksonUtils.toJson(form.getOperator()));
         current.setStatus(operateTypeToNodeStatus(form.getOperationType()));
-        current.setDuring(Duration.between(current.getBeginTime(), current.getEndTime()).getSeconds());
+        current.setDuring(getDuring(Duration.between(current.getBeginTime(), current.getEndTime())));
         //构建下一个实例节点
         InstanceNode next = new InstanceNode();
         BeanUtils.copyProperties(current, next, current.ignoreCopyPropertyListOfForward());
@@ -630,7 +639,7 @@ public class FlowExecutor {
         current.setEndTime(LocalDateTime.now());
         current.setOperationBy(JacksonUtils.toJson(form.getOperator()));
         current.setStatus(operateTypeToNodeStatus(form.getOperationType()));
-        current.setDuring(Duration.between(current.getBeginTime(), current.getEndTime()).getSeconds());
+        current.setDuring(getDuring(Duration.between(current.getBeginTime(), current.getEndTime())));
 
         //更新
         return updateInstance(current, null, form, false, getLock);
@@ -847,6 +856,7 @@ public class FlowExecutor {
         } else {
             initiateNode = instanceNodeRepository.queryInstanceInitiateNode(form.getProcessName(), form.getVersion(), form.getBusinessKey());
             cacheManager.setCache(cacheType, form.getBusinessKey(), initiateNode);
+            cacheManager.setCache(CacheEnums.I_B_T.getType(), form.getBusinessKey(), initiateNode.getBeginTime());
         }
 
         if (initiateNode == null) {
@@ -858,7 +868,6 @@ public class FlowExecutor {
 
         return initiateNode;
     }
-
 
     /**
      * 获取模型终止节点
@@ -929,7 +938,59 @@ public class FlowExecutor {
         }
 
         return terminateNode;
+    }
 
+    /**
+     * 获取时间间隔
+     * @param duration Duration
+     * @return xDxHxMxS，xHxMxS，xMxS，xS
+     */
+    private String getDuring(Duration duration) {
+        StringBuilder sb = new StringBuilder();
+        long value =duration.toDays();
+        if (value >= 1L) {
+            sb.append(duration.toDays()).append("D");
+        }
+       value = duration.toHours()%24;
+        if (value >= 1L) {
+            sb.append(value).append("H");
+        }
+        value = duration.toMinutes()%60;
+        if (value >= 1L) {
+            sb.append(value).append("M");
+        }
+        value = duration.getSeconds()%60;
+        sb.append(value).append("S");
+        return sb.toString();
+    }
+
+    /**
+     * 获取流程实例开始时间
+     * @param form 表单
+     * @param endTime 流程实例结束时间
+     * @return xDxHxMxS，xHxMxS，xMxS，xS
+     */
+    private String getInstanceDuring(ExecuteForm form, LocalDateTime endTime) {
+        String cacheType = CacheEnums.I_B_T.getType();
+        String processName = form.getProcessName();
+        Integer version = form.getVersion();
+        String businessKey = form.getBusinessKey();
+        NeoCacheManager.CacheValue<LocalDateTime> cache = cacheManager.getCache(cacheType, businessKey, LocalDateTime.class);
+        LocalDateTime instanceBeginTime;
+        if (cache.filter() || cache.value() != null) {
+            instanceBeginTime = cache.value();
+        }else {
+            instanceBeginTime = instanceNodeRepository.queryInstanceBeginTime(processName, version, businessKey);
+            cacheManager.setCache(cacheType, businessKey, instanceBeginTime);
+        }
+
+        if (instanceBeginTime == null) {
+            log.error("未查询到流程开始时间：流程 {}-版本 {}-key {}-当前节点位置 {}",
+                    processName, version, businessKey, form.getNum());
+            throw new NeoExecuteException("未查询到流程开始时间");
+        }
+
+        return getDuring(Duration.between(instanceBeginTime, endTime));
     }
 
     /**
@@ -1126,7 +1187,7 @@ public class FlowExecutor {
         current.setLocation(autoNodeDto.location());
         current.setBeginTime(autoNodeDto.beginTime());
         current.setEndTime(LocalDateTime.now());
-        current.setDuring(Duration.between(current.getBeginTime(), current.getEndTime()).getSeconds());
+        current.setDuring(getDuring(Duration.between(current.getBeginTime(), current.getEndTime())));
         return current;
     }
 

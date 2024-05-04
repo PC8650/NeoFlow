@@ -7,6 +7,7 @@ import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -60,7 +61,8 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
      */
     @Query("""
         match (p:Process{name:$0})
-        optional match (p)-[:VERSION]->(v:Version{version:$1})-[:INSTANCE]->(:Instance)-[:BUSINESS{key:$2,status:1}]->(f:InstanceNode)
+        optional match (p)-[:VERSION]->(v:Version{version:$1})-[:INSTANCE]->(i:Instance)
+        optional match (i)-[:BUSINESS{key:$2,status:1}]->(f:InstanceNode) where f is not null
         with v, f, $4-2 as length
         call apoc.path.expandConfig(f, {
             relationshipFilter: "NEXT>",
@@ -101,13 +103,14 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
             $nodeId is null,
             'create (i)-[b:BUSINESS{key: businessKey}]->(c:InstanceNode)
             set b.status = flowStatus, b.beginTime = localDateTime(cMap.beginTime), b.num = 1,
-            c += cMap, c.beginTime = localDateTime(cMap.beginTime)
+            c += cMap, c.autoTime = date(cMap.autoTime),
+            c.beginTime = localDateTime(cMap.beginTime), c.endTime = localDateTime(cMap.endTime)
             return c, b',
             'optional match (i)-[b:BUSINESS{key:$businessKey,status:1}]->(f:InstanceNode) where f is not null
             optional match (f)-[:NEXT*0..]->(c:InstanceNode) where id(c) = $nodeId
             set c.operationBy = cMap.operationBy, c.endTime = localDateTime(cMap.endTime),
-            c.status = cMap.status, c.during = cMap.during,
-            b.status = flowStatus, b.endTime = localDateTime(cMap.endTime),
+            c.status = cMap.status, c.during = cMap.during, c.processDuring = cMap.processDuring,
+            b.status = flowStatus, b.endTime = localDateTime(cMap.endTime), b.during = cMap.processDuring,
             b.operationBy = case when cMap.autoTime is null then cMap.operationBy else b.operationBy end
             return c, b',
             {i:i, cMap:$cMap, flowStatus:$flowStatus, businessKey:$businessKey, nodeId:$nodeId}
@@ -123,8 +126,8 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
             n+= nMap, n.autoTime = date(nMap.autoTime),
             n.beginTime = localDateTime(nMap.beginTime),
             b.cycle = case when n.location = 1 then coalesce(b.cycle, 0) + 1 else b.cycle end,
-            b.operationCandidate = case when nMap.autoTime is null then nMap.operationCandidate else b.operationCandidate end,
-            b.num = b.num + 1
+            b.operationCandidate = nMap.operationCandidate,
+            b.num = b.num + 1, b.currentNodeId = id(n)
             return n',
             {c:c, b:b, nMap:$nMap, condition:$condition}
         ) yield value
@@ -153,31 +156,22 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
         optional match (p)-[:VERSION]->(v:Version{version:$version})-[:INSTANCE]->(i:Instance) where i is not null
         //更新当前节点和流程状态
         with p, i, $num-1 as l
-        call apoc.do.when (
-            $nodeId is null,
-            'create (i)-[b:BUSINESS{key: businessKey}]->(c:InstanceNode)
-            set b.status = flowStatus, b.beginTime = localDateTime(cMap.beginTime), b.num = 1,
-            c += cMap, c.beginTime = localDateTime(cMap.beginTime)
-            return c, b',
-            'optional match (i)-[b:BUSINESS{key:$businessKey,status:1}]->(f:InstanceNode) where f is not null
-            call apoc.path.expandConfig(f, {
-                relationshipFilter: "NEXT>",
-                minLevel: l,
-                maxLevel: l,
-                limit: 1
-            }) yield path
-            with b, last(nodes(path)) as c, cMap, flowStatus, businessKey, nodeId
-            where id(c) = $nodeId
-            set c.operationBy = cMap.operationBy, c.endTime = localDateTime(cMap.endTime),
-            c.status = cMap.status, c.during = cMap.during,
-            b.status = flowStatus, b.endTime = localDateTime(cMap.endTime),
-            b.operationBy = case when cMap.autoTime is null then cMap.operationBy else b.operationBy end
-            return c, b',
-            {i:i, l:l, cMap:$cMap, flowStatus:$flowStatus, businessKey:$businessKey, nodeId:$nodeId}
-        ) yield value
-        
+        optional match (i)-[b:BUSINESS{key:$businessKey,status:1}]->(f:InstanceNode) where f is not null
+        call apoc.path.expandConfig(f, {
+            relationshipFilter: "NEXT>",
+            minLevel: l,
+            maxLevel: l,
+            limit: 1
+        }) yield path
+        with i, b, last(nodes(path)) as c, $cMap as cMap
+        where id(c) = $nodeId
+        set c.operationBy = cMap.operationBy, c.endTime = localDateTime(cMap.endTime),
+        c.status = cMap.status, c.during = cMap.during, c.processDuring = cMap.processDuring,
+        b.status = $flowStatus, b.endTime = localDateTime(cMap.endTime), b.during = cMap.processDuring,
+        b.operationBy = case when cMap.autoTime is null then cMap.operationBy else b.operationBy end
+
         //初始化下一节点
-        with i, value.c as c, value.b as b where c is not null
+        with i, c, b where c is not null
         call apoc.do.when (
             $nMap is null,
             'return null as n',
@@ -186,8 +180,8 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
             n+= nMap, n.autoTime = date(nMap.autoTime),
             n.beginTime = localDateTime(nMap.beginTime),
             b.cycle = case when n.location = 1 then coalesce(b.cycle, 0) + 1 else b.cycle end,
-            b.operationCandidate = case when nMap.autoTime is null then nMap.operationCandidate else b.operationCandidate end,
-            b.num = b.num + 1
+            b.operationCandidate = nMap.operationCandidate,
+            b.num = b.num + 1, b.currentNodeId = id(n)
             return n',
             {c:c, b:b, nMap:$nMap, condition:$condition}
         ) yield value
@@ -222,7 +216,8 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
      */
     @Query("""
         match (p:Process{name:$0})
-        optional match (p)-[:VERSION]->(v:Version{version:$1})-[:INSTANCE]->(:Instance)-[b:BUSINESS{key:$2}]->(f:InstanceNode) where f is not null
+        optional match (p)-[:VERSION]->(v:Version{version:$1})-[:INSTANCE]->(i:Instance)
+        optional match (i)-[b:BUSINESS{key:$2}]->(f:InstanceNode) where f is not null
         with f
         return f.modelNodeUid as modelNodeUid, f.name as name, f.identity as identity,
         1 as status, f.operationType as operationType, f.operationMethod as operationMethod,
@@ -230,6 +225,15 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
         '['+f.operationBy+']' as operationCandidate
     """)
     InstanceNode queryInstanceInitiateNode(String processName, Integer version, String businessKey);
+
+    @Query("""
+        match (p:Process{name:$0})
+        optional match (p)-[:VERSION]->(v:Version{version:$1})-[:INSTANCE]->(i:Instance)
+        optional match (i)-[b:BUSINESS{key:$2}]->(f:InstanceNode) where f is not null
+        with f
+        return f.beginTime
+    """)
+    LocalDateTime queryInstanceBeginTime(String processName, Integer version, String businessKey);
 
     /**
      * 扫描当天的自动节点
