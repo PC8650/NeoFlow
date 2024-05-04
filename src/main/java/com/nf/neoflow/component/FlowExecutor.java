@@ -951,15 +951,15 @@ public class FlowExecutor {
         if (value >= 1L) {
             sb.append(duration.toDays()).append("D");
         }
-       value = duration.toHours()%24;
+       value = duration.toHoursPart();
         if (value >= 1L) {
             sb.append(value).append("H");
         }
-        value = duration.toMinutes()%60;
+        value = duration.toMinutesPart();
         if (value >= 1L) {
             sb.append(value).append("M");
         }
-        value = duration.getSeconds()%60;
+        value = duration.toSecondsPart();
         sb.append(value).append("S");
         return sb.toString();
     }
