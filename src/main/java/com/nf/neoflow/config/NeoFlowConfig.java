@@ -14,6 +14,8 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "neo")
 public class NeoFlowConfig {
 
+    //基础 Basic
+
     /**
      * 是否独立于业务单独部署
      */
@@ -22,37 +24,7 @@ public class NeoFlowConfig {
     /**
      * 扫描的包名
      */
-    private String scanPackage = "com.nf.neoflow.dto";
-
-    /**
-     * 自动执行节点扫描周期Corn
-     * 默认 0 0 5 * * ?
-     */
-    private String autoCorn;
-
-    /**
-     * 自动节点每次执行数量，0则扫描并执行所有
-     * 默认 0
-     */
-    private int autoCount = 0;
-
-    /**
-     * 执行自动节点时的操作人id
-     * 默认 system
-     */
-    private String autoId = "system";
-
-    /**
-     * 执行自动节点时的操作人名称
-     * 默认 system
-     */
-    private String autoName = "system";
-
-    /**
-     * 自动节点执行类型
-     * 1-只执行当天（默认），2-执行当天及以前
-     */
-    private int autoType = AutoType.TODAY;
+    private String scanPackage;
 
     /**
      * 自带接口基路径配置
@@ -67,10 +39,22 @@ public class NeoFlowConfig {
     private Boolean baseUserChoose = false;
 
     /**
+     * 发起人标识，表示该节点候选人为流程发起人
+     * 配合 {@link com.nf.neoflow.models.ModelNode ModelNode}、{@link com.nf.neoflow.models.InstanceNode InstanceNode} 的 operationType 字段
+     */
+    private int initiatorFlag;
+
+
+    //锁 Lock
+
+    /**
      * 是否开启自定义锁
      * {@link com.nf.neoflow.interfaces.CustomizationLock CustomizationLock}
      */
     private Boolean customizationLock = false;
+
+
+    //缓存 Cache
 
     /**
      * 是否使用缓存
@@ -113,6 +97,39 @@ public class NeoFlowConfig {
      * 默认使用本地缓存
      */
     private Boolean customizationCache = false;
+
+
+    //自动节点 AutoNode
+
+    /**
+     * 自动执行节点扫描周期Corn
+     * 默认 0 0 5 * * ?
+     */
+    private String autoCorn;
+
+    /**
+     * 自动节点每次执行数量，0则扫描并执行所有
+     * 默认 0
+     */
+    private int autoCount = 0;
+
+    /**
+     * 执行自动节点时的操作人id
+     * 默认 system
+     */
+    private String autoId = "system";
+
+    /**
+     * 执行自动节点时的操作人名称
+     * 默认 system
+     */
+    private String autoName = "system";
+
+    /**
+     * 自动节点执行类型
+     * 1-只执行当天（默认），2-执行当天及以前
+     */
+    private int autoType = AutoType.TODAY;
 
     /**
      * 自动节点线程池核心线程池大小
@@ -175,4 +192,5 @@ public class NeoFlowConfig {
      * 默认 50
      */
     private int autoAssigned = 50;
+
 }

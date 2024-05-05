@@ -68,16 +68,7 @@ public class ModelNodeDto {
         if (location == null) {
             throw new NeoProcessException("节点位置不能为空");
         }
-        if (autoInterval == null) {
-            if (CollectionUtils.isEmpty(operationCandidateInfo)) {
-                throw new NeoProcessException("节点候选人不能为空");
-            }
-            for (UserBaseInfo userBaseInfo : operationCandidateInfo) {
-                if (StringUtils.isBlank(userBaseInfo.getId()) || StringUtils.isBlank(userBaseInfo.getName())) {
-                    throw new NeoProcessException("节点候选人信息缺失");
-                }
-            }
-        } else if (NodeLocationType.MIDDLE.equals(location) && defaultPassCondition == null) {
+        if (autoInterval != null && NodeLocationType.MIDDLE.equals(location) && defaultPassCondition == null) {
             throw new NeoProcessException("中间自动节点默认通过跳转条件不能为空");
         }
         if (Objects.equals(location, NodeLocationType.Initiate) && !Objects.equals(autoInterval, 0)) {

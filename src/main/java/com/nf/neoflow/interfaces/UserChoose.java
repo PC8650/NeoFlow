@@ -14,17 +14,28 @@ public interface UserChoose {
     /**
      * 用于流程的 "创建"、"修改"、"发起"、"审批" 操作中获取当前用户信息
      * 该方法没有入参，意味着需能从RequestContextHolder、ThreadLocal等 获取当前用户信息
+     * 可根据 {@link com.nf.neoflow.config.NeoFlowConfig#baseUserChoose NeoFlowConfig.baseUserChoose} 选择是否实现
      * @return UserBaseInfo
      */
     UserBaseInfo getUser();
 
     /**
      * 根据模型节点获取实际候选人
+     * 需发起人操作类型 {@link com.nf.neoflow.config.NeoFlowConfig#initiatorFlag NeoFlowConfig.initiatorFlag} 的节点不会调用此方法
      * @param operationType 节点操作类型
      * @param modelCandidateInfo 模型节点候选人信息，根据设置可能为null
      * @return List<UserBaseInfo>
      */
     List<UserBaseInfo> getCandidateUsers(Integer operationType, List<UserBaseInfo> modelCandidateInfo);
+
+    /**
+     * 根据节点操作类型校验候选人
+     * @param operationType 节点操作类型
+     * @param operationUser 当前操作用户
+     * @param candidate 候选人列表，根据设置可能为null
+     * @return Boolean 校验结果
+     */
+    Boolean checkCandidateUser(Integer operationType, UserBaseInfo operationUser, List<UserBaseInfo> candidate);
 
     /**
      * 定义流程模型时，获取候选人列表

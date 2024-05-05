@@ -29,6 +29,7 @@ public class BaseUserChoose {
 
     /**
      * 根据模型节点获取实际候选人
+     * 需发起人操作类型 {@link com.nf.neoflow.config.NeoFlowConfig#initiatorFlag NeoFlowConfig.initiatorFlag} 的节点不会调用此方法
      * @param operationType 节点操作类型
      * @param modelCandidateInfo 模型节点候选人信息
      * @return List<UserBaseInfo>
@@ -38,8 +39,19 @@ public class BaseUserChoose {
     }
 
     /**
+     * 根据节点操作类型校验候选人
+     * @param operationType 节点操作类型
+     * @param operationUser 当前操作用户
+     * @param candidate 候选人列表，根据设置可能为null
+     * @return Boolean 校验结果
+     */
+    public Boolean checkCandidateUser(Integer operationType, UserBaseInfo operationUser, List<UserBaseInfo> candidate) {
+        return userChooseService.checkCandidateUser(operationType, operationUser, candidate);
+    }
+
+    /**
      * 获取或校验当前用户信息
-     * @param userBaseInfo
+     * @param userBaseInfo 当前用户信息
      * @return UserBaseInfo
      */
     public UserBaseInfo user(UserBaseInfo userBaseInfo) {
@@ -58,7 +70,7 @@ public class BaseUserChoose {
 
     /**
      * 获取或校验当前用户信息
-     * @param params
+     * @param params 当前用户信息 id or name
      * @return UserBaseInfo
      */
     public UserBaseInfo user(String... params) {

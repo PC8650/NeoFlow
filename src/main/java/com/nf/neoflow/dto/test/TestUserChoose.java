@@ -4,6 +4,7 @@ package com.nf.neoflow.dto.test;
 import com.nf.neoflow.dto.user.UserBaseInfo;
 import com.nf.neoflow.interfaces.UserChoose;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 
@@ -20,6 +21,14 @@ public class TestUserChoose implements UserChoose {
         userBaseInfo.setId("2");
         userBaseInfo.setName("张三");
         return List.of(userBaseInfo);
+    }
+
+    @Override
+    public Boolean checkCandidateUser(Integer operationType, UserBaseInfo operationUser, List<UserBaseInfo> candidate) {
+        if (2 == operationType || 0 == operationType) {
+            return CollectionUtils.isEmpty(candidate) || candidate.stream().anyMatch(x -> x.equals(operationUser));
+        }
+        return true;
     }
 
     @Override

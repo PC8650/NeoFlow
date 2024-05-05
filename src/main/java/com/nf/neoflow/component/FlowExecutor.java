@@ -544,7 +544,7 @@ public class FlowExecutor {
                 throw new NeoExecuteException("流程执行失败，未找到下一节点");
             }
             autoNextRightNow = Objects.equals(modelNode.getAutoInterval(), 0);
-            next = constructInstanceNode(modelNode);
+            next = constructInstanceNode(modelNode, form);
         }
 
         //更新流程
@@ -589,11 +589,11 @@ public class FlowExecutor {
         boolean autoNextRightNow;
         if (canCycle(form)) {
             //获取开始节点实例，退回发起人
-            next = getInstanceInitiateNodeToRegression(form);
+            next = getInstanceInitiateNode(form);
             autoNextRightNow = false;
         }else {
             //结束流程
-            next = constructInstanceNode(terminateNode);
+            next = constructInstanceNode(terminateNode, form);
             autoNextRightNow = Objects.equals(terminateNode.getAutoInterval(), 0);
         }
 
@@ -678,7 +678,7 @@ public class FlowExecutor {
         InstanceNode currentNode;
         if (Objects.equals(form.getOperationType(), InstanceOperationType.INITIATE)) {
             NodeQueryDto<ModelNode> modelDto = findActiveVersionModelFirstNode(form.getProcessName());
-            currentNode = constructInstanceNode(JacksonUtils.toObj(modelDto.getNodeJson(), ModelNode.class));
+            currentNode = constructInstanceNode(JacksonUtils.toObj(modelDto.getNodeJson(), ModelNode.class), form);
             dto = new NodeQueryDto<>();
             dto.setNode(currentNode);
             form.setOperationMethod(currentNode.getOperationMethod());
@@ -753,23 +753,29 @@ public class FlowExecutor {
     /**
      * 构建实例节点
      * @param modelNode 模型节点
+     * @param form 表单
      * @return InstanceNode
      */
-    private InstanceNode constructInstanceNode(ModelNode modelNode) {
+    private InstanceNode constructInstanceNode(ModelNode modelNode, ExecuteForm form) {
         //复制关键属性
         InstanceNode instanceNode = new InstanceNode();
         BeanUtils.copyProperties(modelNode, instanceNode,
                 modelNode.ignoreCopyPropertyList());
         instanceNode.setModelNodeUid(modelNode.getNodeUid());
 
-        //设置自动执行日期
+        //设置自动执行日期 和 候选人
         Integer autoInterval = modelNode.getAutoInterval();
         if (autoInterval != null) {
             instanceNode.setAutoTime(LocalDate.now().plusDays(autoInterval));
-        }
-
-        //设置候选人
-        if (StringUtils.isNotBlank(modelNode.getOperationCandidate())) {
+        } else if (Objects.equals(config.getInitiatorFlag(), modelNode.getOperationType())) {
+            if (InstanceOperationType.INITIATE.equals(form.getOperationType())) {
+                String candidatesJson = "["+JacksonUtils.toJson(form.getOperator())+"]";
+                instanceNode.setOperationCandidate(candidatesJson);
+            } else {
+                InstanceNode initiateNode = getInstanceInitiateNode(form);
+                instanceNode.setOperationCandidate(initiateNode.getOperationCandidate());
+            }
+        }else if (StringUtils.isNotBlank(modelNode.getOperationCandidate())){
             List<UserBaseInfo> candidates = (List<UserBaseInfo>) JacksonUtils.toObj(modelNode.getOperationCandidate(), List.class, UserBaseInfo.class);
             candidates = userChoose.getCandidateUsers(modelNode.getOperationType(), candidates);
             instanceNode.setOperationCandidate(JacksonUtils.toJson(candidates));
@@ -792,25 +798,35 @@ public class FlowExecutor {
      * @param isTerminated 是否为终止操作
      */
     private void inCandidate(ExecuteForm form, InstanceNode instanceNode, Boolean isTerminated) {
-        String candidateJson;
         String msg;
+        String candidateJson;
+        List<UserBaseInfo> candidate;
+        UserBaseInfo user = form.getOperator();
+        //终止流程
         if (isTerminated) {
             //获取当前流程发起节点，只有流程发起人能终止流程
-            InstanceNode initNode = getInstanceInitiateNodeToRegression(form);
+            InstanceNode initNode = getInstanceInitiateNode(form);
             candidateJson = initNode.getOperationCandidate();
             msg = "流程终止失败，不是发起人";
-        }else {
-            if (instanceNode.getAutoTime() != null) {
-                return;
+            candidate = (List<UserBaseInfo>) JacksonUtils.toObj(candidateJson, List.class, UserBaseInfo.class);
+            if (CollectionUtils.isEmpty(candidate) || candidate.stream().noneMatch(x -> x.equals(user))) {
+                log.error("{}：流程 {}-版本 {}-key {}-当前位置{}-当前用户{}", msg,
+                        form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNum(), user);
+                throw new NeoExecuteException(msg);
             }
-            candidateJson = instanceNode.getOperationCandidate();
-            msg = "流程执行失败，操作人不在候选人中：";
+            return;
         }
 
-        UserBaseInfo user = form.getOperator();
-        List<UserBaseInfo> candidate = (List<UserBaseInfo>) JacksonUtils.toObj(candidateJson, List.class, UserBaseInfo.class);
-        if (!CollectionUtils.isEmpty(candidate) && candidate.stream().noneMatch(x -> x.equals(user))) {
-            log.error("{}流程 {}-版本 {}-key {}-当前位置{}-当前用户{}", msg,
+        //字段节点忽略
+        if (instanceNode.getAutoTime() != null) {
+            return;
+        }
+
+        msg = "流程执行失败，操作人不在候选人中";
+        candidateJson = instanceNode.getOperationCandidate();
+        candidate = (List<UserBaseInfo>) JacksonUtils.toObj(candidateJson, List.class, UserBaseInfo.class);
+        if (!userChoose.checkCandidateUser(instanceNode.getOperationType(), user, candidate)) {
+            log.error("{}：流程 {}-版本 {}-key {}-当前位置{}-当前用户{}", msg,
                     form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNum(), user);
             throw new NeoExecuteException(msg);
         }
@@ -847,7 +863,7 @@ public class FlowExecutor {
      * @param form 表单
      * @return InstanceNode
      */
-    private InstanceNode getInstanceInitiateNodeToRegression(ExecuteForm form) {
+    private InstanceNode getInstanceInitiateNode(ExecuteForm form) {
         InstanceNode initiateNode;
         String cacheType = CacheEnums.I_I_N.getType();
         NeoCacheManager.CacheValue<InstanceNode> cache = cacheManager.getCache(cacheType, form.getBusinessKey(), InstanceNode.class);
@@ -860,8 +876,8 @@ public class FlowExecutor {
         }
 
         if (initiateNode == null) {
-            log.error("流程拒绝失败，退回时未找到当前流程实例发起节点：{}", form.getBusinessKey());
-            throw new NeoExecuteException("流程拒绝失败，退回时未找到当前流程实例发起节点");
+            log.error("未找到当前流程实例发起节点：{}", form.getBusinessKey());
+            throw new NeoExecuteException("未找到当前流程实例发起节点");
         }
 
         initiateNode.setBeginTime(LocalDateTime.now());

@@ -217,8 +217,8 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
     @Query("""
         match (p:Process{name:$0})
         optional match (p)-[:VERSION]->(v:Version{version:$1})-[:INSTANCE]->(i:Instance)
-        optional match (i)-[b:BUSINESS{key:$2}]->(f:InstanceNode) where f is not null
-        with f
+        optional match (i)-[b:BUSINESS{key:$2}]->(f:InstanceNode) 
+        with f where f is not null
         return f.modelNodeUid as modelNodeUid, f.name as name, f.identity as identity,
         1 as status, f.operationType as operationType, f.operationMethod as operationMethod,
         f.onlyPassExecute as onlyPassExecute, f.location as location,
@@ -229,8 +229,8 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
     @Query("""
         match (p:Process{name:$0})
         optional match (p)-[:VERSION]->(v:Version{version:$1})-[:INSTANCE]->(i:Instance)
-        optional match (i)-[b:BUSINESS{key:$2}]->(f:InstanceNode) where f is not null
-        with f
+        optional match (i)-[b:BUSINESS{key:$2}]->(f:InstanceNode)
+        with f where f is not null
         return f.beginTime
     """)
     LocalDateTime queryInstanceBeginTime(String processName, Integer version, String businessKey);

@@ -3,6 +3,7 @@ package com.nf.neoflow.service;
 import com.nf.neoflow.component.BaseUserChoose;
 import com.nf.neoflow.component.NeoCacheManager;
 import com.nf.neoflow.component.NeoLockManager;
+import com.nf.neoflow.config.NeoFlowConfig;
 import com.nf.neoflow.constants.NodeLocationType;
 import com.nf.neoflow.dto.user.UserBaseInfo;
 import com.nf.neoflow.dto.version.*;
@@ -13,6 +14,7 @@ import com.nf.neoflow.repository.VersionRepository;
 import com.nf.neoflow.utils.JacksonUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -38,12 +40,13 @@ public class VersionService {
     private final BaseUserChoose userChoose;
     private final NeoLockManager lockManager;
     private final NeoCacheManager cacheManager;
+    private final NeoFlowConfig config;
 
 
     /**
      * 查询流程版本列表
      * @param form 查询表单
-     * @return
+     * @return Page<VersionListDto>
      */
     public Page<VersionListDto> versionList(VersionListQueryForm form) {
         Sort sort;
@@ -187,6 +190,19 @@ public class VersionService {
             //自检基本属性
             node.check();
 
+            //候选人
+            if (node.getAutoInterval() == null && !Objects.equals(config.getInitiatorFlag(), node.getOperationType())) {
+                if (CollectionUtils.isEmpty(node.getOperationCandidateInfo())) {
+                    throw new NeoProcessException("节点候选人不能为空");
+                }
+                for (UserBaseInfo userBaseInfo : node.getOperationCandidateInfo()) {
+                    if (StringUtils.isBlank(userBaseInfo.getId()) || StringUtils.isBlank(userBaseInfo.getName())) {
+                        throw new NeoProcessException("节点候选人信息缺失");
+                    }
+                }
+            }
+
+            //uid
             if (!nodeUidSet.add(node.getNodeUid())) {
                 throw new NeoProcessException(String.format("节点uid重复：%s", node.getNodeUid()));
             }
