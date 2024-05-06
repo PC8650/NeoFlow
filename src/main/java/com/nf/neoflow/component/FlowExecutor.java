@@ -590,6 +590,7 @@ public class FlowExecutor {
         if (canCycle(form)) {
             //获取开始节点实例，退回发起人
             next = getInstanceInitiateNode(form);
+            next.setOperationType(config.getInitiatorFlag());
             autoNextRightNow = false;
         }else {
             //结束流程

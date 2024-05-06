@@ -40,9 +40,10 @@ public class NeoFlowConfig {
 
     /**
      * 发起人标识，表示该节点候选人为流程发起人
+     * 默认 0
      * 配合 {@link com.nf.neoflow.models.ModelNode ModelNode}、{@link com.nf.neoflow.models.InstanceNode InstanceNode} 的 operationType 字段
      */
-    private int initiatorFlag;
+    private int initiatorFlag = 0;
 
 
     //锁 Lock
@@ -68,11 +69,13 @@ public class NeoFlowConfig {
 
     /**
      * 默认缓存策略初始化容量
+     * 默认 50
      */
     private int initCacheCount = 50;
 
     /**
      * 默认缓存策略最大容量
+     * 默认 500
      */
     private int maxCapacityCount = 500;
 
@@ -83,6 +86,7 @@ public class NeoFlowConfig {
 
     /**
      * 默认缓存策略下统计缓存过期时间，单位：秒
+     * 默认 30
      */
     private long statisticExpire = 30;
 
