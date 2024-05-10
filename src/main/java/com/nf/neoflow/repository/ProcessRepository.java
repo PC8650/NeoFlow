@@ -2,12 +2,14 @@ package com.nf.neoflow.repository;
 
 import com.nf.neoflow.dto.process.ActiveVersionHistoryDto;
 import com.nf.neoflow.dto.process.ProcessActiveStatusDto;
+import com.nf.neoflow.dto.process.QueryProcessStatisticsDto;
 import com.nf.neoflow.models.Process;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -29,8 +31,6 @@ public interface ProcessRepository extends Neo4jRepository<Process,Long> {
      * 查询流程列表
      * @param name 流程名称
      * @param createBy 创建人唯一标识
-     * @param offset 分页偏移量
-     * @param pageSize 分页大小
      * @param pageable 分页对象
      * @return 流程列表
      */
@@ -40,7 +40,7 @@ public interface ProcessRepository extends Neo4jRepository<Process,Long> {
         and ($createBy is null or $createBy = '' or p.createBy = $createBy)
         with p, p.createTime as createTime
         :#{orderBy(#pageable)}
-        skip $offset limit $pageSize
+        skip :#{#pageable.offset} limit :#{#pageable.pageSize}
         return p.name as name, p.activeVersion as activeVersion,
         createTime, p.updateTime as updateTime
     """,
@@ -50,7 +50,7 @@ public interface ProcessRepository extends Neo4jRepository<Process,Long> {
         and ($createBy is null or $createBy = '' or p.createBy = $createBy)
         return count(p)
     """)
-    Page<Process> queryProcessList(String name, String createBy, Long offset, Integer pageSize, Pageable pageable);
+    Page<Process> queryProcessList(String name, String createBy, Pageable pageable);
 
     /**
      * 变更流程启用状态
@@ -115,4 +115,53 @@ public interface ProcessRepository extends Neo4jRepository<Process,Long> {
         localDateTime(replace(result.time, ' ', 'T')) as activeTime
     """)
     List<ActiveVersionHistoryDto> activeVersionHistory(String name);
+
+    /**
+     * 流程统计查询
+     * @param name 流程名称
+     * @param version 版本号
+     * @param beginStart 流程开始时间起始
+     * @param beginEnd 流程开始时间结束
+     * @param endStart 流程结束时间起始
+     * @param endEnd 流程结束时间结束
+     * @param pending 最低流程进行数
+     * @param complete 最低流程完成数
+     * @param rejected 最低流程拒绝数
+     * @param terminated 最低流程终止数
+     * @param total 最低流程总数
+     * @return 流程统计结果
+     */
+    @Query("""
+        match (p:Process) where ($name is null or $name = '' or p.name contains $name)
+        optional match (p)-[:VERSION]->(v:Version)-[:INSTANCE]->(i:Instance) where ($version is null or v.version = $version)
+        optional match (i)-[b:BUSINESS]->(:InstanceNode)
+        where (
+            (($beginStart is null or date(b.beginTime) >= $beginStart) and ($beginEnd is null or date(b.beginTime) <= $beginEnd))
+            and
+            (($endStart is null or date(b.endTime) >= $endStart) and ($endEnd is null or date(b.endTime) <= $endEnd))
+        )
+        with p, v,
+        {
+            version: v.version,
+            pending: sum(case when b.status = 1 then 1 else 0 end),
+            complete: sum(case when b.status = 2 then 1 else 0 end),
+            rejected: sum(case when b.status = 3 then 1 else 0 end),
+            terminated: sum(case when b.status = 3 then 1 else 0 end),
+            total: count(b)
+        } as vi
+        with p, collect(vi) as version,
+        sum(vi.pending) as pending, sum(vi.complete) as complete, sum(vi.rejected) as rejected, sum(vi.terminated) as terminated, sum(vi.total) as total
+        where (
+            ($pending is null or pending >= $pending) and ($complete is null or complete >= $complete) and
+            ($rejected is null or rejected >= $rejected) and ($terminated is null or terminated >= $terminated) and
+            ($total is null or total >= $total)
+        )
+        return p.name as name, pending, complete, rejected, terminated, total, version
+        order by p.createTime
+    """)
+    List<QueryProcessStatisticsDto> queryProcessForStatistics(String name, Integer version,
+                                                              LocalDate beginStart, LocalDate beginEnd,
+                                                              LocalDate endStart, LocalDate endEnd,
+                                                              Long pending, Long complete, Long rejected,
+                                                              Long terminated,Long total);
 }

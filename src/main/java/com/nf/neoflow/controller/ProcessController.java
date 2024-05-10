@@ -50,8 +50,14 @@ public class ProcessController {
 
     @ApiOperation("变更流程启用版本")
     @GetMapping("/activeHistory")
-    @ApiImplicitParam(name = "name", value = "流程名称", required = true, dataType = "String", paramType = "query")
     public ResponseEntity<Result<List<ActiveVersionHistoryDto>>> activeVersionHistory(@RequestParam String name) {
         return ResponseEntity.ok(Result.success(processService.activeVersionHistory(name)));
     }
+
+    @ApiOperation("流程统计查询")
+    @PostMapping("/statistics")
+    public ResponseEntity<Result<List<QueryProcessStatisticsDto>>> QueryProcessStatistics(@RequestBody QueryProcessStatisticsForm form) {
+        return ResponseEntity.ok(Result.success(processService.queryProcessForStatistics(form)));
+    }
+
 }

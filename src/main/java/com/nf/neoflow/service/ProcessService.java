@@ -66,7 +66,7 @@ public class ProcessService {
             sort = Sort.by(Sort.Direction.ASC,"createTime");
         }
         Pageable pageable = PageRequest.of(form.getPageNumber()-1, form.getPageSize(), sort);
-        return processRepository.queryProcessList(form.getName(), form.getCreateBy(), pageable.getOffset(), pageable.getPageSize(), pageable);
+        return processRepository.queryProcessList(form.getName(), form.getCreateBy(), pageable);
     }
 
     /**
@@ -134,6 +134,17 @@ public class ProcessService {
 
         cacheManager.setCache(CacheEnums.P_A_V_H.getType(), name, activeVersionHistoryDtos);
         return activeVersionHistoryDtos;
+    }
+
+    /**
+     * 流程统计查询
+     * @param form 表单
+     * @return List<QueryProcessStatisticsDto>
+     */
+    public List<QueryProcessStatisticsDto> queryProcessForStatistics(QueryProcessStatisticsForm form) {
+        return processRepository.queryProcessForStatistics(form.getName(), form.getVersion(),
+                form.getBeginStart(), form.getBeginEnd(), form.getEndStart(), form.getEndEnd(),
+                form.getPending(), form.getComplete(), form.getRejected(), form.getTerminated(), form.getTotal());
     }
 
 }

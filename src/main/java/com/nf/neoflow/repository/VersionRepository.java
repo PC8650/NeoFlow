@@ -21,12 +21,18 @@ import java.util.Set;
  */
 public interface VersionRepository extends Neo4jRepository<Version,Long> {
 
+    /**
+     * 查询流程版本列表
+     * @param processName 流程名称
+     * @param pageable 分页对象
+     * @return 流程版本列表
+     */
     @Query(value = """
         match (:Process{name:$0})-[:VERSION]->(v:Version)
         optional match (v)<-[:ITERATE]-(i:Version)
         with v, v.createTime as createTime, i.version as iterateFrom
         :#{orderBy(#pageable)}
-        skip $offset limit $pageSize
+        skip :#{#pageable.offset} limit :#{#pageable.pageSize}
         return $0 as processName, v.version as version, iterateFrom, v.cycle as cycle,
         v.createBy as createBy, v.createByName as createByName, createTime
     """,
@@ -34,7 +40,7 @@ public interface VersionRepository extends Neo4jRepository<Version,Long> {
         match (:Process{name:$0})-[:VERSION]->(v:Version)
         return count(v)
     """)
-    Page<VersionListDto> queryVersionList(String processName, Long offset, Integer pageSize, Pageable pageable);
+    Page<VersionListDto> queryVersionList(String processName, Pageable pageable);
 
     /**
      * 查询流程版本视图

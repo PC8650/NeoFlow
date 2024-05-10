@@ -56,7 +56,7 @@ public class VersionService {
             sort = Sort.by(Sort.Direction.ASC,"createTime");
         }
         Pageable pageable = PageRequest.of(form.getPageNumber()-1, form.getPageSize(), sort);
-        return versionRepository.queryVersionList(form.getProcessName(), pageable.getOffset(), form.getPageSize(), pageable);
+        return versionRepository.queryVersionList(form.getProcessName(), pageable);
     }
 
     /**
