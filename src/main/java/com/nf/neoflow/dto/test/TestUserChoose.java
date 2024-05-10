@@ -32,6 +32,14 @@ public class TestUserChoose implements UserChoose {
     }
 
     @Override
+    public List<UserBaseInfo> getCandidateRange(UserBaseInfo currentUser) {
+        UserBaseInfo userBaseInfo = new UserBaseInfo();
+        userBaseInfo.setId("2");
+        userBaseInfo.setName("张三");
+        return List.of(userBaseInfo);
+    }
+
+    @Override
     public List<Object> getCandidateList() {
         return null;
     }

@@ -11,7 +11,7 @@ import java.util.Map;
  * @author PC8650
  */
 @Data
-public class QueryProcessStatisticsDto {
+public class ProcessQueryStatisticsDto {
 
     @ApiModelProperty("流程名称")
     private String name;

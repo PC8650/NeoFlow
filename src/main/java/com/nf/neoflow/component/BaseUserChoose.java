@@ -1,24 +1,28 @@
 package com.nf.neoflow.component;
 
 import com.nf.neoflow.config.NeoFlowConfig;
+import com.nf.neoflow.constants.QueryForOperatorType;
 import com.nf.neoflow.dto.user.UserBaseInfo;
 import com.nf.neoflow.exception.NeoUserException;
 import com.nf.neoflow.interfaces.UserChoose;
-import lombok.Data;
+import com.nf.neoflow.utils.JacksonUtils;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * 获取用户
  * @author PC8650
  */
-@Data
 @Component
+@RequiredArgsConstructor
 public class BaseUserChoose {
 
     private final NeoFlowConfig config;
@@ -26,6 +30,9 @@ public class BaseUserChoose {
     @Autowired
     @Lazy
     private UserChoose userChooseService;
+
+    private final String luceneTemplate = "\\{\"id\"\\:\"%s\" AND \"name\"\\:\"%s\"\\}";
+    private final String luceneSpecialReplaceRegex = "([+\\-!(){}\\[\\]^\"~*?:\\\\/]|&&|\\|\\|)";
 
     /**
      * 根据模型节点获取实际候选人
@@ -86,6 +93,38 @@ public class BaseUserChoose {
             throw new NeoUserException("参数错误");
         }
         return null;
+    }
+
+    /**
+     * 获取当前用户涉及候选范围
+     * @param userId 用户id
+     * @param username 用户名
+     * @param queryType 查询类型：1-发起，2-待办，3-已办
+     * @return 符合lucene查询语法的String / 当前用户信息json
+     */
+    public String getCandidateRange(String userId, String username, Integer queryType) {
+        //校验获取当前用户
+        UserBaseInfo currentUser = user(userId, username);
+        if (currentUser == null) {
+            currentUser = new UserBaseInfo(userId, username);
+        }
+
+        //待办，获取当前用户涉及的候选人范围
+        if (QueryForOperatorType.PENDING.equals(queryType)) {
+            List<UserBaseInfo> candidateRange = userChooseService.getCandidateRange(currentUser);
+            if (CollectionUtils.isEmpty(candidateRange)) {
+                throw new NeoUserException("当前用户信息没有涉及的候选人范围");
+            }
+            //转换成符合lucene查询语法的String
+            return candidateRange.stream()
+                    .map(userBaseInfo -> String.format(luceneTemplate,
+                            userBaseInfo.getId().replaceAll(luceneSpecialReplaceRegex,"\\\\$1"),
+                            userBaseInfo.getName().replaceAll(luceneSpecialReplaceRegex,"\\\\$1")))
+                    .collect(Collectors.joining(" OR "));
+        }
+
+        //其他，当前用户信息json
+        return JacksonUtils.toJson(currentUser);
     }
 
     /**

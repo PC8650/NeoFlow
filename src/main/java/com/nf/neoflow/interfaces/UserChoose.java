@@ -38,6 +38,16 @@ public interface UserChoose {
     Boolean checkCandidateUser(Integer operationType, UserBaseInfo operationUser, List<UserBaseInfo> candidate);
 
     /**
+     * 待办列表获取候选人范围
+     * 结合当前用户和实际业务涉及到的节点操作类型，获取在所有节点操作类型范围内的候选信息
+     * 假设业务中定义了[用户、部门]两种节点操作类型，且节点候选人直接设置的为 用户信息、部门信息
+     * 则需要返回 [当前用户信息，当前用户所属部门信息]
+     * @param currentUser 当前用户
+     * @return List<UserBaseInfo> 例如[当前用户信息，当前用户所属部门信息 ...]
+     */
+    List<UserBaseInfo> getCandidateRange(UserBaseInfo currentUser);
+
+    /**
      * 定义流程模型时，获取候选人列表
      * @return List<Object>
      */

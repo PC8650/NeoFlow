@@ -11,7 +11,7 @@ import java.time.LocalDate;
  * 流程统计查询表单
  */
 @Data
-public class QueryProcessStatisticsForm {
+public class ProcessQueryStatisticsForm {
 
     @ApiModelProperty("流程名称")
     private String name;

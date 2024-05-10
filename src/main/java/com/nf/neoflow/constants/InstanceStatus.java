@@ -25,7 +25,7 @@ public class InstanceStatus {
 
     /**
      * 已终止
-     * 意外终止
+     * 强行终止
      */
     public static final Integer TERMINATED = 4;
 }

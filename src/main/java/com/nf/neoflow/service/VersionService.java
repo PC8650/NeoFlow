@@ -12,13 +12,12 @@ import com.nf.neoflow.enums.LockEnums;
 import com.nf.neoflow.exception.NeoProcessException;
 import com.nf.neoflow.repository.VersionRepository;
 import com.nf.neoflow.utils.JacksonUtils;
+import com.nf.neoflow.utils.PageUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -49,13 +48,7 @@ public class VersionService {
      * @return Page<VersionListDto>
      */
     public Page<VersionListDto> versionList(VersionListQueryForm form) {
-        Sort sort;
-        if (form.getDesc()) {
-            sort = Sort.by(Sort.Direction.DESC,"createTime");
-        }else {
-            sort = Sort.by(Sort.Direction.ASC,"createTime");
-        }
-        Pageable pageable = PageRequest.of(form.getPageNumber()-1, form.getPageSize(), sort);
+        Pageable pageable = PageUtils.initPageable(form.getPageNumber()-1, form.getPageSize(), "createTime", form.getDesc());
         return versionRepository.queryVersionList(form.getProcessName(), pageable);
     }
 

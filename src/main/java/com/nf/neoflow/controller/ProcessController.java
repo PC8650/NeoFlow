@@ -5,7 +5,6 @@ import com.nf.neoflow.dto.response.Result;
 import com.nf.neoflow.models.Process;
 import com.nf.neoflow.service.ProcessService;
 import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -56,7 +55,7 @@ public class ProcessController {
 
     @ApiOperation("流程统计查询")
     @PostMapping("/statistics")
-    public ResponseEntity<Result<List<QueryProcessStatisticsDto>>> QueryProcessStatistics(@RequestBody QueryProcessStatisticsForm form) {
+    public ResponseEntity<Result<List<ProcessQueryStatisticsDto>>> QueryProcessStatistics(@RequestBody ProcessQueryStatisticsForm form) {
         return ResponseEntity.ok(Result.success(processService.queryProcessForStatistics(form)));
     }
 

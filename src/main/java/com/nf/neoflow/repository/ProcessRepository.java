@@ -2,7 +2,8 @@ package com.nf.neoflow.repository;
 
 import com.nf.neoflow.dto.process.ActiveVersionHistoryDto;
 import com.nf.neoflow.dto.process.ProcessActiveStatusDto;
-import com.nf.neoflow.dto.process.QueryProcessStatisticsDto;
+import com.nf.neoflow.dto.process.ProcessQueryStatisticsDto;
+import com.nf.neoflow.dto.query.QueryForOperatorDto;
 import com.nf.neoflow.models.Process;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,7 +26,6 @@ public interface ProcessRepository extends Neo4jRepository<Process,Long> {
      * @return 存在返回true，否则返回false
      */
     Boolean existsProcessByName(String name);
-
 
     /**
      * 查询流程列表
@@ -159,9 +159,109 @@ public interface ProcessRepository extends Neo4jRepository<Process,Long> {
         return p.name as name, pending, complete, rejected, terminated, total, version
         order by p.createTime
     """)
-    List<QueryProcessStatisticsDto> queryProcessForStatistics(String name, Integer version,
+    List<ProcessQueryStatisticsDto> queryProcessForStatistics(String name, Integer version,
                                                               LocalDate beginStart, LocalDate beginEnd,
                                                               LocalDate endStart, LocalDate endEnd,
                                                               Long pending, Long complete, Long rejected,
-                                                              Long terminated,Long total);
+                                                              Long terminated, Long total);
+
+    /**
+     * 发起列表
+     * @param name 流程名称
+     * @param version 版本
+     * @param businessKey 业务key
+     * @param query 用户json
+     * @param instanceStatus 流程实例状态
+     * @param pageable 分页对象
+     * @return Page<QueryForOperatorDto>
+     */
+    @Query(value = """
+        match (i:Instance)-[b:BUSINESS]->(n:InstanceNode{operationBy: $3})
+        where n is not null and ($2 is null or b.key = $2) and ($4 is null or b.status = $4)
+        optional match (v:Version)-[:INSTANCE]->(i) where ($1 is null or v.version = $1)
+        optional match (p)-[:VERSION]->(v) where ($0 is null or $0 = '' or p.name contains $0)
+        with p, v, b where p is not null and v is not null and b is not null
+        return p.name as name, v.version as version,
+        b.beginTime as initiateTime, b.endTime as updateTime, b.status as status,
+        b.key as businessKey, b.num as num, b.currentNodeId as nodeId
+        :#{orderBy(#pageable)}
+        skip :#{#pageable.offset} limit :#{#pageable.pageSize}
+    """,
+    countQuery = """
+        match (i:Instance)-[b:BUSINESS]->(n:InstanceNode{operationBy: $3})
+        where n is not null and ($2 is null or b.key = $2) and ($4 is null or b.status = $4)
+        optional match (v:Version)-[:INSTANCE]->(i) where ($1 is null or v.version = $1)
+        optional match (p)-[:VERSION]->(v) where ($0 is null or $0 = '' or p.name contains $0)
+        with n where p is not null and v is not null and b is not null
+        return count(n)
+    """)
+    Page<QueryForOperatorDto> queryForOperatorInitiate(String name, Integer version, String businessKey, String query, Integer instanceStatus, Pageable pageable);
+
+    /**
+     * 待办列表
+     * @param name 流程名称
+     * @param version 版本
+     * @param businessKey 业务key
+     * @param query lucene查询语句
+     * @param pageable 分页对象
+     * @return Page<QueryForOperatorDto>
+     */
+    @Query(value = """
+        call db.index.fulltext.queryRelationships('BUSINESS_fullText_oc',$3) yield relationship
+        with relationship as b where ($2 is null or b.key = $2) and b.status = 1
+        match (v:Version)-[:INSTANCE]->(:Instance)-[b]->(:InstanceNode) where ($1 is null or v.version = $1)
+        optional match (p)-[:VERSION]->(v) where ($0 is null or $0 = '' or p.name contains $0)
+        with p, v, b where p is not null and v is not null and b is not null
+        return p.name as name, v.version as version,
+        b.beginTime as initiateTime, b.endTime as updateTime,
+        b.key as businessKey, b.num as num, b.currentNodeId as nodeId
+        :#{orderBy(#pageable)}
+        skip :#{#pageable.offset} limit :#{#pageable.pageSize}
+    """,
+    countQuery = """
+        call db.index.fulltext.queryRelationships('BUSINESS_fullText_oc',$3) yield relationship
+        with relationship as b where ($2 is null or b.key = $2) and b.status = 1
+        match (v:Version)-[:INSTANCE]->(:Instance)-[b]->(:InstanceNode) where ($1 is null or v.version = $1)
+        optional match (p)-[:VERSION]->(v) where ($0 is null or $0 = '' or p.name contains $0)
+        with b where p is not null and v is not null and b is not null
+        return count(b)
+    """)
+    Page<QueryForOperatorDto> queryForOperatorPending(String name, Integer version, String businessKey, String query, Pageable pageable);
+
+
+    /**
+     * 已办列表
+     * @param name 流程名称
+     * @param version 版本
+     * @param businessKey 业务key
+     * @param query 用户json
+     * @param nodeStatus 已办节点状态
+     * @param pageable 分页对象
+     * @return Page<QueryForOperatorDto>
+     */
+    @Query(value = """
+        match path = (i:Instance)-[b:BUSINESS]->(:InstanceNode)-[:NEXT*]->(n:InstanceNode{operationBy: $3})
+        where n is not null and ($2 is null or b.key = $2) and ($4 is null or n.status = $4)
+        match (v:Version)-[:INSTANCE]->(i) where ($1 is null or v.version = $1)
+        optional match (p)-[:VERSION]->(v) where ($0 is null or $0 = '' or p.name contains $0)
+        with p, v, b, size(nodes(path))-1 as nodeNum, n where p is not null and v is not null and b is not null
+        with p, v, b, max(n.endTime) as doneTime,
+        collect({num: nodeNum, nodeId: id(n), nodeName: n.name, status: n.status, doneTime: n.endTime}) as doneNodes
+        return doneNodes,
+        p.name as name, v.version as version,
+        b.beginTime as initiateTime, b.endTime as updateTime,
+        b.key as businessKey, b.num as num, b.currentNodeId as nodeId
+        :#{orderBy(#pageable)}
+        skip :#{#pageable.offset} limit :#{#pageable.pageSize}
+    """,
+    countQuery = """
+        match path = (i:Instance)-[b:BUSINESS]->(:InstanceNode)-[:NEXT*]->(n:InstanceNode{operationBy: $3})
+        where n is not null and ($2 is null or b.key = $2) and ($4 is null or n.status = $4)
+        match (v:Version)-[:INSTANCE]->(i) where ($1 is null or v.version = $1)
+        optional match (p)-[:VERSION]->(v) where ($0 is null or $0 = '' or p.name contains $0)
+        with b where p is not null and v is not null and b is not null
+        return count(distinct b)
+    """)
+    Page<QueryForOperatorDto> queryForOperatorDone(String name, Integer version, String businessKey, String query, Integer nodeStatus, Pageable pageable);
+
 }

@@ -11,12 +11,11 @@ import com.nf.neoflow.exception.NeoProcessException;
 import com.nf.neoflow.models.Process;
 import com.nf.neoflow.repository.ProcessRepository;
 import com.nf.neoflow.utils.JacksonUtils;
+import com.nf.neoflow.utils.PageUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -59,13 +58,7 @@ public class ProcessService {
      * @return Page<Process>
      */
     public Page<Process> processList(ProcessQueryForm form) {
-        Sort sort;
-        if (form.getDesc()) {
-            sort = Sort.by(Sort.Direction.DESC,"createTime");
-        }else {
-            sort = Sort.by(Sort.Direction.ASC,"createTime");
-        }
-        Pageable pageable = PageRequest.of(form.getPageNumber()-1, form.getPageSize(), sort);
+        Pageable pageable = PageUtils.initPageable(form.getPageNumber()-1, form.getPageSize(), "createTime", form.getDesc());
         return processRepository.queryProcessList(form.getName(), form.getCreateBy(), pageable);
     }
 
@@ -139,9 +132,9 @@ public class ProcessService {
     /**
      * 流程统计查询
      * @param form 表单
-     * @return List<QueryProcessStatisticsDto>
+     * @return List<ProcessQueryStatisticsDto>
      */
-    public List<QueryProcessStatisticsDto> queryProcessForStatistics(QueryProcessStatisticsForm form) {
+    public List<ProcessQueryStatisticsDto> queryProcessForStatistics(ProcessQueryStatisticsForm form) {
         return processRepository.queryProcessForStatistics(form.getName(), form.getVersion(),
                 form.getBeginStart(), form.getBeginEnd(), form.getEndStart(), form.getEndEnd(),
                 form.getPending(), form.getComplete(), form.getRejected(), form.getTerminated(), form.getTotal());
