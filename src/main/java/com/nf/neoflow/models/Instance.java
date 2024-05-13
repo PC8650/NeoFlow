@@ -1,6 +1,6 @@
 package com.nf.neoflow.models;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
 import org.springframework.data.neo4j.core.schema.Id;
@@ -18,7 +18,7 @@ public class Instance {
     @GeneratedValue
     private Long id;
 
-    @ApiModelProperty("节点名称")
+    @Schema(name = "节点名称")
     private String name;
 
 }

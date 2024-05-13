@@ -1,6 +1,6 @@
 package com.nf.neoflow.dto.process;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
@@ -12,10 +12,10 @@ import lombok.Data;
 public class ProcessCreateForm {
 
     @NotBlank(message = "流程名称不能为空")
-    @ApiModelProperty("流程名称")
+    @Schema(name = "流程名称")
     private String name;
 
-    @ApiModelProperty("创建人唯一标识")
+    @Schema(name = "创建人唯一标识", nullable = true, description = "Neo4jConfig.baseUserChoose的配置选择")
     private String createBy;
     
 }

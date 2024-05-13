@@ -2,7 +2,7 @@ package com.nf.neoflow.dto.execute;
 
 import com.nf.neoflow.dto.user.UserBaseInfo;
 import com.nf.neoflow.exception.NeoExecuteException;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -23,44 +23,47 @@ import java.util.Map;
 @Accessors(chain = true)
 public class ExecuteForm {
 
-    @ApiModelProperty("流程名称")
+    @Schema(name = "流程名称")
     @NotBlank(message = "流程名称不能为空")
     private String processName;
 
-    @ApiModelProperty("操作类型：1-发起，2-通过，3-拒绝，4-转发，5-终止")
+    @Schema(name = "操作类型", description = "1-发起，2-通过，3-拒绝，4-转发，5-终止")
     @NotNull(message = "操作类型不能为空")
     @Range(min = 1, max = 5, message = "操作类型只能为1-发起，2-通过，3-拒绝，4-转发，5-终止")
     private Integer operationType;
 
-    @ApiModelProperty("实例节点位置")
+    @Schema(name = "实例节点位置")
     private Integer num;
 
-    @ApiModelProperty("节点id")
+    @Schema(name = "节点id")
     private Long nodeId;
 
-    @ApiModelProperty("流程实例业务key")
+    @Schema(name = "流程实例业务key")
     private String businessKey;
 
-    @ApiModelProperty("版本")
+    @Schema(name = "版本")
     private Integer version;
 
-    @ApiModelProperty("操作方法")
+    @Schema(name = "操作方法")
     private String operationMethod;
 
-    @ApiModelProperty("跳转条件")
+    @Schema(name = "跳转条件")
     private Integer condition;
 
-    @ApiModelProperty("操作用户信息")
+    @Schema(name = "操作用户信息")
     private UserBaseInfo operator;
 
-    @ApiModelProperty("业务参数")
+    @Schema(name = "业务参数")
     private Map<String, Object> params;
 
-    @ApiModelProperty("转发类型，可选范围[模型节点操作类型]")
+    @Schema(name = "转发类型", description = "可选范围[模型节点操作类型]")
     private Integer forwardOperationType;
 
-    @ApiModelProperty("转发对象")
+    @Schema(name = "转发对象")
     private List<UserBaseInfo> forwardOperator;
+
+    @Schema(name = "操作备注")
+    private String operationRemark;
 
     public void baseCheck() {
         if (num == null || num < 1) {

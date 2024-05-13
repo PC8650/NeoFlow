@@ -6,7 +6,6 @@ import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import com.nf.neoflow.config.NeoFlowConfig;
 import com.nf.neoflow.enums.CacheEnums;
 import com.nf.neoflow.interfaces.CustomizationCache;
-import io.swagger.annotations.ApiModelProperty;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -268,11 +267,9 @@ public class NeoCacheManager {
      * 缓存值
      * @param filter 是否为过滤的空值，判断缓存空值情况下是否跳过后续的数据库查询
      * @param value 缓存值，在filter为true时，统一为null
-     * @param <T>
+     * @param <T> 缓存
      */
-    public record CacheValue<T>(
-            @ApiModelProperty("是否为过滤的空值") Boolean filter,
-            @ApiModelProperty("缓存") T value) {
+    public record CacheValue<T>(Boolean filter, T value) {
         public CacheValue(Boolean filter) {
             this(filter, null);
         }
@@ -285,11 +282,7 @@ public class NeoCacheManager {
      * @param defaultRule 默认策略规则
      * @param customRule 自定义策略规则
      */
-    public record CacheType(
-            @ApiModelProperty("缓存类型") String type,
-            @ApiModelProperty("信息") String info,
-            @ApiModelProperty("默认策略规则") String defaultRule,
-            @ApiModelProperty("自定义策略规则") String customRule) {
+    public record CacheType(String type, String info, String defaultRule, String customRule) {
         public CacheType(CacheEnums ce) {
             this(ce.getType(), ce.getInfo(), ce.getDefaultRule(), ce.getCustomRule());
         }
@@ -308,17 +301,10 @@ public class NeoCacheManager {
      * @param evictionCount 驱逐缓存数量
      * @param estimatedKeys 估计存在的key
      */
-    public record CacheStatistics(
-            @ApiModelProperty("缓存类型") CacheType cacheType,
-            @ApiModelProperty("估计数量") Long estimatedSize,
-            @ApiModelProperty("请求次数") Long requestCount,
-            @ApiModelProperty("命中率") Double hitRate,
-            @ApiModelProperty("未命中率") Double missRate,
-            @ApiModelProperty("加载新值成功的次数") Long loadSuccessCount,
-            @ApiModelProperty("加载新值失败的次数") Long loadFailureCount,
-            @ApiModelProperty("加载操作的平均时间(ms)") Double averageLoadPenalty,
-            @ApiModelProperty("驱逐缓存数量") Long evictionCount,
-            @ApiModelProperty("估计存在的key") Set<Object> estimatedKeys) {
+    public record CacheStatistics(CacheType cacheType, Long estimatedSize,
+                                  Long requestCount, Double hitRate, Double missRate,
+                                  Long loadSuccessCount, Long loadFailureCount,
+                                  Double averageLoadPenalty, Long evictionCount, Set<Object> estimatedKeys) {
 
         public CacheStatistics(CacheEnums ce, CacheStats stats, Set<Object> estimatedKeys) {
             this(new CacheType(ce), (long) estimatedKeys.size(),

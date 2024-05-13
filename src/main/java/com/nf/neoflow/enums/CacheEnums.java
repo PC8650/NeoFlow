@@ -1,7 +1,6 @@
 package com.nf.neoflow.enums;
 
-import com.nf.neoflow.utils.JacksonUtils;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -26,15 +25,24 @@ public enum CacheEnums {
     F_I_C("f_i_c" ,"流程实例能否退回", "业务key", "f_i_c+分隔符+业务key"),
     I_I_N("i_i_n" ,"流程实例发起节点", "业务key", "i_i_n+分隔符+业务key"),
     I_B_T("i_b_t","流程实例开始时间","业务key","i_b_t+分隔符+业务key"),
+    I_O_H("i_o_h","流程实例操作历史","业务key 或 业务key+分隔符+节点位置","i_o_h+分隔符+业务key 或 i_o_h+分隔符+业务key+分隔符+节点位置"),
     C_S("c_s", "缓存统计", "all", "");
 
-    @ApiModelProperty("缓存类型")
+    /**
+     * 缓存类型
+     */
     private final String type;
-    @ApiModelProperty("信息")
+    /**
+     * 信息
+     */
     private final String info;
-    @ApiModelProperty("默认策略规则")
+    /**
+     * 默认策略规则
+     */
     private final String defaultRule;
-    @ApiModelProperty("自定义策略规则")
+    /**
+     * 自定义策略规则
+     */
     private final String customRule;
 
     public static List<String> filterStatistics() {

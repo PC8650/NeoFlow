@@ -1,6 +1,6 @@
 package com.nf.neoflow.dto.process;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -13,19 +13,19 @@ import lombok.Data;
 @Data
 public class ProcessChangeVersionForm {
 
-    @ApiModelProperty("流程名称")
+    @Schema(name = "流程名称")
     @NotBlank(message = "流程名称不能为空")
     private String name;
 
-    @ApiModelProperty("更换的版本号")
+    @Schema(name = "更换的版本号", minimum = "1")
     @NotNull(message = "版本号不能为空")
     @Min(value = 1, message = "版本号不能小于1")
     private Integer activeVersion;
 
-    @ApiModelProperty("更新人标识")
+    @Schema(name = "更新人标识", nullable = true, description = "Neo4jConfig.baseUserChoose的配置选择")
     private String updateBy;
 
-    @ApiModelProperty("更新人名称")
+    @Schema(name = "更新人名称", nullable = true, description = "Neo4jConfig.baseUserChoose的配置选择")
     private String updateByName;
 
 }

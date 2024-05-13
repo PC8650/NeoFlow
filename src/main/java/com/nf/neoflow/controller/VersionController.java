@@ -3,15 +3,15 @@ package com.nf.neoflow.controller;
 import com.nf.neoflow.dto.response.Result;
 import com.nf.neoflow.dto.version.*;
 import com.nf.neoflow.service.VersionService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@Api("Version 版本")
+@Tag(name = "Version 版本")
 @RestController
 @AllArgsConstructor
 @RequestMapping("${neo.prefix:/neo}/version")
@@ -19,25 +19,25 @@ public class VersionController {
 
     private final VersionService versionService;
 
-    @ApiOperation("查询流程版本列表")
+    @Operation(description = "查询流程版本列表")
     @GetMapping("/list")
     public ResponseEntity<Result<Page<VersionListDto>>> queryList(@Valid @ModelAttribute VersionListQueryForm form) {
         return ResponseEntity.ok(Result.success(versionService.versionList(form)));
     }
 
-    @ApiOperation("查询流程版本视图")
+    @Operation(description = "查询流程版本视图")
     @GetMapping("/view")
     public ResponseEntity<Result<VersionModelViewDto>> queryList(@Valid @ModelAttribute VersionViewQueryForm form) {
         return ResponseEntity.ok(Result.success(versionService.versionView(form)));
     }
 
-    @ApiOperation("查询流程版本迭代")
+    @Operation(description = "查询流程版本迭代")
     @GetMapping("/iterate")
     public ResponseEntity<Result<?>> iterate(@Valid @ModelAttribute IterateTreeQueryForm form) {
         return ResponseEntity.ok(Result.success(versionService.versionIterateTree(form)));
     }
 
-    @ApiOperation("创建流程版本模型")
+    @Operation(description = "创建流程版本模型")
     @PostMapping("/create")
     public ResponseEntity<Result<?>> createVersion(@Valid @RequestBody VersionModelCreateForm form) {
         versionService.createVersion(form);

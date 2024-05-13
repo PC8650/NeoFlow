@@ -1,6 +1,6 @@
 package com.nf.neoflow.dto.process;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -12,15 +12,15 @@ import lombok.Data;
 @Data
 public class ProcessChangeActiveForm {
 
-    @ApiModelProperty("流程名称")
+    @Schema(name = "流程名称")
     @NotBlank(message = "流程名称不能为空")
     private String name;
 
-    @ApiModelProperty("更改的状态：true-启用，false-关闭")
+    @Schema(name = "更改的状态", description = "true-启用，false-关闭")
     @NotNull(message = "启用状态不能为空")
     private Boolean active;
 
-    @ApiModelProperty("更新人标识")
+    @Schema(name = "更新人标识", nullable = true, description = "Neo4jConfig.baseUserChoose的配置选择")
     private String updateBy;
 
 }

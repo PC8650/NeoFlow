@@ -1,6 +1,6 @@
 package com.nf.neoflow.dto.version;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -13,9 +13,9 @@ import java.util.List;
 @Data
 public class IterateTreeNodeGraphic {
 
-    @ApiModelProperty("版本节点")
+    @Schema(name = "版本节点")
     private List<IterateTreeNode> nodes;
 
-    @ApiModelProperty("迭代关系")
+    @Schema(name = "迭代关系")
     private List<ProcessNodeEdge> edges;
 }

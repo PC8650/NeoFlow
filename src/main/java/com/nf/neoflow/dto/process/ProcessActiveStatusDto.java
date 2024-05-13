@@ -1,6 +1,6 @@
 package com.nf.neoflow.dto.process;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -10,14 +10,15 @@ import lombok.Data;
 @Data
 public class ProcessActiveStatusDto {
 
-    @ApiModelProperty("流程名称")
+    @Schema(name = "流程名称")
     private String name;
 
-    @ApiModelProperty("是否启用")
+    @Schema(name = "是否启用")
     private Boolean active;
 
-    @ApiModelProperty("启用版本")
+    @Schema(name = "启用版本")
     private Integer activeVersion;
 
+    @Schema(name = "备注信息")
     private String remark;
 }

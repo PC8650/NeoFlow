@@ -2,7 +2,7 @@ package com.nf.neoflow.models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.nf.neoflow.constants.TimeFormat;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
 import org.springframework.data.neo4j.core.schema.Id;
@@ -22,22 +22,22 @@ public class Version {
     @GeneratedValue
     private Long id;
 
-    @ApiModelProperty("版本号")
+    @Schema(name = "版本号")
     private Integer version;
 
-    @ApiModelProperty("允许退回发起的次数")
+    @Schema(name = "允许退回发起的次数")
     private Integer cycle = 0;
 
-    @ApiModelProperty("终止方法，对应的@ProcessMethod")
+    @Schema(name = "终止方法", description = "对应的@ProcessMethod")
     private String terminatedMethod;
 
-    @ApiModelProperty("创建人标识")
+    @Schema(name = "创建人标识")
     private String createBy;
 
-    @ApiModelProperty("创建人名称")
+    @Schema(name = "创建人名称")
     private String createByName;;
 
-    @ApiModelProperty("创建时间")
+    @Schema(name = "创建时间")
     @JsonFormat(pattern = TimeFormat.DATE_TIME)
     private LocalDateTime createTime;
 

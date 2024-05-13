@@ -1,7 +1,7 @@
 package com.nf.neoflow.dto.version;
 
 import com.nf.neoflow.exception.NeoProcessException;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
@@ -15,19 +15,19 @@ import java.util.List;
 @Data
 public class ProcessNodeEdge {
 
-    @ApiModelProperty("开始节点标识")
+    @Schema(name = "开始节点标识")
     String startNode;
 
-    @ApiModelProperty("结束节点标识")
+    @Schema(name = "结束节点标识")
     String endNode;
 
-    @ApiModelProperty("条件")
+    @Schema(name = "条件")
     Integer condition;
 
-    @ApiModelProperty("起始坐标")
+    @Schema(name = "起始坐标")
     List<Double> startLocation;
 
-    @ApiModelProperty("结束坐标")
+    @Schema(name = "结束坐标")
     List<Double> endLocation;
 
     public void check() {

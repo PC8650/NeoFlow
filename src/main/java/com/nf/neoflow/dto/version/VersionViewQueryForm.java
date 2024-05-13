@@ -1,6 +1,6 @@
 package com.nf.neoflow.dto.version;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
@@ -11,10 +11,10 @@ import lombok.Data;
 @Data
 public class VersionViewQueryForm {
 
-    @ApiModelProperty("流程名称")
+    @Schema(name = "流程名称")
     @NotBlank(message = "流程名称不能为空")
     private String processName;
 
-    @ApiModelProperty("版本号")
+    @Schema(name = "版本号")
     private Integer version;
 }

@@ -3,8 +3,8 @@ package com.nf.neoflow.controller;
 import com.nf.neoflow.dto.execute.ExecuteForm;
 import com.nf.neoflow.dto.response.Result;
 import com.nf.neoflow.service.ExecuteService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 
-@Api("执行流程")
+@Tag(name = "执行流程")
 @RestController
 @AllArgsConstructor
 @RequestMapping("${neo.prefix:/neo}")
@@ -20,14 +20,14 @@ public class ExecuteController {
 
     private final ExecuteService executeService;
 
-    @ApiOperation("执行流程")
+    @Operation(description = "执行流程")
     @PostMapping("/execute")
     public ResponseEntity<Result<?>> execute(@Valid @RequestBody ExecuteForm form) {
         executeService.execute(form);
         return ResponseEntity.ok(Result.success());
     }
 
-    @ApiOperation("执行自动节点")
+    @Operation(description = "执行自动节点")
     @GetMapping("/auto_execute")
     public ResponseEntity<Result<?>> autoExecute(@RequestParam(required = false) LocalDate date) {
         executeService.executeAutoNode(date);

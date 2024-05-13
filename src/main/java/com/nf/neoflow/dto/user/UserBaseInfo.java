@@ -1,7 +1,7 @@
 package com.nf.neoflow.dto.user;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,9 +16,9 @@ import lombok.NoArgsConstructor;
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public class UserBaseInfo {
 
-    @ApiModelProperty("唯一标识")
+    @Schema(name = "唯一标识")
     private String id;
 
-    @ApiModelProperty("名称")
+    @Schema(name = "名称")
     private String name;
 }

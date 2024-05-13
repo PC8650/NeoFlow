@@ -1,6 +1,6 @@
 package com.nf.neoflow.models;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
 import org.springframework.data.neo4j.core.schema.Id;
@@ -21,43 +21,43 @@ public class ModelNode {
     @GeneratedValue
     private Long id;
 
-    @ApiModelProperty("创建模型时前端生成的uid")
+    @Schema(name = "创建模型时前端生成的uid")
     private String nodeUid;
 
-    @ApiModelProperty("节点名称")
+    @Schema(name = "节点名称")
     private String name;
 
-    @ApiModelProperty("节点标识，可用于需对特殊节点做处理的业务")
+    @Schema(name = "节点标识", description = "可用于需对特殊节点做处理的业务")
     private String identity;
 
-    @ApiModelProperty("节点操作类型，根据业务自定义")
+    @Schema(name = "节点操作类型", description = "根据业务自定义")
     private Integer operationType;
 
-    @ApiModelProperty("指定节点操作候选人，配合operationType自定义")
+    @Schema(name = "指定节点操作候选人", description = "配合operationType自定义")
     private String operationCandidate;
 
-    @ApiModelProperty("接收传递候选人信息")
+    @Schema(name = "接收传递候选人信息")
     private List<Map<String,Object>> operationCandidateInfo;
 
-    @ApiModelProperty("节点操作方法，对应的@ProcessMethod")
+    @Schema(name = "节点操作方法", description = "对应的@ProcessMethod")
     private String operationMethod;
 
-    @ApiModelProperty("是否只通过才执行方法")
+    @Schema(name = "是否只通过才执行方法")
     private Boolean onlyPassExecute;
 
-    @ApiModelProperty("自动执行间隔，只精确到日期（x 天后，x <= 0 立即自动执行），有值将忽略操作类型和候选人")
+    @Schema(name = "自动执行间隔",description = "只精确到日期（x 天后，x <= 0 立即自动执行），有值将忽略操作类型和候选人")
     private Integer autoInterval;
 
-    @ApiModelProperty("默认通过时的跳转条件，跳转条件缺失时默认选择改值，配合自动节点")
+    @Schema(name = "默认通过时的跳转条件", description = "跳转条件缺失时默认选择改值，配合自动节点")
     private Integer defaultPassCondition;
 
-    @ApiModelProperty("节点位置：1-开始，2-中间，3-完成，4-终止")
+    @Schema(name = "节点位置", description = "1-开始，2-中间，3-完成，4-终止")
     private Integer location;
 
-    @ApiModelProperty("x坐标")
+    @Schema(name = "x坐标")
     private Double x;
 
-    @ApiModelProperty("y坐标")
+    @Schema(name = "y坐标")
     private Double y;
 
     /**

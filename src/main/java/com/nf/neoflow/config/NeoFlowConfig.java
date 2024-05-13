@@ -34,6 +34,7 @@ public class NeoFlowConfig {
 
     /**
      * 是否开启自带用户选择接口，用于在流程 "创建"、"修改"、"发起"、"审批" 操作中获取当前用户
+     * 否则默认从前端传递
      * {@link com.nf.neoflow.interfaces.UserChoose UserChoose}
      */
     private Boolean baseUserChoose = false;

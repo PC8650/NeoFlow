@@ -1,6 +1,6 @@
 package com.nf.neoflow.dto.execute;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -10,19 +10,19 @@ import lombok.Data;
 @Data
 public class NodeQueryDto<T> {
 
-    @ApiModelProperty("节点")
+    @Schema(name = "节点")
     T node;
 
-    @ApiModelProperty("映射查询")
+    @Schema(name = "映射查询")
     String nodeJson;
 
-    @ApiModelProperty("上一节点状态")
+    @Schema(name = "上一节点状态")
     private Boolean before;
 
-    @ApiModelProperty("版本")
+    @Schema(name = "版本")
     Integer version;
 
-    @ApiModelProperty("版本对应的终止方法")
+    @Schema(name = "版本对应的终止方法")
     String terminatedMethod;
 
 }

@@ -7,7 +7,7 @@ package com.nf.neoflow.constants;
 public class InstanceNodeStatus {
 
     /**
-     * 待处理
+     * 待办
      */
     public static final Integer PENDING = 1;
 

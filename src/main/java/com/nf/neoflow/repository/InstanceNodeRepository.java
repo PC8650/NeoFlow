@@ -109,7 +109,8 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
             'optional match (i)-[b:BUSINESS{key:$businessKey,status:1}]->(f:InstanceNode) where f is not null
             optional match (f)-[:NEXT*0..]->(c:InstanceNode) where id(c) = $nodeId
             set c.operationBy = cMap.operationBy, c.endTime = localDateTime(cMap.endTime),
-            c.status = cMap.status, c.during = cMap.during, c.processDuring = cMap.processDuring,
+            c.status = cMap.status, c.operationRemark = cMap.operationRemark,
+            c.during = cMap.during, c.processDuring = cMap.processDuring,
             b.status = flowStatus, b.endTime = localDateTime(cMap.endTime), b.during = cMap.processDuring,
             b.operationBy = case when cMap.autoTime is null then cMap.operationBy else b.operationBy end
             return c, b',
@@ -166,7 +167,8 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
         with i, b, last(nodes(path)) as c, $cMap as cMap
         where id(c) = $nodeId
         set c.operationBy = cMap.operationBy, c.endTime = localDateTime(cMap.endTime),
-        c.status = cMap.status, c.during = cMap.during, c.processDuring = cMap.processDuring,
+        c.status = cMap.status, c.operationRemark = cMap.operationRemark,
+        c.during = cMap.during, c.processDuring = cMap.processDuring,
         b.status = $flowStatus, b.endTime = localDateTime(cMap.endTime), b.during = cMap.processDuring,
         b.operationBy = case when cMap.autoTime is null then cMap.operationBy else b.operationBy end
 

@@ -1,6 +1,6 @@
 package com.nf.neoflow.dto.version;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import org.hibernate.validator.constraints.Range;
@@ -12,12 +12,11 @@ import org.hibernate.validator.constraints.Range;
 @Data
 public class IterateTreeQueryForm {
 
-    @ApiModelProperty("流程名称")
+    @Schema(name = "流程名称")
     @NotBlank(message = "流程名称不能为空")
     private String processName;
 
-    @ApiModelProperty("""
-            查询类型，默认为1：
+    @Schema(name = "查询类型", nullable = true, defaultValue = "1", description = """
             1-非嵌套，迭代列表只包含直系迭代；
             2-嵌套，迭代列表包含非直系迭代；
             3-图，返回节点和关系

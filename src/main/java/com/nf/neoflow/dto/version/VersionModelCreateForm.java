@@ -1,6 +1,6 @@
 package com.nf.neoflow.dto.version;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
@@ -14,30 +14,30 @@ import java.util.Set;
 @Data
 public class VersionModelCreateForm {
 
-    @ApiModelProperty("流程名称")
+    @Schema(name = "流程名称")
     @NotBlank(message = "流程名称不能为空")
     private String processName;
 
-    @ApiModelProperty("迭代自版本号，空白创建则为null")
+    @Schema(name = "迭代自版本号", nullable = true, defaultValue = "空白创建则为null")
     private Integer iterateFrom;
 
-    @ApiModelProperty("拒绝后退回至发起的次数")
+    @Schema(name = "拒绝后退回至发起的次数", nullable = true, defaultValue = "0")
     private Integer cycle = 0;
 
-    @ApiModelProperty("终止方法，对应的@ProcessMethod")
+    @Schema(name = "终止方法", nullable = true, description = "对应的@ProcessMethod")
     private String terminatedMethod;
 
-    @ApiModelProperty("创建人标识")
+    @Schema(name = "创建人标识", nullable = true, description = "Neo4jConfig.baseUserChoose的配置选择")
     private String createBy;
 
-    @ApiModelProperty("创建人名称")
+    @Schema(name = "创建人名称", nullable = true, description = "Neo4jConfig.baseUserChoose的配置选择")
     private String createByName;
 
-    @ApiModelProperty("流程模型边")
+    @Schema(name = "流程模型边")
     @NotEmpty(message = "节点不能为空")
     private Set<ModelNodeDto> nodes;
 
-    @ApiModelProperty("流程模型边")
+    @Schema(name = "流程模型边")
     @NotEmpty(message = "边不能为空")
     private Set<ProcessNodeEdge> edges;
 }

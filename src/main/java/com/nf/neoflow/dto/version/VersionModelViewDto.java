@@ -2,9 +2,8 @@ package com.nf.neoflow.dto.version;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.nf.neoflow.models.ModelNode;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import lombok.Value;
 
 import java.util.Map;
 import java.util.Set;
@@ -17,28 +16,28 @@ import java.util.Set;
 @JsonInclude(value = JsonInclude.Include.ALWAYS, content = JsonInclude.Include.ALWAYS)
 public class VersionModelViewDto {
 
-    @ApiModelProperty("流程名称")
+    @Schema(name = "流程名称")
     private String processName;
 
-    @ApiModelProperty("迭代自版本号")
+    @Schema(name = "迭代自版本号")
     private Integer iterateFrom;
 
-    @ApiModelProperty("版本号")
+    @Schema(name = "版本号")
     private Integer version;
 
-    @ApiModelProperty("允许退回发起的次数")
+    @Schema(name = "允许退回发起的次数")
     private Integer cycle;
 
-    @ApiModelProperty("终止方法，对应的@ProcessMethod")
+    @Schema(name = "终止方法", description = "对应的@ProcessMethod")
     private String terminatedMethod;
 
-    @ApiModelProperty("组件模型")
+    @Schema(name = "组件模型")
     private Map<String,Object> componentModel;
 
-    @ApiModelProperty("版本节点")
+    @Schema(name = "版本节点")
     private Set<ModelNode> versionNodes;
 
-    @ApiModelProperty("版本边")
+    @Schema(name = "版本边")
     private Set<ProcessNodeEdge> versionEdges;
 
 }

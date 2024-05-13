@@ -1,6 +1,6 @@
 package com.nf.neoflow.models;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
 import org.springframework.data.neo4j.core.schema.Id;
@@ -23,55 +23,58 @@ public class InstanceNode {
     @GeneratedValue
     private Long id;
 
-    @ApiModelProperty("对应的模型节点uid")
+    @Schema(name = "对应的模型节点uid")
     private String modelNodeUid;
 
-    @ApiModelProperty("节点名称")
+    @Schema(name = "节点名称")
     private String name;
 
-    @ApiModelProperty("节点标识，可用于需对特殊节点做处理的业务")
+    @Schema(name = "节点标识", description = "可用于需对特殊节点做处理的业务")
     private String identity;
 
-    @ApiModelProperty("节点状态：1-待处理，2-同意，3-拒绝，4-转发")
+    @Schema(name = "节点状态", description = "1-待办，2-同意，3-拒绝，4-转发")
     private Integer status;
 
-    @ApiModelProperty("节点操作类型，根据业务自定义")
+    @Schema(name = "节点操作类型", description = "根据业务自定义")
     private Integer operationType;
 
-    @ApiModelProperty("指定节点操作候选人，配合operationType自定义")
+    @Schema(name = "指定节点操作候选人", description = "配合operationType自定义")
     private String operationCandidate;
 
-    @ApiModelProperty("接收传递候选人信息")
+    @Schema(name = "接收传递候选人信息")
     private List<Map<String,Object>> operationCandidateInfo;
 
-    @ApiModelProperty("节点操作方法，对应的@ProcessMethod")
+    @Schema(name = "节点操作方法", description = "对应的@ProcessMethod")
     private String operationMethod;
 
-    @ApiModelProperty("是否只通过才执行方法")
+    @Schema(name = "是否只通过才执行方法")
     private Boolean onlyPassExecute;
 
-    @ApiModelProperty("自动执行日期，有值将忽略操作类型和候选人")
+    @Schema(name = "自动执行日期", description = "有值将忽略操作类型和候选人")
     private LocalDate autoTime;
 
-    @ApiModelProperty("默认通过时的跳转条件，跳转条件缺失时默认选择改值，配合自动节点")
+    @Schema(name = "默认通过时的跳转条件", description = "跳转条件缺失时默认选择改值，配合自动节点")
     private Integer defaultPassCondition;
 
-    @ApiModelProperty("节点位置：1-开始，2-中间，3-完成，4-终止")
+    @Schema(name = "节点位置", description = "1-开始，2-中间，3-完成，4-终止")
     private Integer location;
 
-    @ApiModelProperty("实际操作人")
+    @Schema(name = "实际操作人")
     private String operationBy;
 
-    @ApiModelProperty("节点开始时间")
+    @Schema(name = "操作备注")
+    private String operationRemark;
+
+    @Schema(name = "节点开始时间")
     private LocalDateTime beginTime;
 
-    @ApiModelProperty("节点结束时间")
+    @Schema(name = "节点结束时间")
     private LocalDateTime endTime;
 
-    @ApiModelProperty("节点持续时间")
+    @Schema(name = "节点持续时间")
     private String during;
 
-    @ApiModelProperty("流程持续时间")
+    @Schema(name = "流程持续时间")
     private String ProcessDuring;
 
     /**

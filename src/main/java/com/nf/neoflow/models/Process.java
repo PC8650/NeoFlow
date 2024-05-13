@@ -2,7 +2,7 @@ package com.nf.neoflow.models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.nf.neoflow.constants.TimeFormat;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
@@ -25,29 +25,29 @@ public class Process {
     @GeneratedValue
     private Long id;
 
-    @ApiModelProperty("流程名称")
+    @Schema(name = "流程名称")
     private String name;
 
-    @ApiModelProperty("是否启用")
+    @Schema(name = "是否启用")
     private Boolean active = false;
 
-    @ApiModelProperty("启用版本")
+    @Schema(name = "启用版本")
     private Integer activeVersion;
 
-    @ApiModelProperty("版本启用历史")
+    @Schema(name = "版本启用历史")
     private List<Integer> activeHistory;
 
-    @ApiModelProperty("创建者唯一标识")
+    @Schema(name = "创建者唯一标识")
     private String createBy;
 
-    @ApiModelProperty("更新者唯一标识")
+    @Schema(name = "更新者唯一标识")
     private String updateBy;
 
-    @ApiModelProperty("创建时间")
+    @Schema(name = "创建时间")
     @JsonFormat(pattern = TimeFormat.DATE_TIME)
     private LocalDateTime createTime;
 
-    @ApiModelProperty("修改时间")
+    @Schema(name = "修改时间")
     @JsonFormat(pattern = TimeFormat.DATE_TIME)
     private LocalDateTime updateTime;
 

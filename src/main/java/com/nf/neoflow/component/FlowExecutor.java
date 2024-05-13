@@ -30,6 +30,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -478,6 +479,8 @@ public class FlowExecutor {
      */
     public UpdateResult updateInstance(InstanceNode current, InstanceNode next, ExecuteForm form,
                                        Boolean autoNextRightNow, Boolean getLock) {
+        current.setOperationRemark(form.getOperationRemark());
+        form.setOperationRemark(null);
         //计算流程持续时间
         if (!InstanceOperationType.INITIATE.equals(form.getOperationType())) {
              current.setProcessDuring(getInstanceDuring(form, current.getEndTime()));
@@ -510,6 +513,9 @@ public class FlowExecutor {
                     form.getNodeId(), form.getNum(), form.getBusinessKey(), form.getCondition(), flowStatus, cMap, nMap);
         }
         log.info("流程状态更新：流程 {}-版本 {}-key {}", form.getProcessName(), form.getVersion(), form.getBusinessKey());
+
+        //删除实例操作历史缓存i_o_h
+        cacheManager.deleteCache(CacheEnums.I_O_H.getType(), List.of(form.getBusinessKey(), cacheManager.mergeKey(form.getBusinessKey(), form.getNum().toString())));
 
         if (next != null && nextId != null) {
             next.setId(nextId);

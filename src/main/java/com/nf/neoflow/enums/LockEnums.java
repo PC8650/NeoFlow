@@ -18,9 +18,21 @@ public enum LockEnums {
     VERSION_CREATE("version_create","创建流程模型","流程模型创建中，请稍后重试","用于创建版本，建议流程名称为key"),
     FLOW_EXECUTE("flow_execute","流程执行","流程执行中，请稍后重试","用于流程执行，建议businessKey为key");
 
+    /**
+     * 锁名称
+     */
     private final String name;
+    /**
+     * 锁行日志信息
+     */
     private final String msg;
+    /**
+     * 锁错误信息
+     */
     private final String errorMsg;
+    /**
+     * 描述
+     */
     private final String desc;
 
     /**
