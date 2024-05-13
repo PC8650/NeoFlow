@@ -55,8 +55,14 @@ public class ProcessController {
 
     @Operation(description = "流程统计查询")
     @PostMapping("/statistics")
-    public ResponseEntity<Result<List<ProcessQueryStatisticsDto>>> QueryProcessStatistics(@RequestBody ProcessQueryStatisticsForm form) {
+    public ResponseEntity<Result<List<ProcessQueryStatisticsDto>>> QueryProcessStatistics(@Valid @RequestBody ProcessQueryStatisticsForm form) {
         return ResponseEntity.ok(Result.success(processService.queryProcessForStatistics(form)));
+    }
+
+    @Operation(description = "查询所有流程名称")
+    @GetMapping("/name")
+    public ResponseEntity<Result<List<String>>> queryAllProcessName() {
+        return ResponseEntity.ok(Result.success(processService.queryAllProcessName()));
     }
 
 }

@@ -1,6 +1,7 @@
 package com.nf.neoflow.dto.query;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.hibernate.validator.constraints.Range;
@@ -28,7 +29,8 @@ public class QueryForOperatorForm {
     @Schema(name = "流程名称", nullable = true)
     private String name;
 
-    @Schema(name = "流程版本", nullable = true)
+    @Schema(name = "流程版本", nullable = true, minimum = "1")
+    @Min(value = 1, message = "流程版本不能小于1")
     private Integer version;
 
     @Schema(name = "业务key", nullable = true)

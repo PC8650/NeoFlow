@@ -140,4 +140,22 @@ public class ProcessService {
                 form.getPending(), form.getComplete(), form.getRejected(), form.getTerminated(), form.getTotal());
     }
 
+    /**
+     * 查询所有流程名称
+     * @return 流程名称
+     */
+    public List<String> queryAllProcessName() {
+        String cacheType = CacheEnums.A_P_N.getType();
+        String key = "all";
+        List<String> names;
+        NeoCacheManager.CacheValue<List> cache = cacheManager.getCache(cacheType, key, List.class);
+        if (!cache.filter() && cache.value() != null) {
+            names = cache.value();
+        }else {
+            names = processRepository.queryAllProcessName();
+            cacheManager.setCache(cacheType, key, names);
+        }
+        return names;
+    }
+
 }

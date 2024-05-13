@@ -1,6 +1,5 @@
 package com.nf.neoflow.enums;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -15,6 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 public enum CacheEnums {
 
+    A_P_N("a_p_n", "所有流程名称", "all", "a_p_n+分隔符+all"),
     P_A_V_H("p_a_v_h", "流程版本启用历史", "流程名称", "p_a_v_h+分隔符+流程名称"),
     V_M("v_m", "流程版本模型", "流程名称+分隔符+版本号", "v_m+分隔符+流程名称+分隔符+版本号"),
     V_I_T("v_i_t" ,"流程版本迭代树", "流程名称", "v_i_t+分隔符+流程名称"),

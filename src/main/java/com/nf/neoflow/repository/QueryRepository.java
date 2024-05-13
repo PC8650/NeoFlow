@@ -1,6 +1,7 @@
 package com.nf.neoflow.repository;
 
 import com.nf.neoflow.dto.query.OperationHistoryDto;
+import com.nf.neoflow.dto.query.OperatorOfPendingDto;
 import com.nf.neoflow.dto.query.QueryForOperatorDto;
 import com.nf.neoflow.dto.query.QueryOfNodeIdentityDto;
 import com.nf.neoflow.models.Instance;
@@ -16,6 +17,23 @@ import java.util.List;
  * @author PC8650
  */
 public interface QueryRepository extends Neo4jRepository<Instance, Long> {
+
+    /**
+     * 询当前用户在各流程的待办数量
+     * @param name 流程名称
+     * @param version 版本
+     * @param query lucene查询语句
+     * @return List<OperatorOfPendingDto>
+     */
+    @Query("""
+        call db.index.fulltext.queryRelationships('BUSINESS_fullText_oc',$2) yield relationship
+        with relationship as b where b.status = 1
+        match (v:Version)-[:INSTANCE]->(:Instance)-[b]->(:InstanceNode) where ($1 is null or v.version = $1)
+        optional match (p)-[:VERSION]->(v) where ($0 is null or $0 = '' or p.name contains $0)
+        with p, v, count(b) as vc where p is not null
+        return p.name as name, sum(vc) as count, collect({version: v.version, count: vc}) as version
+    """)
+    List<OperatorOfPendingDto> queryForOperatorOfPending(String name, Integer version, String query);
 
     /**
      * 发起列表

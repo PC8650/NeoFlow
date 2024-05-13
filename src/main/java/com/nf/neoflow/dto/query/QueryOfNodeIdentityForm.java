@@ -1,6 +1,7 @@
 package com.nf.neoflow.dto.query;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.hibernate.validator.constraints.Range;
@@ -21,25 +22,26 @@ public class QueryOfNodeIdentityForm {
     @Range(min = 2, max = 5, message = "已办节点状态只能为2-同意，3-拒绝，4-转发，5-终止")
     private Integer nodeStatus;
 
-    @Schema(name = "流程名称")
+    @Schema(name = "流程名称", nullable = true)
     private String name;
 
-    @Schema(name = "流程版本")
+    @Schema(name = "流程版本", nullable = true, minimum = "1")
+    @Min(value = 1, message = "版本号不能小于1")
     private Integer version;
 
-    @Schema(name = "业务key")
+    @Schema(name = "业务key", nullable = true)
     private String businessKey;
 
-    @Schema(name = "节点名称")
+    @Schema(name = "节点名称", nullable = true)
     private String nodeName;
 
-    @Schema(name = "节点身份")
+    @Schema(name = "节点身份", nullable = true)
     private String nodeIdentity;
 
-    @Schema(name = "当前用户id")
+    @Schema(name = "当前用户id", nullable = true, description = "Neo4jConfig.baseUserChoose的配置选择")
     private String userId;
 
-    @Schema(name = "当前用户名称")
+    @Schema(name = "当前用户名称", nullable = true, description = "Neo4jConfig.baseUserChoose的配置选择")
     private String username;
 
     @Schema(name = "是否降序", nullable = true, defaultValue = "true")

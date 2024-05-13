@@ -26,7 +26,16 @@ public class QueryService {
     private final QueryRepository queryRepository;
 
     /**
-     * 查询 发起 / 待办 / 已办 列表
+     * 查询当前用户在各流程的待办数量
+     * @param form 查询表单
+     */
+    public List<OperatorOfPendingDto> queryForOperatorOfPending(OperatorOfPendingForm form){
+        String query = userChoose.getCandidateRange(form.getUserId(), form.getUsername(), QueryForOperatorType.PENDING);
+        return queryRepository.queryForOperatorOfPending(form.getName(), form.getVersion(), query);
+    }
+
+    /**
+     * 查询当前用户 发起 / 待办 / 已办 列表
      * @param form 表单
      * @return Page<QueryForOperatorDto>
      */

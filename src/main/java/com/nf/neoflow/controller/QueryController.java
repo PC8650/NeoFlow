@@ -22,7 +22,13 @@ public class QueryController {
 
     private final QueryService queryService;
 
-    @Operation(description = "查询 发起/待办/已办 列表")
+    @Operation(description = "查询当前用户在各流程的待办数量")
+    @GetMapping("/pending")
+    public ResponseEntity<Result<List<OperatorOfPendingDto>>> queryForOperatorOfPending(@Valid @ModelAttribute OperatorOfPendingForm form){
+        return ResponseEntity.ok(Result.success(queryService.queryForOperatorOfPending(form)));
+    }
+
+    @Operation(description = "查询当前用户 发起/待办/已办 列表")
     @GetMapping("/list")
     public ResponseEntity<Result<Page<QueryForOperatorDto>>> queryForOperator(@Valid @ModelAttribute QueryForOperatorForm form) {
         return ResponseEntity.ok(Result.success(queryService.queryForOperator(form)));

@@ -164,4 +164,13 @@ public interface ProcessRepository extends Neo4jRepository<Process,Long> {
                                                               Long pending, Long complete, Long rejected,
                                                               Long terminated, Long total);
 
+    /**
+     * 查询所有流程名称
+     * @return List<String>
+     */
+    @Query("""
+        match (p:Process) return p.name order by id(p)
+    """)
+    List<String> queryAllProcessName();
+
 }
