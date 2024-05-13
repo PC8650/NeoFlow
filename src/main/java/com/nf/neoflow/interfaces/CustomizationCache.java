@@ -8,7 +8,7 @@ import java.util.Set;
 
 /**
  * 自定义缓存接口
- * 需要实现接口，重写方法，手动注入spring容器。
+ * {@link com.nf.neoflow.config.NeoFlowConfig#customizationCache NeoFlowConfig.customizationCache}=true时，需要实现接口，重写方法，手动注入spring容器。
  * 缓存过期策略需要根据 {@link com.nf.neoflow.enums.CacheEnums CacheType} 在方法内部决定
  * @author PC8650
  */
@@ -46,12 +46,14 @@ public interface CustomizationCache {
 
     /**
      * 删除缓存
+     * not must：未耦合在逻辑中，根据需求实现扩展
      * @param caches key-cacheType {@link com.nf.neoflow.enums.CacheEnums CacheType}，value-cacheKey列表 缓存类型+分隔符+key
      */
     void deleteCache(Map<String, List<String>> caches);
 
     /**
      * 删除缓存
+     * not must：未耦合在逻辑中，根据需求实现扩展
      * @param cacheType {@link com.nf.neoflow.enums.CacheEnums CacheType}缓存类型
      */
     void deleteCache(String... cacheType);
@@ -59,6 +61,7 @@ public interface CustomizationCache {
 
     /**
      * 获取所有缓存统计信息
+     * not must
      * @return 所有缓存统计信息
      */
     Object cacheStatistics();

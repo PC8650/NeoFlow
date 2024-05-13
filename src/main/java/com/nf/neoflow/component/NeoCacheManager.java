@@ -173,6 +173,36 @@ public class NeoCacheManager {
 
     /**
      * 删除缓存
+     * @param caches Map<cacheType, List<cacheKey>>
+     */
+    public void deleteCache(Map<String, List<String>> caches) {
+        if (config.getEnableCache()) {
+            //自定义策略
+            if (config.getCustomizationCache()) {
+                caches.keySet().forEach(cacheType -> {
+                    caches.get(cacheType).replaceAll(s -> mergeKey(cacheType, s));
+                });
+                customizationCache.deleteCache(caches);
+                return;
+            }
+            //默认策略
+            caches.keySet().forEach(cacheType -> {
+                Cache cache = cacheManager.getCache(cacheType);
+                if (cache != null) {
+                    com.github.benmanes.caffeine.cache.Cache nativeCache = (com.github.benmanes.caffeine.cache.Cache) cache.getNativeCache();
+                    List<String> keys = caches.get(cacheType);
+                    if (CollectionUtils.isEmpty(keys)) {
+                        nativeCache.invalidateAll();
+                    }else {
+                        nativeCache.invalidateAll(keys);
+                    }
+                }
+            });
+        }
+    }
+
+    /**
+     * 删除缓存
      * @param cacheType 缓存分类
      */
     public void deleteCache(String... cacheType) {

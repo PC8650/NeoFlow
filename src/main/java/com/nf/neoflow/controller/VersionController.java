@@ -37,6 +37,12 @@ public class VersionController {
         return ResponseEntity.ok(Result.success(versionService.versionIterateTree(form)));
     }
 
+    @Operation(description = "获取候选人选择列表")
+    @GetMapping("/candidate")
+    public ResponseEntity<Result<Object>> getCandidateList() {
+        return ResponseEntity.ok(Result.success(versionService.getCandidateList()));
+    }
+
     @Operation(description = "创建流程版本模型")
     @PostMapping("/create")
     public ResponseEntity<Result<?>> createVersion(@Valid @RequestBody VersionModelCreateForm form) {

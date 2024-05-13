@@ -101,7 +101,7 @@ public class VersionService {
                 result = versionRepository.queryVersionIterateTree(form.getProcessName());
             }
             case 2 -> {
-                result = versionRepository.queryVersionIterateTreeNested(form.getProcessName());
+                result = treeNested(versionRepository.queryVersionIterateTreeNested(form.getProcessName()));
             }
             case 3 -> {
                 result = versionRepository.queryVersionIterateTreeGraphic(form.getProcessName());
@@ -111,6 +111,14 @@ public class VersionService {
 
         cacheManager.setCache(cacheType, cacheKey, result);
         return result;
+    }
+
+    /**
+     * 定义流程模型时，获取候选人选择列表
+     * @return 返回所有业务涉及到的可选候选人信息
+     */
+    public Object getCandidateList() {
+        return userChoose.getCandidateList();
     }
 
     /**

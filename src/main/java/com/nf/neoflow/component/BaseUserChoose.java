@@ -29,10 +29,18 @@ public class BaseUserChoose {
 
     @Autowired
     @Lazy
-    private UserChoose userChooseService;
+    private UserChoose userChoose;
 
     private final String luceneTemplate = "\\{\"id\"\\:\"%s\" AND \"name\"\\:\"%s\"\\}";
     private final String luceneSpecialReplaceRegex = "([+\\-!(){}\\[\\]^\"~*?:\\\\/]|&&|\\|\\|)";
+
+    /**
+     * 定义流程模型时，获取候选人选择列表
+     * @return 返回所有业务涉及到的可选候选人信息
+     */
+    public Object getCandidateList() {
+        return userChoose.getCandidateList();
+    }
 
     /**
      * 根据模型节点获取实际候选人
@@ -42,7 +50,7 @@ public class BaseUserChoose {
      * @return List<UserBaseInfo>
      */
     public List<UserBaseInfo> getCandidateUsers(Integer operationType, List<UserBaseInfo> modelCandidateInfo) {
-        return userChooseService.getCandidateUsers(operationType, modelCandidateInfo);
+        return userChoose.getCandidateUsers(operationType, modelCandidateInfo);
     }
 
     /**
@@ -53,7 +61,7 @@ public class BaseUserChoose {
      * @return Boolean 校验结果
      */
     public Boolean checkCandidateUser(Integer operationType, UserBaseInfo operationUser, List<UserBaseInfo> candidate) {
-        return userChooseService.checkCandidateUser(operationType, operationUser, candidate);
+        return userChoose.checkCandidateUser(operationType, operationUser, candidate);
     }
 
     /**
@@ -111,7 +119,7 @@ public class BaseUserChoose {
 
         //待办，获取当前用户涉及的候选人范围
         if (QueryForOperatorType.PENDING.equals(queryType)) {
-            List<UserBaseInfo> candidateRange = userChooseService.getCandidateRange(currentUser);
+            List<UserBaseInfo> candidateRange = userChoose.getCandidateRange(currentUser);
             if (CollectionUtils.isEmpty(candidateRange)) {
                 throw new NeoUserException("当前用户信息没有涉及的候选人范围");
             }
@@ -132,7 +140,7 @@ public class BaseUserChoose {
      * @return 用户信息
      */
     private UserBaseInfo getUser() {
-        UserBaseInfo user = userChooseService.getUser();
+        UserBaseInfo user = userChoose.getUser();
         if (Objects.isNull(user)) {
             throw new NeoUserException("未获取到用户信息");
         }

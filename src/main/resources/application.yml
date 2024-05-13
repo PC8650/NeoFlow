@@ -1,0 +1,22 @@
+spring:
+  neo4j:
+    uri: bolt://localhost:7687
+    authentication:
+      username: neo4j
+      password: 12345678
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    layout: BaseLayout
+
+neo:
+  scan-package: com.nf.neoflow.dto.test
+
+logging:
+  level:
+#    org.springframework.web: DEBUG
+    org.springframework.data.neo4j.configuration.Neo4jConfiguration: DEBUG
+#    org.neo4j.driver: DEBUG

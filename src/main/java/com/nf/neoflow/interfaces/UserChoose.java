@@ -48,8 +48,9 @@ public interface UserChoose {
     List<UserBaseInfo> getCandidateRange(UserBaseInfo currentUser);
 
     /**
-     * 定义流程模型时，获取候选人列表
-     * @return List<Object>
+     * 定义流程模型时，获取候选人选择列表
+     * not must：未耦合在逻辑中，非强制选择
+     * @return 返回所有业务涉及到的可选候选人信息
      */
-    List<Object> getCandidateList();
+    Object getCandidateList();
 }
