@@ -97,15 +97,9 @@ public class VersionService {
 
         Object result;
         switch (form.getType()) {
-            case 1 -> {
-                result = versionRepository.queryVersionIterateTree(form.getProcessName());
-            }
-            case 2 -> {
-                result = treeNested(versionRepository.queryVersionIterateTreeNested(form.getProcessName()));
-            }
-            case 3 -> {
-                result = versionRepository.queryVersionIterateTreeGraphic(form.getProcessName());
-            }
+            case 1 -> result = versionRepository.queryVersionIterateTree(form.getProcessName());
+            case 2 -> result = treeNested(versionRepository.queryVersionIterateTreeNested(form.getProcessName()));
+            case 3 -> result = versionRepository.queryVersionIterateTreeGraphic(form.getProcessName());
             default -> throw new NeoProcessException("参数错误");
         }
 
