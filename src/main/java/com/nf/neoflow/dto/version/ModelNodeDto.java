@@ -70,7 +70,7 @@ public class ModelNodeDto {
         if (autoInterval != null && NodeLocationType.MIDDLE.equals(location) && defaultPassCondition == null) {
             throw new NeoProcessException("中间自动节点默认通过跳转条件不能为空");
         }
-        if (Objects.equals(location, NodeLocationType.Initiate) && !Objects.equals(autoInterval, 0)) {
+        if (Objects.equals(location, NodeLocationType.INITIATE) && !Objects.equals(autoInterval, 0)) {
             throw new NeoProcessException("发起节点只能设置为[立即自动执行]");
         }
         if (x == null || y == null) {

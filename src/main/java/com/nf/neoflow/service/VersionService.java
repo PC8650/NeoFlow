@@ -161,7 +161,7 @@ public class VersionService {
             lockManager.releaseLock(form.getProcessName(), getLock, lockEnum);
         }
 
-        log.info("{}创建新版本成功，版本号{}", form.getProcessName(), version);
+        log.info("{} 创建新版本成功，版本号{}", form.getProcessName(), version);
     }
 
     /**
@@ -209,7 +209,7 @@ public class VersionService {
             }
 
             //特殊节点数量
-            if (Objects.equals(node.getLocation(), NodeLocationType.Initiate)) {
+            if (Objects.equals(node.getLocation(), NodeLocationType.INITIATE)) {
                 startCount++;
             } else if (Objects.equals(node.getLocation(), NodeLocationType.COMPLETE)) {
                 completeCount++;
@@ -253,7 +253,7 @@ public class VersionService {
             //校验结构
             startNode = nodeMap.get(edge.getStartNode());
             endNode = nodeMap.get(edge.getEndNode());
-            if (Objects.equals(endNode.getLocation(), NodeLocationType.Initiate)) {
+            if (Objects.equals(endNode.getLocation(), NodeLocationType.INITIATE)) {
                 throw new NeoProcessException("不能指向开始节点");
             }
             if (Objects.equals(startNode.getLocation(), NodeLocationType.COMPLETE)

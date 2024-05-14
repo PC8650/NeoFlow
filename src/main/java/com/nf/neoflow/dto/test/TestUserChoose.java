@@ -17,10 +17,11 @@ public class TestUserChoose implements UserChoose {
 
     @Override
     public List<UserBaseInfo> getCandidateUsers(Integer operationType, List<UserBaseInfo> modelCandidateInfo) {
-        UserBaseInfo userBaseInfo = new UserBaseInfo();
-        userBaseInfo.setId("2");
-        userBaseInfo.setName("张三");
-        return List.of(userBaseInfo);
+//        UserBaseInfo userBaseInfo = new UserBaseInfo();
+//        userBaseInfo.setId("2");
+//        userBaseInfo.setName("张三");
+//        return List.of(userBaseInfo);
+        return modelCandidateInfo;
     }
 
     @Override

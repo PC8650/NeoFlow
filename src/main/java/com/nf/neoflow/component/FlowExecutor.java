@@ -622,13 +622,7 @@ public class FlowExecutor {
         //拒绝时带有跳转条件，下一个节点不为终止节点且当前不为发起节点，执行通过逻辑
         if (form.getCondition() != null) {
             terminateNode = findNextModelNode(form, current.getModelNodeUid());
-            if (terminateNode == null) {
-                if (!Objects.equals(current.getLocation(), NodeLocationType.Initiate)) {
-                    log.error("流程执行失败，未找到下一节点：流程 {}-版本 {}-key {}-当前节点位置 {}",
-                            form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNum());
-                    throw new NeoExecuteException("流程执行失败，未找到下一节点");
-                }
-            }else if (!Objects.equals(terminateNode.getLocation(), NodeLocationType.TERMINATE)) {
+            if (terminateNode != null && !NodeLocationType.TERMINATE.equals(terminateNode.getLocation())) {
                 return updateFlowAfterPass(form, current, getLock);
             }
         }
@@ -736,7 +730,7 @@ public class FlowExecutor {
     private NodeQueryDto<InstanceNode> getInstanceNode(ExecuteForm form) {
         NodeQueryDto<InstanceNode> dto;
         InstanceNode currentNode;
-        if (Objects.equals(form.getOperationType(), InstanceOperationType.INITIATE)) {
+        if (InstanceOperationType.INITIATE.equals(form.getOperationType())) {
             NodeQueryDto<ModelNode> modelDto = findActiveVersionModelFirstNode(form.getProcessName());
             currentNode = constructInstanceNode(JacksonUtils.toObj(modelDto.getNodeJson(), ModelNode.class), form);
             dto = new NodeQueryDto<>();
@@ -826,8 +820,12 @@ public class FlowExecutor {
         //设置自动执行日期 和 候选人
         Integer autoInterval = modelNode.getAutoInterval();
         if (autoInterval != null) {
+            if (NodeLocationType.INITIATE.equals(modelNode.getLocation())) {
+                setInstanceNodeCandidateByModel(modelNode.getOperationCandidate(), modelNode.getOperationType(), instanceNode);
+            }
             instanceNode.setAutoTime(LocalDate.now().plusDays(autoInterval));
         } else if (Objects.equals(config.getInitiatorFlag(), modelNode.getOperationType())) {
+            //发起流程时，发起实例节点还未入库，若下一节点操作类型为"发起人操作"，则手动设置候选人
             if (InstanceOperationType.INITIATE.equals(form.getOperationType())) {
                 String candidatesJson = "["+JacksonUtils.toJson(form.getOperator())+"]";
                 instanceNode.setOperationCandidate(candidatesJson);
@@ -836,9 +834,7 @@ public class FlowExecutor {
                 instanceNode.setOperationCandidate(initiateNode.getOperationCandidate());
             }
         }else if (StringUtils.isNotBlank(modelNode.getOperationCandidate())){
-            List<UserBaseInfo> candidates = (List<UserBaseInfo>) JacksonUtils.toObj(modelNode.getOperationCandidate(), List.class, UserBaseInfo.class);
-            candidates = userChoose.getCandidateUsers(modelNode.getOperationType(), candidates);
-            instanceNode.setOperationCandidate(JacksonUtils.toJson(candidates));
+            setInstanceNodeCandidateByModel(modelNode.getOperationCandidate(), modelNode.getOperationType(), instanceNode);
         }
 
         //设置状态
@@ -847,8 +843,19 @@ public class FlowExecutor {
         //设置时间
         instanceNode.setBeginTime(LocalDateTime.now());
 
-
         return instanceNode;
+    }
+
+    /**
+     * 通过模型设置实例节点候选人
+     * @param modelCandidateJson 模型节点候选人json
+     * @param modeOperationType 模型节点操作类型
+     * @param instanceNode 实例节点
+     */
+    private void setInstanceNodeCandidateByModel(String modelCandidateJson, Integer modeOperationType , InstanceNode instanceNode) {
+        List<UserBaseInfo> candidates = (List<UserBaseInfo>) JacksonUtils.toObj(modelCandidateJson, List.class, UserBaseInfo.class);
+        candidates = userChoose.getCandidateUsers(modeOperationType, candidates);
+        instanceNode.setOperationCandidate(JacksonUtils.toJson(candidates));
     }
 
     /**
@@ -877,8 +884,8 @@ public class FlowExecutor {
             return;
         }
 
-        //字段节点忽略
-        if (instanceNode.getAutoTime() != null) {
+        //忽略非发起节点的自动节点
+        if (instanceNode.getAutoTime() != null && !NodeLocationType.INITIATE.equals(instanceNode.getLocation())) {
             return;
         }
 
