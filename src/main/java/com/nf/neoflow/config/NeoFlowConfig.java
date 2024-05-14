@@ -46,6 +46,14 @@ public class NeoFlowConfig {
      */
     private int initiatorFlag = 0;
 
+    /**
+     *  {@link com.nf.neoflow.models.InstanceNode#during InstanceNode.during} 是否使用首字母缩写格式
+     *  true：xDxHxMxS
+     *  false：x天x时x分x秒
+     *  默认false
+     */
+    private Boolean initialsDuring = true;
+
 
     //锁 Lock
 

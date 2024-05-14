@@ -69,6 +69,8 @@ public class FlowExecutor {
 
     private ExecutorService autoNodeExecutor;
 
+    private final String[] DURING_CHAR = new String[4];
+
     /**
      * 定时检测ASSIGNED_PENDING_COUNT是否归零
      */
@@ -86,6 +88,18 @@ public class FlowExecutor {
 
     @PostConstruct
     private void init() {
+        //DURING_CHAR 初始化
+        if (config.getInitialsDuring()) {
+            DURING_CHAR[0] = "D";
+            DURING_CHAR[1] = "H";
+            DURING_CHAR[2] = "M";
+            DURING_CHAR[3] = "S";
+        } else {
+            DURING_CHAR[0] = "天";
+            DURING_CHAR[1] = "时";
+            DURING_CHAR[2] = "分";
+            DURING_CHAR[3] = "秒";
+        }
         //systemOperator 初始化
         systemOperator = new UserBaseInfo(config.getAutoId(), config.getAutoName());
 
@@ -1030,20 +1044,20 @@ public class FlowExecutor {
      */
     private String getDuring(Duration duration) {
         StringBuilder sb = new StringBuilder();
-        long value =duration.toDays();
+        long value =duration.toDaysPart();
         if (value >= 1L) {
-            sb.append(duration.toDays()).append("D");
+            sb.append(duration.toDays()).append(DURING_CHAR[0]);
         }
        value = duration.toHoursPart();
         if (value >= 1L) {
-            sb.append(value).append("H");
+            sb.append(value).append(DURING_CHAR[1]);
         }
         value = duration.toMinutesPart();
         if (value >= 1L) {
-            sb.append(value).append("M");
+            sb.append(value).append(DURING_CHAR[2]);
         }
         value = duration.toSecondsPart();
-        sb.append(value).append("S");
+        sb.append(value).append(DURING_CHAR[3]);
         return sb.toString();
     }
 
