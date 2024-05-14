@@ -106,12 +106,12 @@ public interface ProcessRepository extends Neo4jRepository<Process,Long> {
     @Query("""
         match (p:Process{name: $name})
         where p.activeHistory is not null and size(p.activeHistory) > 0
-        unwind  p.activeHistory as history
+        unwind p.activeHistory as history
         with apoc.convert.fromJsonMap(history) as result
         with result
         return result.version as version,
-        result.id as activeId, result.name as activeName,
-        localDateTime(replace(result.time, ' ', 'T')) as activeTime
+        result.activeId as activeId, result.activeName as activeName,
+        localDateTime(replace(result.activeTime, ' ', 'T')) as activeTime
     """)
     List<ActiveVersionHistoryDto> activeVersionHistory(String name);
 

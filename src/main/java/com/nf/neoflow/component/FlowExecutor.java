@@ -792,7 +792,7 @@ public class FlowExecutor {
         dto.setNode(JacksonUtils.toObj(dto.getNodeJson(), InstanceNode.class));
 
         //校验当前节点
-        if (!Objects.equals(dto.getNode().getStatus(), InstanceNodeStatus.PENDING)) {
+        if (!InstanceNodeStatus.PENDING.equals(dto.getNode().getStatus())) {
             log.error("流程执行失败，当前节点已执行：流程 {}-版本 {}-key {}-当前节点位置 {}",
                     form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNum());
             throw new NeoExecuteException("流程执行失败，当前节点已执行");
@@ -838,7 +838,7 @@ public class FlowExecutor {
                 setInstanceNodeCandidateByModel(modelNode.getOperationCandidate(), modelNode.getOperationType(), instanceNode);
             }
             instanceNode.setAutoTime(LocalDate.now().plusDays(autoInterval));
-        } else if (Objects.equals(config.getInitiatorFlag(), modelNode.getOperationType())) {
+        } else if (Objects.equals(modelNode.getOperationType(), config.getInitiatorFlag())) {
             //发起流程时，发起实例节点还未入库，若下一节点操作类型为"发起人操作"，则手动设置候选人
             if (InstanceOperationType.INITIATE.equals(form.getOperationType())) {
                 String candidatesJson = "["+JacksonUtils.toJson(form.getOperator())+"]";
@@ -1115,13 +1115,13 @@ public class FlowExecutor {
      * @return 节点状态
      */
     private Integer operateTypeToNodeStatus(Integer operationType) {
-        if (Objects.equals(operationType, InstanceOperationType.REJECTED)) {
+        if (InstanceOperationType.REJECTED.equals(operationType)) {
             return InstanceNodeStatus.REJECTED;
         }
-        if (Objects.equals(operationType, InstanceOperationType.FORWARD)) {
+        if (InstanceOperationType.FORWARD.equals(operationType)) {
             return InstanceNodeStatus.FORWARD;
         }
-        if (Objects.equals(operationType, InstanceOperationType.TERMINATED)) {
+        if (InstanceOperationType.TERMINATED.equals(operationType)) {
             return InstanceNodeStatus.TERMINATED;
         }
 
@@ -1136,10 +1136,10 @@ public class FlowExecutor {
      */
     private Integer getFlowStatus(InstanceNode current, InstanceNode next) {
         if (next == null) {
-          if (Objects.equals(current.getLocation(), NodeLocationType.COMPLETE)) {
+          if (NodeLocationType.COMPLETE.equals(current.getLocation())) {
               return InstanceStatus.COMPLETE;
           }
-          if (Objects.equals(current.getLocation(), NodeLocationType.TERMINATE)) {
+          if (NodeLocationType.TERMINATE.equals(current.getLocation())) {
               return InstanceStatus.REJECTED;
           }
           return InstanceStatus.TERMINATED;

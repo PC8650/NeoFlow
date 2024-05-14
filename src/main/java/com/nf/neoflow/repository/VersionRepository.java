@@ -60,7 +60,7 @@ public interface VersionRepository extends Neo4jRepository<Version,Long> {
         with p, i, v, nm, {operationCandidateInfo:apoc.convert.fromJsonList(nm.operationCandidate)} as oc, rel
         return p.name as processName, i.version as iterateFrom, v.version as version, v.cycle as cycle, v.terminatedMethod as terminatedMethod,
         collect(distinct apoc.map.merge(apoc.map.removeKeys(nm, ['operationCandidate']),oc)) as versionNodes,
-        collect(distinct {startNode: startNode(rel).nodeUid, endNode: endNode(rel).nodeUid, condition: rel.condition}) as versionEdges
+        collect(distinct {startNode: startNode(rel).nodeUid, endNode: endNode(rel).nodeUid, condition: rel.condition, startLocation: rel.startLocation, endLocation: rel.endLocation}) as versionEdges
     """)
     VersionModelViewDto queryVersionView(String processName, Integer version);
 
