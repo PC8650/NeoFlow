@@ -20,7 +20,7 @@ public class ExecuteService {
     private final FlowExecutor flowExecutor;
 
     public void execute(ExecuteForm form) {
-        flowExecutor.executor(form, false);
+        flowExecutor.executor(form);
     }
 
     public void executeAutoNode(LocalDate date){

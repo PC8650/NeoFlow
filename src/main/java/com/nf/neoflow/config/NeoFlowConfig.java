@@ -107,6 +107,24 @@ public class NeoFlowConfig {
     //自动节点 AutoNode
 
     /**
+     * 判断{@link com.nf.neoflow.enums.LockEnums#AUTO_EXECUTE LockEnums.AUTO_EXECUTE}是否满足释放条件的循环周期，单位：秒
+     * 默认3s
+     */
+    private Integer autoLockCheckPeriod = 3;
+
+    /**
+     * {@link com.nf.neoflow.enums.LockEnums#AUTO_EXECUTE LockEnums.AUTO_EXECUTE}的过期时间，单位：秒
+     * 默认为空，无过期时间
+     */
+    private Integer autoLockExpired;
+
+    /**
+     * 是否开启自动节点扫描的定时任务
+     * 默认 false
+     */
+    private Boolean scanAuto = false;
+
+    /**
      * 自动执行节点扫描周期Corn
      * 默认 0 0 5 * * ?
      */

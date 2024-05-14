@@ -32,6 +32,7 @@ public class TestNod {
         }else if (x.getOperationType() == 3) {
             x.setCondition(2);
         }
+//        int i = 1 / 0;
         return x;
     }
 

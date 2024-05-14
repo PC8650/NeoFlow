@@ -25,7 +25,7 @@ public class TestUserChoose implements UserChoose {
 
     @Override
     public Boolean checkCandidateUser(Integer operationType, UserBaseInfo operationUser, List<UserBaseInfo> candidate) {
-        if (2 == operationType || 0 == operationType) {
+        if (operationType == null || 2 == operationType || 0 == operationType) {
             return CollectionUtils.isEmpty(candidate) || candidate.stream().anyMatch(x -> x.equals(operationUser));
         }
         return true;

@@ -14,6 +14,9 @@ springdoc:
 
 neo:
   scan-package: com.nf.neoflow.dto.test
+  scan-auto: true
+  auto-lock-expired: 20
+  auto-lock-check-period: 1
 
 logging:
   level:

@@ -30,12 +30,13 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 
 /**
@@ -68,10 +69,27 @@ public class FlowExecutor {
 
     private ExecutorService autoNodeExecutor;
 
+    /**
+     * 定时检测ASSIGNED_PENDING_COUNT是否归零
+     */
+    private final ScheduledExecutorService AUTO_LOCK_CHECK_EXECUTOR = Executors.newSingleThreadScheduledExecutor();
+
+    /**
+     * 定时检测AUTO_EXECUTE是否过期
+     */
+    private final ScheduledExecutorService AUTO_LOCK_EXPIRED_EXECUTOR = Executors.newSingleThreadScheduledExecutor();
+
+    /**
+     * 已分配且正在执行的节点数
+     */
+    private final AtomicInteger ASSIGNED_PENDING_COUNT = new AtomicInteger();
+
     @PostConstruct
-    private void autoNodeExecutorInit() {
+    private void init() {
+        //systemOperator 初始化
         systemOperator = new UserBaseInfo(config.getAutoId(), config.getAutoName());
 
+        //autoNodeExecutor 初始化
         BlockingQueue<Runnable> queue;
         switch (config.getQueueType().toLowerCase()) {
             case "array" -> queue = new ArrayBlockingQueue<>(config.getQueueCapacity());
@@ -149,15 +167,35 @@ public class FlowExecutor {
     /**
      * 执行器
      * @param form 表单
-     * @param getLockByLast 是否在上个节点获取锁
      */
-    public void executor(ExecuteForm form, Boolean getLockByLast) {
+    public void executor(ExecuteForm form) {
         int operationType = form.getOperationType();
         BiFunction<ExecuteForm, Boolean, UpdateResult> function = excuteMap.get(operationType);
         if (function == null) {
             log.error("错误的操作类型-{}", operationType);
             throw new NeoExecuteException("错误的操作类型");
         }
+
+        //执行当前节点
+        UpdateResult updateResult = transactionTemplate.execute(status -> {
+            try {
+                return function.apply(form, false);
+            }catch (Exception e) {
+                status.setRollbackOnly();
+                throw e;
+            }
+        });
+
+        rightNowNext(updateResult, form.getBusinessKey());
+    }
+
+    /**
+     * 执行器
+     * @param form 表单
+     * @param getLockByLast 是否在上个节点获取锁
+     */
+    public void executor(ExecuteForm form, Boolean getLockByLast) {
+        BiFunction<ExecuteForm, Boolean, UpdateResult> function = excuteMap.get(form.getOperationType());
 
         //执行当前节点
         UpdateResult updateResult = transactionTemplate.execute(status -> {
@@ -169,10 +207,25 @@ public class FlowExecutor {
             }
         });
 
-        //按需自动执行下一节点
-        if (updateResult.autoRigNow()) {
-            ExecuteForm nextForm = autoNextForm(updateResult);
-            autoNodeExecutor.execute(() -> executor(nextForm, updateResult.getLock()));
+        rightNowNext(updateResult, form.getBusinessKey());
+    }
+
+    /**
+     * 立即执行下一节点
+     * @param updateResult 当前节点更新结果
+     * @param businessKey 业务key
+     */
+    public void rightNowNext(UpdateResult updateResult, String businessKey) {
+        //若线程池异常/判断或构建表单异常，需要释放锁
+        try {
+            //按需自动执行下一节点
+            if (updateResult != null && updateResult.autoRigNow()) {
+                ExecuteForm nextForm = autoNextForm(updateResult);
+                autoNodeExecutor.execute(() -> executor(nextForm, updateResult.getLock()));
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            lockManager.releaseLock(businessKey, updateResult.getLock(), LockEnums.FLOW_EXECUTE);
         }
     }
 
@@ -1112,38 +1165,121 @@ public class FlowExecutor {
      */
     @Scheduled(cron = "${neo.auto-corn:0 0 5 * * ?}")
     public void autoScan(){
-        LocalDate date = LocalDate.now();
-        log.info("开始扫描自动节点 {}", date);
-        autoDeal(date);
+        if (config.getScanAuto()) {
+            LocalDate date = LocalDate.now();
+            log.info("开始扫描自动节点 {}", date);
+            autoDeal(date);
+        }
+    }
+
+    /**
+     * 扫描执行自动节点锁过期监控
+     * @param getLock 是否获取锁
+     * @param assignedPendingFuture 执行中的分配节点数量监控Future
+     * @return Future
+     */
+    private Future<?> autoLockMonitor(AtomicBoolean getLock, AtomicReference<Future<?>> assignedPendingFuture) {
+
+        Integer expired = config.getAutoLockExpired();
+
+        if (expired != null && expired > 0) {
+            return AUTO_LOCK_EXPIRED_EXECUTOR.schedule(() -> {
+                if (getLock.getAndSet(false)) {
+                    log.info("扫描执行自动节点超时，释放锁");
+                    lockManager.releaseLock("ea", getLock.get(), LockEnums.AUTO_EXECUTE);
+                    // 取消AUTO_LOCK_CHECK_EXECUTOR此次的任务
+                    Future<?> future = assignedPendingFuture.get();
+                    if (future != null && !future.isDone()) {
+                        log.info("取消执行中的自动节点数量检测");
+                        future.cancel(true);
+                    }
+                }
+            }, expired, TimeUnit.SECONDS);
+        }
+
+        return null;
+    }
+
+    /**
+     * 正在执行的分配节点数量监控
+     * @param getLock 是否获取锁
+     * @param assignedFlag 是否开始分配
+     * @param assignedPendingFuture 执行中的分配节点数量监控Future
+     * @param autoLockFuture 锁过期监控Future
+     * @return Future
+     */
+    private Future<?> assignedPendingMonitor(AtomicBoolean getLock, AtomicBoolean assignedFlag , AtomicReference<Future<?>> assignedPendingFuture, AtomicReference<Future<?>> autoLockFuture) {
+        return AUTO_LOCK_CHECK_EXECUTOR.scheduleAtFixedRate(() -> {
+            log.info("执行中的自动节点数量检测，是否开始分配 {}，当前数量 {}", assignedFlag.get(), ASSIGNED_PENDING_COUNT.get());
+            if (getLock.get() && assignedFlag.get() && ASSIGNED_PENDING_COUNT.get() == 0) {
+                log.info("扫描执行自动节点结束，释放锁");
+                lockManager.releaseLock("ea", getLock.get(), LockEnums.AUTO_EXECUTE);
+                // 取消AUTO_LOCK_EXPIRED_EXECUTOR此次的任务
+                Future<?> future = autoLockFuture.get();
+                if (future != null && !future.isDone()) {
+                    log.info("取消锁过期检测");
+                    future.cancel(true);
+                }
+                //取消自身的任务
+                future = assignedPendingFuture.get();
+                if (future != null) {
+                    log.info("取消执行中的自动节点数量检测");
+                    future.cancel(true);
+                }
+            }
+        }, config.getAutoLockCheckPeriod(), config.getAutoLockCheckPeriod(), TimeUnit.SECONDS);
     }
 
     /**
      * 处理自动节点
      * @param date 自动执行日期
      */
-    public void autoDeal(LocalDate date){
-        //扫描
-        List<AutoNodeDto> autoNodes;
-        if (config.getAutoType() == AutoType.TODAY) {
-            autoNodes = instanceNodeRepository.queryAutoNodeToDay(date);
-        } else {
-            autoNodes = instanceNodeRepository.queryAutoNodeToDayAndBefore(date);
+    public void autoDeal(LocalDate date) {
+        //获取锁
+        AtomicBoolean getLock = new AtomicBoolean(lockManager.getLock("ea", LockEnums.AUTO_EXECUTE));
+        //是否开始分配
+        AtomicBoolean assignedFlag = new AtomicBoolean();
+        AtomicReference<Future<?>> assignedPendingFuture = new AtomicReference<>();
+        AtomicReference<Future<?>> autoLockFuture = new AtomicReference<>();
+        try {
+            //启动定时线程池任务
+            assignedPendingFuture.set(assignedPendingMonitor(getLock, assignedFlag, assignedPendingFuture, autoLockFuture));
+            autoLockFuture.set(autoLockMonitor(getLock, assignedPendingFuture));
+            //扫描
+            List<AutoNodeDto> autoNodes;
+            if (config.getAutoType() == AutoType.TODAY) {
+                autoNodes = instanceNodeRepository.queryAutoNodeToDay(date);
+            } else {
+                autoNodes = instanceNodeRepository.queryAutoNodeToDayAndBefore(date);
+            }
+
+            int size = autoNodes.size();
+            if (size > 0) {
+                //分配到autoNodeExecutor
+                assigned(autoNodes, size, assignedFlag);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            lockManager.releaseLock("ea", getLock.get(), LockEnums.AUTO_EXECUTE);
+            Future<?> autoLock = autoLockFuture.get();
+            Future<?> assignedPending = assignedPendingFuture.get();
+            if (autoLock != null && !autoLock.isDone()) {
+                autoLock.cancel(true);
+            }
+            if (assignedPending != null && !assignedPending.isDone()) {
+                assignedPending.cancel(true);
+            }
         }
 
-        if (CollectionUtils.isEmpty(autoNodes)) {
-            return;
-        }
-
-        //分配到autoNodeExecutor
-        assigned(autoNodes);
     }
 
     /**
      * 分配自动节点
      * @param autoNodes 自动节点
+     * @param size 节点数量
+     * @param assignedFlag 是否开始分配
      */
-    private void assigned(List<AutoNodeDto> autoNodes) {
-        int size = autoNodes.size();
+    private void assigned(List<AutoNodeDto> autoNodes, Integer size, AtomicBoolean assignedFlag) {
         int assigned;
         if (size == 0) {
             return;
@@ -1153,6 +1289,7 @@ public class FlowExecutor {
             assigned = size / config.getAutoAssigned() + 1;
         }
 
+        //已分配的节点数量
         for (int i = 0; i < assigned; i++) {
             List<AutoNodeDto> subList;
             int start = i * config.getAutoAssigned();
@@ -1162,18 +1299,15 @@ public class FlowExecutor {
             } else {
                 subList = autoNodes.subList(i * config.getAutoAssigned(), size);
             }
-            autoNodeExecutor.execute(()->acceptAutoNodes(subList));
-        }
 
-    }
-
-    /**
-     * 接收分配的自动节点
-     * @param autoNodes 自动节点
-     */
-    private void acceptAutoNodes(List<AutoNodeDto> autoNodes) {
-        for (AutoNodeDto autoNode : autoNodes) {
-            autoExecute(autoNode);
+            //若循环过程中，线程池异常，则需额外处理assignedNodeCount
+            autoNodeExecutor.execute(()-> {
+                assignedFlag.compareAndSet(false, true);
+                ASSIGNED_PENDING_COUNT.addAndGet(subList.size());
+                for (AutoNodeDto autoNode : subList) {
+                    autoExecute(autoNode);
+                }
+            });
         }
     }
 
@@ -1252,19 +1386,27 @@ public class FlowExecutor {
      */
     public void autoExecute(AutoNodeDto autoNodeDto) {
         //当前自动节点
-        UpdateResult updateResult = transactionTemplate.execute(status -> {
-            try {
-                return updateAfterAuto(autoNodeDto);
-            }catch (Exception e) {
-                status.setRollbackOnly();
-                throw e;
-            }
-        });
+        UpdateResult updateResult;
+        boolean[] result = new boolean[1];
+        result[0] = true;
+        try {
+            updateResult = transactionTemplate.execute(status -> {
+                try {
+                    return updateAfterAuto(autoNodeDto);
+                }catch (Exception e) {
+                    status.setRollbackOnly();
+                    result[0] = false;
+                    throw e;
+                }
+            });
 
-        //按需自动执行下一节点
-        if (updateResult.autoRigNow()) {
-            ExecuteForm nextForm = autoNextForm(updateResult);
-            autoNodeExecutor.execute(() -> executor(nextForm, updateResult.getLock()));
+            rightNowNext(updateResult, autoNodeDto.businessKey());
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            result[0] = false;
+        } finally {
+            int i = ASSIGNED_PENDING_COUNT.decrementAndGet();
+            log.info("自动节点已处理，结果：{}，[businessKey {}- num {}- nodeId {}]，剩余 {}", result[0], autoNodeDto.businessKey(), autoNodeDto.num(), autoNodeDto.nodeId(), i);
         }
     }
 
