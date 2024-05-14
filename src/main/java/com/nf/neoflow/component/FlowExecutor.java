@@ -194,7 +194,7 @@ public class FlowExecutor {
      * @param form 表单
      * @param getLockByLast 是否在上个节点获取锁
      */
-    public void executor(ExecuteForm form, Boolean getLockByLast) {
+    private void executor(ExecuteForm form, Boolean getLockByLast) {
         BiFunction<ExecuteForm, Boolean, UpdateResult> function = excuteMap.get(form.getOperationType());
 
         //执行当前节点
@@ -215,7 +215,7 @@ public class FlowExecutor {
      * @param updateResult 当前节点更新结果
      * @param businessKey 业务key
      */
-    public void rightNowNext(UpdateResult updateResult, String businessKey) {
+    private void rightNowNext(UpdateResult updateResult, String businessKey) {
         //若线程池异常/判断或构建表单异常，需要释放锁
         try {
             //按需自动执行下一节点
@@ -530,7 +530,7 @@ public class FlowExecutor {
      * @param getLock 是否获取锁
      * @return 更新结果
      */
-    public UpdateResult updateInstance(InstanceNode current, InstanceNode next, ExecuteForm form,
+    private UpdateResult updateInstance(InstanceNode current, InstanceNode next, ExecuteForm form,
                                        Boolean autoNextRightNow, Boolean getLock) {
         current.setOperationRemark(form.getOperationRemark());
         form.setOperationRemark(null);
@@ -756,7 +756,7 @@ public class FlowExecutor {
      * @param form 表单
      * @return 查询结果
      */
-    public NodeQueryDto<InstanceNode> queryCurrentInstanceNode(ExecuteForm form) {
+    private NodeQueryDto<InstanceNode> queryCurrentInstanceNode(ExecuteForm form) {
         NodeQueryDto<InstanceNode> dto;
         if (form.getNum() < 5) {
             dto = instanceNodeRepository.queryCurrentInstanceNode(form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNodeId());
@@ -1234,7 +1234,7 @@ public class FlowExecutor {
      * 处理自动节点
      * @param date 自动执行日期
      */
-    public void autoDeal(LocalDate date) {
+    private void autoDeal(LocalDate date) {
         //获取锁
         AtomicBoolean getLock = new AtomicBoolean(lockManager.getLock("ea", LockEnums.AUTO_EXECUTE));
         ASSIGNED_PENDING_COUNT.set(0);
@@ -1384,7 +1384,7 @@ public class FlowExecutor {
      * 执行自动节点
      * @param autoNodeDto 自动节点
      */
-    public void autoExecute(AutoNodeDto autoNodeDto) {
+    private void autoExecute(AutoNodeDto autoNodeDto) {
         //当前自动节点
         UpdateResult updateResult;
         boolean[] result = new boolean[1];

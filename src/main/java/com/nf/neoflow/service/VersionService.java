@@ -350,7 +350,7 @@ public class VersionService {
         return modelNodeDto;
     }
 
-    private  ModelNodeDto completeInit(List<UserBaseInfo> operationCandidate) {
+    private ModelNodeDto completeInit(List<UserBaseInfo> operationCandidate) {
         ModelNodeDto modelNodeDto = new ModelNodeDto();
         modelNodeDto.setLocation(3);
         modelNodeDto.setAutoInterval(0);
@@ -359,7 +359,7 @@ public class VersionService {
         return modelNodeDto;
     }
 
-    private  ModelNodeDto terminateInit(List<UserBaseInfo> operationCandidate) {
+    private ModelNodeDto terminateInit(List<UserBaseInfo> operationCandidate) {
         ModelNodeDto modelNodeDto = new ModelNodeDto();
         modelNodeDto.setLocation(4);
         modelNodeDto.setAutoInterval(0);
