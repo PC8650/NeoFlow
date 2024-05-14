@@ -1301,7 +1301,6 @@ public class FlowExecutor {
                 subList = autoNodes.subList(i * config.getAutoAssigned(), size);
             }
 
-            //若循环过程中，线程池异常，则需额外处理assignedNodeCount
             autoNodeExecutor.execute(()-> {
                 assignedFlag.compareAndSet(false, true);
                 ASSIGNED_PENDING_COUNT.addAndGet(subList.size());
