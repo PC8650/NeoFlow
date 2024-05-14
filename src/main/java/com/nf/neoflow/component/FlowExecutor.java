@@ -1237,6 +1237,7 @@ public class FlowExecutor {
     public void autoDeal(LocalDate date) {
         //获取锁
         AtomicBoolean getLock = new AtomicBoolean(lockManager.getLock("ea", LockEnums.AUTO_EXECUTE));
+        ASSIGNED_PENDING_COUNT.set(0);
         //是否开始分配
         AtomicBoolean assignedFlag = new AtomicBoolean();
         AtomicReference<Future<?>> assignedPendingFuture = new AtomicReference<>();
