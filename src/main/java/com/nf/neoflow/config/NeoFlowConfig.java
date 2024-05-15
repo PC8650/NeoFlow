@@ -33,6 +33,12 @@ public class NeoFlowConfig {
     private String prefix;
 
     /**
+     * 节点约束和索引文件(不包含全文索引)，通过ResourceLoader获取
+     * 默认 classpath:cypher/constraintAndIndex.cypher
+     */
+    private String constraintAndIndexFile = "classpath:cypher/constraintAndIndex.cypher";
+
+    /**
      * 是否开启自带用户选择接口，用于在流程 "创建"、"修改"、"发起"、"审批" 操作中获取当前用户
      * 否则默认从前端传递
      * {@link com.nf.neoflow.interfaces.UserChoose UserChoose}
