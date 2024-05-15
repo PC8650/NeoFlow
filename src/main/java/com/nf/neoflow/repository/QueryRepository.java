@@ -116,12 +116,12 @@ public interface QueryRepository extends Neo4jRepository<Instance, Long> {
         with p, v, b, size(nodes(path))-1 as nodeNum, n where p is not null
         with p, v, b, max(n.endTime) as doneTime,
         collect({num: nodeNum, nodeId: id(n), nodeName: n.name, status: n.status, doneTime: n.endTime}) as doneNodes
+        :#{orderBy(#pageable)}
+        skip :#{#pageable.offset} limit :#{#pageable.pageSize}
         return doneNodes,
         p.name as name, v.version as version,
         b.beginTime as initiateTime, b.endTime as updateTime,
         b.key as businessKey, b.num as num, b.currentNodeId as nodeId
-        :#{orderBy(#pageable)}
-        skip :#{#pageable.offset} limit :#{#pageable.pageSize}
     """,
     countQuery = """
         match path = (i:Instance)-[b:BUSINESS]->(:InstanceNode)-[:NEXT*]->(n:InstanceNode{operationBy: $3})
@@ -147,9 +147,9 @@ public interface QueryRepository extends Neo4jRepository<Instance, Long> {
     @Query(value = """
         call db.index.fulltext.queryNodes('InstanceNode_fullText_oc',$query) yield node
         with node as n where n.status =1
-        and ($nodeName is null or n.name = $nodeName) and ($nodeIdentity is null or n.nodeIdentity = $nodeIdentity)
+        and ($nodeName is null or n.name = $nodeName) and ($nodeIdentity is null or n.identity = $nodeIdentity)
         match path = (i:Instance)-[b:BUSINESS]->(:InstanceNode)-[:NEXT*]->(n) where ($businessKey is null or b.key = $businessKey)
-        optional match (v:Version)-[:INSTANCE]->(i) where (2 is null or v.version = 2)
+        optional match (v:Version)-[:INSTANCE]->(i) where ($version is null or v.version = $version)
         optional match (p:Process)-[:VERSION]->(v)where ($name is null or p.name = $name)
         with p, v, b, b.endTime as endTime, size(nodes(path))-1 as num, id(n) as nodeId, n.status as status where p is not null
         return p.name as name, v.version as version, b.key as businessKey, num, nodeId, status
@@ -159,9 +159,9 @@ public interface QueryRepository extends Neo4jRepository<Instance, Long> {
     countQuery = """
         call db.index.fulltext.queryNodes('InstanceNode_fullText_oc',$query) yield node
         with node as n where n.status =1
-        and ($nodeName is null or n.name = $nodeName) and ($nodeIdentity is null or n.nodeIdentity = $nodeIdentity)
+        and ($nodeName is null or n.name = $nodeName) and ($nodeIdentity is null or n.identity = $nodeIdentity)
         match path = (i:Instance)-[b:BUSINESS]->(:InstanceNode)-[:NEXT*]->(n) where ($businessKey is null or b.key = $businessKey)
-        optional match (v:Version)-[:INSTANCE]->(i) where (2 is null or v.version = 2)
+        optional match (v:Version)-[:INSTANCE]->(i) where ($version is null or v.version = $version)
         optional match (p:Process)-[:VERSION]->(v)where ($name is null or p.name = $name)
         with n where p is not null
         return count(n)
@@ -185,9 +185,9 @@ public interface QueryRepository extends Neo4jRepository<Instance, Long> {
     @Query(value = """
         call db.index.fulltext.queryNodes('InstanceNode_fullText_oc',$query) yield node
         with node as n where n.status > 1 and ($nodeStatus is null or n.status = $nodeStatus)
-        and ($nodeName is null or n.name = $nodeName) and ($nodeIdentity is null or n.nodeIdentity = $nodeIdentity)
+        and ($nodeName is null or n.name = $nodeName) and ($nodeIdentity is null or n.identity = $nodeIdentity)
         match path = (i:Instance)-[b:BUSINESS]->(:InstanceNode)-[:NEXT*]->(n) where ($businessKey is null or b.key = $businessKey)
-        optional match (v:Version)-[:INSTANCE]->(i) where (2 is null or v.version = 2)
+        optional match (v:Version)-[:INSTANCE]->(i) where ($version is null or v.version = $version)
         optional match (p:Process)-[:VERSION]->(v)where ($name is null or p.name = $name)
         with p, v, b, n.endTime as endTime, size(nodes(path))-1 as num, id(n) as nodeId, n.status as status where p is not null
         return p.name as name, v.version as version, b.key as businessKey, num, nodeId, status
@@ -197,9 +197,9 @@ public interface QueryRepository extends Neo4jRepository<Instance, Long> {
     countQuery = """
         call db.index.fulltext.queryNodes('InstanceNode_fullText_oc',$query) yield node
         with node as n where n.status > 1 and ($nodeStatus is null or n.status = $nodeStatus)
-        and ($nodeName is null or n.name = $nodeName) and ($nodeIdentity is null or n.nodeIdentity = $nodeIdentity)
+        and ($nodeName is null or n.name = $nodeName) and ($nodeIdentity is null or n.identity = $nodeIdentity)
         match path = (i:Instance)-[b:BUSINESS]->(:InstanceNode)-[:NEXT*]->(n) where ($businessKey is null or b.key = $businessKey)
-        optional match (v:Version)-[:INSTANCE]->(i) where (2 is null or v.version = 2)
+        optional match (v:Version)-[:INSTANCE]->(i) where ($version is null or v.version = $version)
         optional match (p:Process)-[:VERSION]->(v)where ($name is null or p.name = $name)
         with n where p is not null
         return count(n)

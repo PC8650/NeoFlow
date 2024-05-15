@@ -261,7 +261,7 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
     @Query("""
         match (p:Process)-[:VERSION]->(v:Version)-[:INSTANCE]->(i:Instance),
         path = (i)-[b:BUSINESS{status:1}]->(:InstanceNode)-[*0..]->(n:InstanceNode{status:1})
-        where n.autoTime = $0
+        where n.autoTime <= $0
         return p.name as processName, v.version as version, b.key as businessKey,
         size(nodes(path))-1 as num, id(n) as nodeId, n.beginTime as beginTime,
         n.modelNodeUid as modelNodeUid, n.operationMethod as operationMethod,
