@@ -1,0 +1,125 @@
+package org.nf.neoflow.dto.test;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.nf.neoflow.dto.user.UserBaseInfo;
+import org.nf.neoflow.dto.version.ModelNodeDto;
+import org.nf.neoflow.dto.version.ProcessNodeEdge;
+import org.nf.neoflow.dto.version.VersionModelCreateForm;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+public class TestCreateVersion {
+    public static void main(String[] args) throws Exception {
+        Set<ModelNodeDto> nodes = new HashSet<>();
+        Set<ProcessNodeEdge> edges = new HashSet<>();
+
+        // 添加发起节点
+        ModelNodeDto startNode = new ModelNodeDto();
+        startNode.setNodeUid("1");
+        startNode.setName("发起");
+        startNode.setIdentity("Start");
+        startNode.setOperationType(0);
+        startNode.setOperationMethod("begin");
+        startNode.setAutoInterval(0);
+        startNode.setLocation(1);
+        startNode.setX(1D);
+        startNode.setY(1D);
+        nodes.add(startNode);
+
+        ProcessNodeEdge startEdge = new ProcessNodeEdge();
+        startEdge.setStartNode("1");
+        startEdge.setEndNode("2");
+        startEdge.setCondition(1);
+        startEdge.setStartLocation(List.of(1D,1D));
+        startEdge.setEndLocation(List.of(1D,1D));
+        edges.add(startEdge);
+
+        // 生成中间节点和边
+        for (int i = 2; i <= 5; i++) {
+            ModelNodeDto middleNode = new ModelNodeDto();
+            middleNode.setNodeUid(String.valueOf(i));
+            middleNode.setName("中间节点" + (i - 1));
+            middleNode.setIdentity("Middle" + (i - 1));
+            middleNode.setOperationType(2);
+            middleNode.setX(1D);
+            middleNode.setY(1D);
+
+            List<UserBaseInfo> candidates = new ArrayList<>();
+            UserBaseInfo user = new UserBaseInfo();
+            user.setId("2");
+            user.setName("张三");
+            candidates.add(user);
+
+            middleNode.setOperationCandidateInfo(candidates);
+            middleNode.setOperationMethod("verify");
+            middleNode.setLocation(2);
+            nodes.add(middleNode);
+
+            // 连接到下一个节点或终止节点
+            if (i < 5) {
+                ProcessNodeEdge edge = new ProcessNodeEdge();
+                edge.setStartNode(String.valueOf(i));
+                edge.setEndNode(String.valueOf(i + 1));
+                edge.setCondition(1);
+                edge.setStartLocation(List.of(1D,1D));
+                edge.setEndLocation(List.of(1D,1D));
+                edges.add(edge);
+            }
+            ProcessNodeEdge rejectEdge = new ProcessNodeEdge();
+            rejectEdge.setStartNode(String.valueOf(i));
+            rejectEdge.setEndNode("7");
+            rejectEdge.setCondition(2);
+            rejectEdge.setStartLocation(List.of(1D,1D));
+            rejectEdge.setEndLocation(List.of(1D,1D));
+            edges.add(rejectEdge);
+        }
+
+        // 添加完成节点和终止节点
+        ModelNodeDto completeNode = new ModelNodeDto();
+        completeNode.setNodeUid("6");
+        completeNode.setName("完成");
+        completeNode.setIdentity("Complete");
+        completeNode.setOperationType(0);
+        completeNode.setOperationMethod("");
+        completeNode.setAutoInterval(0);
+        completeNode.setLocation(3);
+        completeNode.setX(1D);
+        completeNode.setY(1D);
+        nodes.add(completeNode);
+
+        ProcessNodeEdge completeEdge = new ProcessNodeEdge();
+        completeEdge.setStartNode("5");
+        completeEdge.setEndNode("6");
+        completeEdge.setCondition(1);
+        completeEdge.setStartLocation(List.of(1D,1D));
+        completeEdge.setEndLocation(List.of(1D,1D));
+        edges.add(completeEdge);
+
+
+        ModelNodeDto terminateNode = new ModelNodeDto();
+        terminateNode.setNodeUid("7");
+        terminateNode.setName("终止");
+        terminateNode.setIdentity("Terminate");
+        terminateNode.setOperationType(0);
+        terminateNode.setOperationMethod("");
+        terminateNode.setAutoInterval(0);
+        terminateNode.setLocation(4);
+        terminateNode.setX(1D);
+        terminateNode.setY(1D);
+        nodes.add(terminateNode);
+
+        // 使用Jackson序列化为JSON
+        VersionModelCreateForm form = new VersionModelCreateForm();
+        form.setNodes(nodes);
+        form.setEdges(edges);
+        form.setProcessName("划款");
+        form.setCycle(1);
+        form.setCreateBy("2");
+        form.setCreateByName("张三");
+        ObjectMapper mapper = new ObjectMapper();
+        System.out.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(form));
+    }
+}
