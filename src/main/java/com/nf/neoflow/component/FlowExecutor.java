@@ -2,10 +2,7 @@ package com.nf.neoflow.component;
 
 import com.nf.neoflow.config.NeoFlowConfig;
 import com.nf.neoflow.constants.*;
-import com.nf.neoflow.dto.execute.AutoNodeDto;
-import com.nf.neoflow.dto.execute.ExecuteForm;
-import com.nf.neoflow.dto.execute.NodeQueryDto;
-import com.nf.neoflow.dto.execute.UpdateResult;
+import com.nf.neoflow.dto.execute.*;
 import com.nf.neoflow.dto.user.UserBaseInfo;
 import com.nf.neoflow.enums.CacheEnums;
 import com.nf.neoflow.enums.LockEnums;
@@ -30,9 +27,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -176,6 +171,39 @@ public class FlowExecutor {
                 },
                 rejectedExecutionHandler
         );
+    }
+
+    /**
+     * 批量提交到执行器
+     * @param forms 表单
+     */
+    public BatchResultDto batchToExecutor(Set<ExecuteForm> forms) {
+       if (CollectionUtils.isEmpty(forms)) {
+           throw new NeoExecuteException("提交表单不能为空");
+       }
+       int size = forms.size();
+        int limit = config.getBatchSize();
+        if (size > limit) {
+            throw new NeoExecuteException(String.format("当前提交数量-%s，应小于- %s", size, limit));
+        }
+
+        int success = 0;
+        int fail = 0;
+        List<String> successList = new ArrayList<>();
+        List<String> failList = new ArrayList<>();
+        for (ExecuteForm form : forms) {
+            try {
+                executor(form);
+                success += 1;
+                successList.add(form.getBusinessKey());
+            }catch (Exception e) {
+                log.error(e.getMessage(), e);
+                fail += 1;
+                failList.add(form.getBusinessKey() + "：" + e.getMessage());
+            }
+        }
+
+        return new BatchResultDto(size, success, fail, successList, failList);
     }
 
     /**

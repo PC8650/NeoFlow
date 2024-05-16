@@ -4,7 +4,6 @@ import com.nf.neoflow.config.NeoFlowConfig;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
 import org.springframework.core.io.Resource;
@@ -14,7 +13,6 @@ import org.springframework.stereotype.Component;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * cypher 脚本执行器，启动后执行脚本创建约束和索引
@@ -52,7 +50,7 @@ public class CypherScriptExecutor {
         Resource resource = resourceLoader.getResource(scriptFileClassPath);
         List<String> cyphers;
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()))) {
-             cyphers = reader.lines().filter(StringUtils::isNotBlank).toList();
+             cyphers = reader.lines().filter(c -> c.startsWith("create") || c.startsWith("CREATE")).toList();
             log.info("读取完成：{}", scriptFileClassPath);
         } catch (Exception e) {
             log.error(String.format("读取失败：%s", scriptFileClassPath), e);

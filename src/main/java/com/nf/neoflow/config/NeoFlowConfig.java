@@ -60,6 +60,11 @@ public class NeoFlowConfig {
      */
     private Boolean initialsDuring = true;
 
+    /**
+     * 批量提交流程执行上限
+     * 默认 5
+     */
+    private int batchSize = 5;
 
     //锁 Lock
 
