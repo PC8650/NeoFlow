@@ -25,16 +25,16 @@ public class TestCreateVersion {
         startNode.setOperationMethod("begin");
         startNode.setAutoInterval(0);
         startNode.setLocation(1);
-        startNode.setX(1D);
-        startNode.setY(1D);
+        startNode.setX(1.1F);
+        startNode.setY(1.1F);
         nodes.add(startNode);
 
         ProcessNodeEdge startEdge = new ProcessNodeEdge();
         startEdge.setStartNode("1");
         startEdge.setEndNode("2");
         startEdge.setCondition(1);
-        startEdge.setStartLocation(List.of(1D,1D));
-        startEdge.setEndLocation(List.of(1D,1D));
+        startEdge.setStartLocation(List.of(1.1F,1.1F));
+        startEdge.setEndLocation(List.of(1.1F,1.1F));
         edges.add(startEdge);
 
         // 生成中间节点和边
@@ -44,8 +44,8 @@ public class TestCreateVersion {
             middleNode.setName("中间节点" + (i - 1));
             middleNode.setIdentity("Middle" + (i - 1));
             middleNode.setOperationType(2);
-            middleNode.setX(1D);
-            middleNode.setY(1D);
+            middleNode.setX(1.1F);
+            middleNode.setY(1.1F);
 
             List<UserBaseInfo> candidates = new ArrayList<>();
             UserBaseInfo user = new UserBaseInfo();
@@ -64,16 +64,16 @@ public class TestCreateVersion {
                 edge.setStartNode(String.valueOf(i));
                 edge.setEndNode(String.valueOf(i + 1));
                 edge.setCondition(1);
-                edge.setStartLocation(List.of(1D,1D));
-                edge.setEndLocation(List.of(1D,1D));
+                edge.setStartLocation(List.of(1.1F,1.1F));
+                edge.setEndLocation(List.of(1.1F,1.1F));
                 edges.add(edge);
             }
             ProcessNodeEdge rejectEdge = new ProcessNodeEdge();
             rejectEdge.setStartNode(String.valueOf(i));
             rejectEdge.setEndNode("7");
             rejectEdge.setCondition(2);
-            rejectEdge.setStartLocation(List.of(1D,1D));
-            rejectEdge.setEndLocation(List.of(1D,1D));
+            rejectEdge.setStartLocation(List.of(1.1F,1.1F));
+            rejectEdge.setEndLocation(List.of(1.1F,1.1F));
             edges.add(rejectEdge);
         }
 
@@ -86,16 +86,16 @@ public class TestCreateVersion {
         completeNode.setOperationMethod("");
         completeNode.setAutoInterval(0);
         completeNode.setLocation(3);
-        completeNode.setX(1D);
-        completeNode.setY(1D);
+        completeNode.setX(1.1F);
+        completeNode.setY(1.1F);
         nodes.add(completeNode);
 
         ProcessNodeEdge completeEdge = new ProcessNodeEdge();
         completeEdge.setStartNode("5");
         completeEdge.setEndNode("6");
         completeEdge.setCondition(1);
-        completeEdge.setStartLocation(List.of(1D,1D));
-        completeEdge.setEndLocation(List.of(1D,1D));
+        completeEdge.setStartLocation(List.of(1.1F,1.1F));
+        completeEdge.setEndLocation(List.of(1.1F,1.1F));
         edges.add(completeEdge);
 
 
@@ -107,8 +107,8 @@ public class TestCreateVersion {
         terminateNode.setOperationMethod("");
         terminateNode.setAutoInterval(0);
         terminateNode.setLocation(4);
-        terminateNode.setX(1D);
-        terminateNode.setY(1D);
+        terminateNode.setX(1.1F);
+        terminateNode.setY(1.1F);
         nodes.add(terminateNode);
 
         // 使用Jackson序列化为JSON
