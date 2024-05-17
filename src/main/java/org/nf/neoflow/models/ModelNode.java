@@ -48,17 +48,17 @@ public class ModelNode {
     @Schema(name = "自动执行间隔",description = "只精确到日期（x 天后，x <= 0 立即自动执行），有值将忽略操作类型和候选人")
     private Integer autoInterval;
 
-    @Schema(name = "默认通过时的跳转条件", description = "跳转条件缺失时默认选择改值，配合自动节点")
+    @Schema(name = "通过时默认的跳转条件", description = "跳转条件缺失时默认选择改值，配合自动节点")
     private Integer defaultPassCondition;
 
     @Schema(name = "节点位置", description = "1-开始，2-中间，3-完成，4-终止")
     private Integer location;
 
     @Schema(name = "x坐标")
-    private Double x;
+    private Float x;
 
     @Schema(name = "y坐标")
-    private Double y;
+    private Float y;
 
     /**
      * 复制忽略属性

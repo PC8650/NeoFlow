@@ -48,10 +48,10 @@ public class ModelNodeDto {
     private Integer location;
 
     @Schema(name = "x坐标")
-    private Double x;
+    private Float x;
 
     @Schema(name = "y坐标")
-    private Double y;
+    private Float y;
 
 
     public void check() {

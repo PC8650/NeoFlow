@@ -25,10 +25,10 @@ public class ProcessNodeEdge {
     Integer condition;
 
     @Schema(name = "起始坐标")
-    List<Double> startLocation;
+    List<Float> startLocation;
 
     @Schema(name = "结束坐标")
-    List<Double> endLocation;
+    List<Float> endLocation;
 
     public void check() {
         if (StringUtils.isBlank(startNode) || StringUtils.isBlank(endNode)) {
