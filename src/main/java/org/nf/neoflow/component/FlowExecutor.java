@@ -336,6 +336,10 @@ public class FlowExecutor {
                     getLock = lockManager.getLock(form.getBusinessKey(), LockEnums.FLOW_EXECUTE);
                 }
             } else {
+                if (config.getIndependence()) {
+                    log.error("流程执行失败，未设置流程实例业务key：流程 {}-版本 {}", form.getProcessName(), form.getVersion());
+                    throw new NeoExecuteException("流程执行失败，未设置流程实例业务key");
+                }
                 getLock = getLockByLast;
             }
 
