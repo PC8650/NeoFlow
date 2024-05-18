@@ -14,15 +14,18 @@ public class NodeQueryDto<T> {
     T node;
 
     @Schema(name = "映射查询")
-    String nodeJson;
+    private String nodeJson;
 
     @Schema(name = "上一节点状态")
     private Boolean before;
 
     @Schema(name = "版本")
-    Integer version;
+    private Integer version;
+
+    @Schema(name = "到达目标模型节点的条件")
+    private Integer condition;
 
     @Schema(name = "版本对应的终止方法")
-    String terminatedMethod;
+    private String terminatedMethod;
 
 }

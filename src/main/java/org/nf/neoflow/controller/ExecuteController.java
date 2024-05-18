@@ -6,6 +6,8 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.nf.neoflow.dto.execute.BatchResultDto;
 import org.nf.neoflow.dto.execute.ExecuteForm;
+import org.nf.neoflow.dto.execute.GraftForm;
+import org.nf.neoflow.dto.execute.GraftResult;
 import org.nf.neoflow.dto.response.Result;
 import org.nf.neoflow.service.ExecuteService;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +37,18 @@ public class ExecuteController {
     @PostMapping("/batch_execute")
     public ResponseEntity<Result<BatchResultDto>> batchExecute(@Valid @RequestBody Set<ExecuteForm> forms) {
         return ResponseEntity.ok(Result.success(executeService.executeBatch(forms)));
+    }
+
+    @Operation(description = "流程实例移植版本")
+    @PostMapping("/graft")
+    public ResponseEntity<Result<GraftResult>> graft(@Valid @RequestBody GraftForm form) {
+        return ResponseEntity.ok(Result.success(executeService.instanceVersionGraft(form)));
+    }
+
+    @Operation(description = "批量移植流程实例版本")
+    @PostMapping("/batch_graft")
+    public ResponseEntity<Result<BatchResultDto>> batchGraft(@Valid @RequestBody Set<GraftForm> forms) {
+        return ResponseEntity.ok(Result.success(executeService.graftBatch(forms)));
     }
 
     @Operation(description = "执行自动节点")

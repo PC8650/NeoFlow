@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * 流程执行组件
@@ -174,32 +175,75 @@ public class FlowExecutor {
     }
 
     /**
-     * 批量提交到执行器
-     * @param forms 表单
+     * 实例版本移植，使其在原有基础上使用新的版本模型。
+     * 仅在当前节点为待办时，由候选人可确认移植。
+     * {@link  GraftForm#getGraftNum() GraftForm.graftNum} 为空时，需要当前节点的modelNodeUid需要在移植版本的模型节点中有对应；
+     * {@link  GraftForm#getGraftNum() GraftForm.graftNum} 不为空，移植到其对应的节点。
+     * 当前操作类型默认为 {@link  InstanceOperationType#PASS pass} ，将默认选择跳转到移植节点的条件，是否执行方法由 {@link  GraftForm#getExecuteMethod()}  GraftForm.executeMethod} 决定，
+     * 并以移植节点模型生成下一个实例节点
+     * @param form 表单
      */
-    public BatchResultDto batchToExecutor(Set<ExecuteForm> forms) {
-       if (CollectionUtils.isEmpty(forms)) {
-           throw new NeoExecuteException("提交表单不能为空");
-       }
-       int size = forms.size();
+    public void instanceVersionGraft(GraftForm form) {
+        UpdateResult updateResult = transactionTemplate.execute(status -> {
+            try {
+                return executeGraft(form);
+            }catch (Exception e) {
+                status.setRollbackOnly();
+                throw e;
+            }
+        });
+
+        rightNowNext(updateResult, form.getBusinessKey());
+    }
+
+    /**
+     * 批量操作
+     * @param forms 表单
+     * @param clazz 表单类型
+     * @return BatchResultDto
+     */
+    public BatchResultDto batchOperation(Set<?> forms, Class<?> clazz) {
+        if (CollectionUtils.isEmpty(forms)) {
+            throw new NeoExecuteException("提交表单不能为空");
+        }
+        int size = forms.size();
         int limit = config.getBatchSize();
         if (size > limit) {
             throw new NeoExecuteException(String.format("当前提交数量-%s，应小于- %s", size, limit));
         }
-
         int success = 0;
         int fail = 0;
         List<String> successList = new ArrayList<>();
         List<String> failList = new ArrayList<>();
-        for (ExecuteForm form : forms) {
-            try {
-                executor(form);
-                success += 1;
-                successList.add(form.getBusinessKey());
-            }catch (Exception e) {
-                log.error(e.getMessage(), e);
-                fail += 1;
-                failList.add(form.getBusinessKey() + "：" + e.getMessage());
+        if (clazz == ExecuteForm.class) {
+            //批量执行流程
+            ExecuteForm f;
+            for (Object form : forms) {
+                f = (ExecuteForm) form;
+                try {
+                    executor(f);
+                    success += 1;
+                    successList.add(f.getBusinessKey());
+                }catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                    fail += 1;
+                    failList.add(f.getBusinessKey() + "：" + e.getMessage());
+                }
+            }
+        }else if (clazz == GraftForm.class) {
+            //批量移植流程版本
+            GraftForm f;
+            for (Object form : forms) {
+                f = (GraftForm) form;
+                try {
+                    instanceVersionGraft(f);
+                    success += 1;
+                    successList.add(f.getBusinessKey());
+                }catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                    fail += 1;
+                    failList.add(f.getBusinessKey() + "：" + e.getMessage());
+                }
             }
         }
 
@@ -485,6 +529,66 @@ public class FlowExecutor {
     }
 
     /**
+     * 执行流程实例版本移植
+     * @param form 表单
+     * @return updateResult
+     */
+    public UpdateResult executeGraft(GraftForm form) {
+        boolean getLock = false;
+        boolean autoNextRightNow = false;
+        String businessKey = form.getBusinessKey();
+        log.info("移植流程版本：流程 {}-版本 {}-key {} -移植版本 {}",
+                form.getProcessName(), form.getVersion(), businessKey, form.getGraftVersion());
+        try {
+            form.check();
+            getLock = lockManager.getLock(businessKey, LockEnums.FLOW_EXECUTE);
+            //获取当前节点信息
+            ExecuteForm executeForm = new ExecuteForm(form);
+            executeForm.setOperator(userChoose.user(form.getOperator()));
+            NodeQueryDto<InstanceNode> dto = queryCurrentInstanceNode(executeForm);
+            InstanceNode current = dto.getNode();
+
+            //校验候选人
+            inCandidate(executeForm, current, false);
+
+            //查询移植版本模型节点
+            NodeQueryDto<ModelNode> modeDto = graftVersionModelNode(form, current.getModelNodeUid());
+            executeForm.setOperationType(InstanceOperationType.PASS);
+
+            //执行节点方法
+            if (form.getExecuteMethod()) {
+                executeForm.setOperationMethod(current.getOperationMethod());
+                operateMethod(executeForm);
+            }
+            executeForm.setCondition(modeDto.getCondition());
+
+            //构建下一个实例节点
+            InstanceNode next = constructInstanceNode(modeDto.getNode(), executeForm);
+
+            //设置结束时间、实际操作人、状态
+            current.setEndTime(LocalDateTime.now());
+            current.setOperationBy(JacksonUtils.toJson(form.getOperator()));
+            current.setStatus(operateTypeToNodeStatus(executeForm.getOperationType()));
+            current.setDuring(getDuring(Duration.between(current.getBeginTime(), current.getEndTime())));
+
+            next.setBeginTime(current.getEndTime());
+
+            //更新流程
+            UpdateResult updateResult = updateInstanceByGraft(current, next, executeForm, form);
+            autoNextRightNow = updateResult.autoRigNow();
+            return updateResult;
+        } catch (Exception e) {
+            lockManager.releaseLock(businessKey, getLock, LockEnums.FLOW_EXECUTE);
+            getLock = false;
+            throw e;
+        } finally {
+            if (!autoNextRightNow) {
+                lockManager.releaseLock(businessKey, getLock, LockEnums.FLOW_EXECUTE);
+            }
+        }
+    }
+
+    /**
      * 获取当前实例节点并执行节点方法
      * @param form 表单
      * @param isTerminated 是否为终止操作
@@ -533,10 +637,11 @@ public class FlowExecutor {
             //判断返回的businessKey
             if (StringUtils.isBlank(form.getBusinessKey())) {
                 log.error("流程执行失败，未设置流程实例业务key：流程 {}-版本 {}", form.getProcessName(), form.getVersion());
+                throw new NeoExecuteException("流程执行失败，未设置流程实例业务key");
             }
 
             //校验关键数据一致性
-            if ((StringUtils.isNotBlank(businessKey) && !Objects.equals(form.getBusinessKey(), businessKey)) ||
+            if (!Objects.equals(form.getBusinessKey(), businessKey) ||
                     !Objects.equals(form.getProcessName(), processName) ||
                     !Objects.equals(form.getVersion(), version) ||
                     !Objects.equals(form.getNodeId(), nodeId) ||
@@ -561,6 +666,101 @@ public class FlowExecutor {
                 form.setCondition(current.getDefaultPassCondition());
             }
         }
+    }
+
+    /**
+     * 执行节点方法
+     * @param form 表单
+     */
+    private void operateMethod(ExecuteForm form) {
+        log.info("移植流程实例版本，执行节点方法");
+        //执行节点方法
+        if (config.getIndependence()) {
+            log.info("独立部署，跳过流程方法");
+            return;
+        }
+
+        //记录关键数据
+        String businessKey = form.getBusinessKey();
+        String processName = form.getProcessName();
+        Integer version = form.getVersion();
+        Long nodeId = form.getNodeId();
+        Integer num = form.getNum();
+
+        //执行节点方法
+        log.info("集成部署，执行流程方法-{}", form.getOperationMethod());
+        form = operatorManager.operate(form);
+
+        //判断返回的businessKey
+        if (StringUtils.isBlank(form.getBusinessKey())) {
+            log.error("流程执行失败，未设置流程实例业务key：流程 {}-版本 {}", form.getProcessName(), form.getVersion());
+            throw new NeoExecuteException("流程执行失败，未设置流程实例业务key");
+        }
+
+        //校验关键数据一致性
+        if (!Objects.equals(form.getBusinessKey(), businessKey) ||
+                !Objects.equals(form.getProcessName(), processName) ||
+                !Objects.equals(form.getVersion(), version) ||
+                !Objects.equals(form.getNodeId(), nodeId) ||
+                !Objects.equals(form.getNum(), num)) {
+            log.error("流程执行失败，关键数据不一致：流程 {}-版本 {}-key {}-当前节点位置 {}", processName, version, businessKey, num);
+            throw new NeoExecuteException("流程执行失败，节点方法后关键数据变更");
+        }
+    }
+
+    /**
+     * 移植版本更新流程
+     * @param current 当前实例节点
+     * @param next  下一个实例节点
+     * @param executeForm 执行表单
+     * @param graftForm 移植表单
+     * @return 更新结果
+     */
+    private UpdateResult updateInstanceByGraft(InstanceNode current, InstanceNode next, ExecuteForm executeForm, GraftForm graftForm) {
+        current.setOperationRemark(executeForm.getOperationRemark());
+        executeForm.setOperationRemark(null);
+        //计算流程持续时间
+        if (!InstanceOperationType.INITIATE.equals(executeForm.getOperationType())) {
+            current.setProcessDuring(getInstanceDuring(executeForm, current.getEndTime()));
+        }
+        //spring-data-neo4j复杂对象作为参数，需转成map，LocalDateTime、LocalDate会被转成数组，需手动处理
+        Map<String, Object> cMap = JacksonUtils.objToMap(current);
+        cMap.replace("beginTime", current.getBeginTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        if (current.getEndTime() != null) {
+            cMap.replace("endTime", current.getEndTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        }
+        if (current.getAutoTime() != null) {
+            cMap.replace("autoTime", current.getAutoTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
+        }
+        Map<String, Object> nMap = JacksonUtils.objToMap(next);
+        if (nMap != null) {
+            nMap.replace("beginTime", next.getBeginTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            if (next.getAutoTime() != null) {
+                nMap.replace("autoTime", next.getAutoTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
+            }
+        }
+        Integer flowStatus = getFlowStatus(current, next);
+        Long nextId;
+
+        log.info("移植流程版本：流程 {}-版本 {}-key {} -移植版本 {}",
+                executeForm.getProcessName(), executeForm.getVersion(), executeForm.getBusinessKey(), graftForm.getGraftVersion());
+        if (executeForm.getNum() < 5) {
+            nextId = instanceNodeRepository.updateFlowInstanceByGraft(executeForm.getProcessName(), executeForm.getVersion(),
+                    executeForm.getNodeId(), executeForm.getBusinessKey(), executeForm.getCondition(), flowStatus, graftForm.getGraftVersion(), cMap, nMap);
+        } else {
+            nextId = instanceNodeRepository.updateFlowInstanceByGraftTooLong(executeForm.getProcessName(), executeForm.getVersion(),
+                    executeForm.getNodeId(), graftForm.getNum(), executeForm.getBusinessKey(), executeForm.getCondition(), flowStatus, graftForm.getGraftVersion(), cMap, nMap);
+        }
+        log.info("流程状态移植：流程 {}-版本 {}-key {} -移植版本 {}",
+                executeForm.getProcessName(), executeForm.getVersion(), executeForm.getBusinessKey(), graftForm.getGraftVersion());
+
+        //删除实例操作历史缓存i_o_h
+        cacheManager.deleteCache(CacheEnums.I_O_H.getType(), List.of(executeForm.getBusinessKey(), cacheManager.mergeKey(executeForm.getBusinessKey(), executeForm.getNum().toString())));
+
+        next.setId(nextId);
+        graftForm.increment(nextId);
+        executeForm.setVersion(graftForm.getGraftVersion());
+        return new UpdateResult(executeForm, next, next.getAutoTime() != null, true);
     }
 
     /**
@@ -1197,6 +1397,55 @@ public class FlowExecutor {
                 .setOperationType(InstanceOperationType.PASS);
 
         return form;
+    }
+
+    /**
+     * 获取移植版本模型节点
+     * @param form 表单
+     * @param modeNodeUid 模型节点uid
+     */
+    private NodeQueryDto<ModelNode> graftVersionModelNode(GraftForm form, String modeNodeUid) {
+        NeoCacheManager.CacheValue<NodeQueryDto> cacheValue;
+        String cacheType;
+        String cacheKey;
+        NodeQueryDto<ModelNode> modelDto;
+        String errorLog;
+        if (form.getGraftNum() == null) {
+            //通过nodeUid移植
+            cacheType = CacheEnums.N_M_N.getType();
+            cacheKey = cacheManager.mergeKey(form.getProcessName(), form.getGraftVersion().toString(), modeNodeUid);
+            cacheValue = cacheManager.getCache(cacheType, cacheKey, NodeQueryDto.class);
+            if (cacheValue.filter() || cacheValue.value() != null) {
+                modelDto = (NodeQueryDto<ModelNode>) cacheValue.value();
+            }else {
+                modelDto = modelNodeRepository.queryModelNode(form.getProcessName(), form.getGraftVersion(), modeNodeUid);
+                cacheManager.setCache(cacheType, cacheKey, modelDto);
+            }
+            errorLog = String.format("流程执行失败，未找到移植节点：流程 %s-版本 %s -key %s -当前节点位置 %s -移植版本 %s-移植节点uid %s",
+                    form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNum(), form.getGraftVersion(), modeNodeUid);
+        }else {
+            //通过节点位置移植
+            cacheType = CacheEnums.M_N_U.getType();
+            cacheKey = cacheManager.mergeKey(form.getProcessName(), form.getGraftVersion().toString(), form.getGraftNum().toString());
+            cacheValue = cacheManager.getCache(cacheType, cacheKey, NodeQueryDto.class);
+            if (cacheValue.filter() || cacheValue.value() != null) {
+                modelDto = (NodeQueryDto<ModelNode>) cacheValue.value();
+            }else {
+                modelDto = modelNodeRepository.queryModelNode(form.getProcessName(), form.getGraftVersion(), form.getGraftNum());
+                cacheManager.setCache(cacheType, cacheKey, modelDto);
+            }
+            errorLog = String.format("流程执行失败，未找到移植节点：流程 %s-版本 %s -key %s -当前节点位置 %s -移植版本 %s -移植位置 %s",
+                    form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNum(), form.getGraftVersion(), form.getGraftNum());
+        }
+
+        if (modelDto == null || StringUtils.isBlank(modelDto.getNodeJson())) {
+            log.error(errorLog);
+            throw new NeoExecuteException("流程执行失败，未找到移植节点");
+        }
+
+        modelDto.setNode(JacksonUtils.toObj(modelDto.getNodeJson(), ModelNode.class));
+
+        return modelDto;
     }
 
     /**

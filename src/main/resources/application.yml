@@ -13,7 +13,7 @@ springdoc:
     layout: BaseLayout
 
 neo:
-  scan-package: com.nf.neoflow.dto.test
+  scan-package: org.nf.neoflow.dto.test
   scan-auto: true
   auto-lock-expired: 20
   auto-lock-check-period: 1
