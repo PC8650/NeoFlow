@@ -79,8 +79,8 @@ public class ExecuteForm {
     private String operationRemark;
 
     public void baseCheck() {
-        if (num == null || num < 1) {
-            throw new NeoExecuteException("实例节点位置应 >= 1");
+        if (num == null || num < 2) {
+            throw new NeoExecuteException("实例节点位置应 >= 2");
         }
         if (nodeId == null || nodeId < 1) {
             throw new NeoExecuteException("实例节点id应 >= 1");
