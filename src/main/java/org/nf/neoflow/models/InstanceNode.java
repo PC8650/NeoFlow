@@ -77,6 +77,9 @@ public class InstanceNode {
     @Schema(name = "流程持续时间")
     private String ProcessDuring;
 
+    @Schema(name = "版本移植")
+    private String graft;
+
     /**
      * 复制忽略属性
      * @return String[]
@@ -84,6 +87,7 @@ public class InstanceNode {
     public String[] ignoreCopyPropertyListOfForward() {
         return new String[]{
                 "id","status",
+                "graft",
                 "autoTime",
                 "operationBy",
                 "operationType",

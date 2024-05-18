@@ -18,6 +18,9 @@ public class QueryForOperatorDto {
     @Schema(name = "流程名称")
     private String name;
 
+    @Schema(name = "激活版本")
+    private Integer activeVersion;
+
     @Schema(name = "流程版本")
     private Integer version;
 

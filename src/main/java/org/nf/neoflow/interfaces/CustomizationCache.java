@@ -9,7 +9,7 @@ import java.util.Map;
 
 /**
  * 自定义缓存接口
- * {@link NeoFlowConfig#customizationCache NeoFlowConfig.customizationCache}=true时，需要实现接口，重写方法，手动注入spring容器。
+ * {@link NeoFlowConfig#getCustomizationCache() NeoFlowConfig.customizationCache}=true时，需要实现接口，重写方法，手动注入spring容器。
  * 缓存过期策略需要根据 {@link CacheEnums CacheType} 在方法内部决定
  * @author PC8650
  */

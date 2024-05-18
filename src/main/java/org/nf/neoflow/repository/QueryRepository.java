@@ -51,7 +51,7 @@ public interface QueryRepository extends Neo4jRepository<Instance, Long> {
         optional match (v:Version)-[:INSTANCE]->(i) where ($1 is null or v.version = $1)
         optional match (p)-[:VERSION]->(v) where ($0 is null or $0 = '' or p.name contains $0)
         with p, v, b where p is not null
-        return p.name as name, v.version as version,
+        return p.name as name, p.activeVersion as activeVersion, v.version as version,
         b.beginTime as initiateTime, b.endTime as updateTime, b.status as status,
         b.key as businessKey, b.num as num, b.currentNodeId as nodeId
         :#{orderBy(#pageable)}
@@ -82,7 +82,7 @@ public interface QueryRepository extends Neo4jRepository<Instance, Long> {
         match (v:Version)-[:INSTANCE]->(:Instance)-[b]->(:InstanceNode) where ($1 is null or v.version = $1)
         optional match (p)-[:VERSION]->(v) where ($0 is null or $0 = '' or p.name contains $0)
         with p, v, b where p is not null
-        return p.name as name, v.version as version,
+        return p.name as name, p.activeVersion as activeVersion, v.version as version,
         b.beginTime as initiateTime, b.endTime as updateTime,
         b.key as businessKey, b.num as num, b.currentNodeId as nodeId
         :#{orderBy(#pageable)}
@@ -119,7 +119,7 @@ public interface QueryRepository extends Neo4jRepository<Instance, Long> {
         :#{orderBy(#pageable)}
         skip :#{#pageable.offset} limit :#{#pageable.pageSize}
         return doneNodes,
-        p.name as name, v.version as version,
+        p.name as name, p.activeVersion as activeVersion, v.version as version,
         b.beginTime as initiateTime, b.endTime as updateTime,
         b.key as businessKey, b.num as num, b.currentNodeId as nodeId
     """,
@@ -216,7 +216,7 @@ public interface QueryRepository extends Neo4jRepository<Instance, Long> {
      */
     @Query("""
         match (:Instance)-[b:BUSINESS{key:$0}]->(i:InstanceNode)
-        with i, case when $1 is null then b.num else $1 end as length
+        with i, coalesce($1, b.num) as length
         call apoc.path.expandConfig(i, {
             relationshipFilter: "NEXT>",
             minLevel: length-1,
@@ -229,10 +229,12 @@ public interface QueryRepository extends Neo4jRepository<Instance, Long> {
         return n.name as nodeName,
         n.status as operationResult,
         apoc.convert.fromJsonList(n.operationCandidate) as candidate,
-        apoc.convert.fromJsonMap(n.operationBy) as operator,
+        case when n.operationBy is not null then apoc.convert.fromJsonMap(n.operationBy) else {} end as operator,
         n.operationRemark as operationRemark,
+        n.graft as graft,
         n.beginTime as beginTime, n.endTime as endTime,
         n.during as during
+        order by beginTime
     """)
     List<OperationHistoryDto> queryInstanceOperationHistory(String businessKey, Integer num);
 

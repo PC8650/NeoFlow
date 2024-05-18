@@ -83,6 +83,130 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
     NodeQueryDto<InstanceNode> queryCurrentInstanceNodeTooLong(String processName, Integer version, String businessKey, Long nodeId, Integer num);
 
     /**
+     * 版本移植更新流程实例
+     * @param processName 流程名称
+     * @param version 版本
+     * @param nodeId 当前实例节点id
+     * @param businessKey 业务key
+     * @param condition 跳转条件
+     * @param flowStatus 流程状态
+     * @param graftVersion 移植版本
+     * @param cMap 当前实例节点
+     * @param nMap 下一实例节点
+     * @return 下一实例节点
+     */
+    @Query("""
+        match (p:Process{name:$processName})
+        optional match (p)-[:VERSION]->(v:Version{version:$version})-[:INSTANCE]->(i:Instance) where i is not null
+        //更新当前节点和流程状态
+        optional match (i)-[b:BUSINESS{key:$businessKey,status:1}]->(f:InstanceNode) where f is not null
+        optional match (f)-[:NEXT*0..]->(c:InstanceNode) where id(c) = $nodeId
+        set c.operationBy = $cMap.operationBy, c.endTime = localDateTime($cMap.endTime),
+        c.status = $cMap.status, c.operationRemark = $cMap.operationRemark,
+        c.during = $cMap.during, c.processDuring = $cMap.processDuring,
+        c.graft = $version + '-->' + $graftVersion,
+        b.status = $flowStatus, b.endTime = localDateTime($cMap.endTime), b.during = $cMap.processDuring,
+        b.operationBy = case when $cMap.autoTime is null then $cMap.operationBy else b.operationBy end,
+        b.key = null
+        
+        //初始化下一节点
+        with p, i, b, f, c where c is not null
+        call apoc.do.when (
+            $nMap is null,
+            'return null as n',
+            'create (c)-[nr:NEXT]->(n:InstanceNode)
+            set nr.condition = condition,
+            n+= nMap, n.autoTime = date(nMap.autoTime),
+            n.beginTime = localDateTime(nMap.beginTime),
+            b.cycle = case when n.location = 1 then coalesce(b.cycle, 0) + 1 else b.cycle end,
+            b.operationCandidate = nMap.operationCandidate,
+            b.num = b.num + 1, b.currentNodeId = id(n)
+            return n',
+            {c:c, b:b, nMap:$nMap, condition:$condition}
+        ) yield value
+        
+        //新建[:BUSINESS]到移植版本的(Instance)
+        with p, b, f, value.n as n
+        optional match (p)-[:VERSION]-(:Version{version:$graftVersion})-[:INSTANCE]->(gi:Instance)
+        create (gi)-[nb:BUSINESS]->(f)
+        with b, nb, n
+        set nb += b, nb.key = $businessKey
+        delete b
+        with n
+        
+        return id(n)
+    """)
+    Long updateFlowInstanceByGraft(String processName, Integer version, Long nodeId,
+                            String businessKey, Integer condition, Integer flowStatus, Integer graftVersion,
+                            Map<String, Object> cMap, Map<String, Object> nMap);
+
+    /**
+     * 版本移植更新流程实例
+     * @param processName 流程名称
+     * @param version 版本
+     * @param nodeId 当前实例节点id
+     * @param businessKey 业务key
+     * @param condition 跳转条件
+     * @param flowStatus 流程状态
+     * @param graftVersion 移植版本
+     * @param cMap 当前实例节点
+     * @param nMap 下一实例节点
+     * @return 下一实例节点
+     */
+    @Query("""
+        match (p:Process{name:$processName})
+        optional match (p)-[:VERSION]->(v:Version{version:$version})-[:INSTANCE]->(i:Instance) where i is not null
+        //更新当前节点和流程状态
+        with p, i, $num-1 as l
+        optional match (i)-[b:BUSINESS{key:$businessKey,status:1}]->(f:InstanceNode) where f is not null
+        call apoc.path.expandConfig(f, {
+            relationshipFilter: "NEXT>",
+            minLevel: l,
+            maxLevel: l,
+            limit: 1
+        }) yield path
+        with p, i, b, f, last(nodes(path)) as c, $cMap as cMap
+        where id(c) = $nodeId
+        set c.operationBy = cMap.operationBy, c.endTime = localDateTime(cMap.endTime),
+        c.status = cMap.status, c.operationRemark = cMap.operationRemark,
+        c.during = cMap.during, c.processDuring = cMap.processDuring,
+        c.graft = $version + '-->' + $graftVersion,
+        b.status = $flowStatus, b.endTime = localDateTime(cMap.endTime), b.during = cMap.processDuring,
+        b.operationBy = case when cMap.autoTime is null then cMap.operationBy else b.operationBy end,
+        b.key = null
+        
+        //初始化下一节点
+        with p, i, b, f, c where c is not null
+        call apoc.do.when (
+            $nMap is null,
+            'return null as n',
+            'create (c)-[nr:NEXT]->(n:InstanceNode)
+            set nr.condition = condition,
+            n+= nMap, n.autoTime = date(nMap.autoTime),
+            n.beginTime = localDateTime(nMap.beginTime),
+            b.cycle = case when n.location = 1 then coalesce(b.cycle, 0) + 1 else b.cycle end,
+            b.operationCandidate = nMap.operationCandidate,
+            b.num = b.num + 1, b.currentNodeId = id(n)
+            return n',
+            {c:c, b:b, nMap:$nMap, condition:$condition}
+        ) yield value
+        
+        //新建[:BUSINESS]到移植版本的(Instance)
+        with p, b, f, value.n as n
+        optional match (p)-[:VERSION]-(:Version{version:$graftVersion})-[:INSTANCE]->(gi:Instance)
+        create (gi)-[nb:BUSINESS]->(f)
+        with b, nb, n
+        set nb += b, nb.key = $businessKey
+        delete b
+        with n
+        
+        return id(n)
+    """)
+    Long updateFlowInstanceByGraftTooLong(String processName, Integer version, Long nodeId, Integer num,
+                                   String businessKey, Integer condition, Integer flowStatus, Integer graftVersion,
+                                   Map<String, Object> cMap, Map<String, Object> nMap);
+
+    /**
      * 更新流程实例
      * @param processName 流程名称
      * @param version 版本
@@ -228,6 +352,13 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
     """)
     InstanceNode queryInstanceInitiateNode(String processName, Integer version, String businessKey);
 
+    /**
+     * 查询实例开始时间
+     * @param processName 流程名称
+     * @param version 版本
+     * @param businessKey 业务key
+     * @return LocalDateTime
+     */
     @Query("""
         match (p:Process{name:$0})
         optional match (p)-[:VERSION]->(v:Version{version:$1})-[:INSTANCE]->(i:Instance)

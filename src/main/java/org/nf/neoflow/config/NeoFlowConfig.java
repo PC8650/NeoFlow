@@ -59,7 +59,7 @@ public class NeoFlowConfig {
     private int initiatorFlag = 0;
 
     /**
-     *  {@link InstanceNode#during InstanceNode.during} 是否使用首字母缩写格式
+     *  {@link InstanceNode#getDuring() InstanceNode.during} 是否使用首字母缩写格式
      *  true：xDxHxMxS
      *  false：x天x时x分x秒
      *  默认false
@@ -67,7 +67,7 @@ public class NeoFlowConfig {
     private Boolean initialsDuring = true;
 
     /**
-     * 批量提交流程执行上限
+     * 流程批量操作上限
      * 默认 5
      */
     private int batchSize = 5;

@@ -8,6 +8,7 @@ import org.nf.neoflow.dto.user.UserBaseInfo;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 流程实例操作历史
@@ -27,6 +28,9 @@ public class OperationHistoryDto {
 
     @Schema(name = "操作结果", description = "1-待办，2-同意，3-拒绝，4-转发，5-终止")
     private Integer operationResult;
+
+    @Schema(name = "版本移植")
+    private String graft;
 
     @Schema(name = "操作备注")
     private String operationRemark;

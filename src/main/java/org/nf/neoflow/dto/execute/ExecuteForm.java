@@ -4,9 +4,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.Range;
+import org.nf.neoflow.constants.InstanceOperationType;
 import org.nf.neoflow.dto.user.UserBaseInfo;
 import org.nf.neoflow.exception.NeoExecuteException;
 import org.springframework.util.CollectionUtils;
@@ -20,8 +22,19 @@ import java.util.Map;
  * @author PC8650
  */
 @Data
+@NoArgsConstructor
 @Accessors(chain = true)
 public class ExecuteForm {
+
+    public ExecuteForm(GraftForm form) {
+        this.processName = form.getProcessName();
+        this.version = form.getVersion();
+        this.businessKey = form.getBusinessKey();
+        this.num = form.getNum();
+        this.nodeId = form.getNodeId();
+        this.operationRemark = form.getOperationRemark();
+        this.operationType = InstanceOperationType.PASS;
+    }
 
     @Schema(name = "流程名称")
     @NotBlank(message = "流程名称不能为空")

@@ -44,7 +44,7 @@ public class BaseUserChoose {
 
     /**
      * 根据模型节点获取实际候选人
-     * 需发起人操作类型 {@link NeoFlowConfig#initiatorFlag NeoFlowConfig.initiatorFlag} 的节点不会调用此方法
+     * 需发起人操作类型 {@link NeoFlowConfig#getInitiatorFlag()  NeoFlowConfig.initiatorFlag} 的节点不会调用此方法
      * @param operationType 节点操作类型
      * @param modelCandidateInfo 模型节点候选人信息
      * @return List<UserBaseInfo>
