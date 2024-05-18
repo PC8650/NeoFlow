@@ -564,6 +564,7 @@ public class FlowExecutor {
                 executeForm.setOperationMethod(current.getOperationMethod());
                 operateMethod(executeForm);
             }
+            //设置跳转条件为移植版本模型节点跳转条件
             executeForm.setCondition(modeDto.getCondition());
 
             //构建下一个实例节点
@@ -729,20 +730,8 @@ public class FlowExecutor {
         }
         //spring-data-neo4j复杂对象作为参数，需转成map，LocalDateTime、LocalDate会被转成数组，需手动处理
         Map<String, Object> cMap = JacksonUtils.objToMap(current);
-        cMap.replace("beginTime", current.getBeginTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-        if (current.getEndTime() != null) {
-            cMap.replace("endTime", current.getEndTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-        }
-        if (current.getAutoTime() != null) {
-            cMap.replace("autoTime", current.getAutoTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
-        }
         Map<String, Object> nMap = JacksonUtils.objToMap(next);
-        if (nMap != null) {
-            nMap.replace("beginTime", next.getBeginTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-            if (next.getAutoTime() != null) {
-                nMap.replace("autoTime", next.getAutoTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
-            }
-        }
+        updateMapReady(current, next, cMap, nMap);
         Integer flowStatus = getFlowStatus(current, next);
         Long nextId;
 
@@ -762,7 +751,9 @@ public class FlowExecutor {
         cacheManager.deleteCache(CacheEnums.I_O_H.getType(), List.of(executeForm.getBusinessKey(), cacheManager.mergeKey(executeForm.getBusinessKey(), executeForm.getNum().toString())));
 
         next.setId(nextId);
+        //移植表单自增num和设置nodeId，用于返回
         graftForm.increment(nextId);
+        //执行表单这种版本为移植版本，用于后续执行自动节点
         executeForm.setVersion(graftForm.getGraftVersion());
         return new UpdateResult(executeForm, next, next.getAutoTime() != null, true);
     }
@@ -786,20 +777,8 @@ public class FlowExecutor {
         }
         //spring-data-neo4j复杂对象作为参数，需转成map，LocalDateTime、LocalDate会被转成数组，需手动处理
         Map<String, Object> cMap = JacksonUtils.objToMap(current);
-        cMap.replace("beginTime", current.getBeginTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-        if (current.getEndTime() != null) {
-            cMap.replace("endTime", current.getEndTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-        }
-        if (current.getAutoTime() != null) {
-            cMap.replace("autoTime", current.getAutoTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
-        }
         Map<String, Object> nMap = JacksonUtils.objToMap(next);
-        if (nMap != null) {
-            nMap.replace("beginTime", next.getBeginTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-            if (next.getAutoTime() != null) {
-                nMap.replace("autoTime", next.getAutoTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
-            }
-        }
+        updateMapReady(current, next, cMap, nMap);
         Integer flowStatus = getFlowStatus(current, next);
         Long nextId;
 
@@ -821,6 +800,32 @@ public class FlowExecutor {
             return new UpdateResult(form, next, autoNextRightNow, getLock);
         } else {
             return new UpdateResult(form, null, false, getLock);
+        }
+    }
+
+    /**
+     * 更新前准备参数Map
+     * @param current 当前实例节点
+     * @param next 下一个实例节点
+     * @param cMap 当前实例节点map
+     * @param nMap 下一个实例节点map
+     */
+    public void updateMapReady(InstanceNode current, InstanceNode next, Map<String, Object> cMap, Map<String, Object> nMap) {
+        if (cMap != null) {
+            cMap.replace("beginTime", current.getBeginTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            if (current.getEndTime() != null) {
+                cMap.replace("endTime", current.getEndTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            }
+            if (current.getAutoTime() != null) {
+                cMap.replace("autoTime", current.getAutoTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
+            }
+        }
+
+        if (nMap != null) {
+            nMap.replace("beginTime", next.getBeginTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            if (next.getAutoTime() != null) {
+                nMap.replace("autoTime", next.getAutoTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
+            }
         }
     }
 
