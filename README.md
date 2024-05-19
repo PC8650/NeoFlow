@@ -196,7 +196,7 @@
 | pageNumber | number  | N   | 页码          | 默认 1     |
 | pageSize   | number  | N   | 每页显示数量      | 默认 15    |
 
-
+**响应参数**
 
 | 名称      | 类型    | 含义   | 备注  |
 | ------- | ----- | ---- | --- |
@@ -277,7 +277,7 @@
 | active   | boolean | Y   | 更改的状态 | true-启用，false-关闭                   |
 | updateBy | string  | N   | 更新人标识 | 根据配置NeoFlowConfig.baseUserChoose决定 |
 
-
+**响应参数**
 
 | 名称            | 类型      | 含义     | 备注         |
 | ------------- | ------- | ------ | ---------- |
@@ -327,7 +327,7 @@
 | updateBy      | string | N   | 更新人标识  | 根据配置NeoFlowConfig.baseUserChoose决定 |
 | updateByName  | string | N   | 更新人名称  | 根据配置NeoFlowConfig.baseUserChoose决定 |
 
-
+**响应参数**
 
 null
 
@@ -365,7 +365,7 @@ null
 | ---- | ------ | --- | ---- | --- |
 | name | string | Y   | 流程名称 |     |
 
-
+**响应参数**
 
 | 名称  | 类型    | 含义   | 备注  |
 | --- | ----- | ---- | --- |
@@ -420,7 +420,7 @@ null
 | terminated | umber  | N   | 最低流程终止数  | 不能小于0      |
 | total      | number | N   | 最低流程总数   | 不能小于0      |
 
-
+**响应参数**
 
 | 名称  | 类型    | 含义   | 备注  |
 | --- | ----- | ---- | --- |
@@ -495,7 +495,7 @@ null
 
 null
 
-
+**响应参数**
 
 | 名称  | 类型             | 含义     | 备注  |
 | --- | -------------- | ------ | --- |
@@ -533,7 +533,7 @@ null
 | pageNumber  | number  | N   | 页码       | 默认 1     |
 | pageSize    | number  | N   | 每页显示数量   | 默认 15    |
 
-
+**响应参数**
 
 | 名称      | 类型    | 含义   | 备注  |
 | ------- | ----- | ---- | --- |
@@ -616,7 +616,7 @@ null
 | processName | string | Y   | 流程名称 |       |
 | version     | number | Y   | 版本号  | 不能小于1 |
 
-
+**响应参数**
 
 | 名称               | 类型     | 含义        | 备注   |
 | ---------------- | ------ | --------- | ---- |
