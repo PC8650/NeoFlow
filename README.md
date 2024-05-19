@@ -81,7 +81,7 @@
  
 ## 数据建模
 
-![NeoFlow数据建模](https://github.com/PC8650/NeoFlow/assets/70273864/95949a0b-6dcc-4e25-880a-7eec9b98d6e4)
+![NeoFlow数据建模](https://github.com/PC8650/NeoFlow/assets/70273864/e8b83524-ec46-484e-ac50-ee4d63a020b3)
 
 ## 配置
 
