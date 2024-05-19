@@ -38,10 +38,10 @@ public class QueryOfNodeIdentityForm {
     @Schema(name = "节点身份", nullable = true)
     private String nodeIdentity;
 
-    @Schema(name = "当前用户id", nullable = true, description = "Neo4jConfig.baseUserChoose的配置选择")
+    @Schema(name = "当前用户id", nullable = true, description = "NeoFlowConfig.baseUserChoose的配置选择")
     private String userId;
 
-    @Schema(name = "当前用户名称", nullable = true, description = "Neo4jConfig.baseUserChoose的配置选择")
+    @Schema(name = "当前用户名称", nullable = true, description = "NeoFlowConfig.baseUserChoose的配置选择")
     private String username;
 
     @Schema(name = "是否降序", nullable = true, defaultValue = "true")

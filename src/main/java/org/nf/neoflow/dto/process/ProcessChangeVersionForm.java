@@ -22,10 +22,10 @@ public class ProcessChangeVersionForm {
     @Min(value = 1, message = "版本号不能小于1")
     private Integer activeVersion;
 
-    @Schema(name = "更新人标识", nullable = true, description = "Neo4jConfig.baseUserChoose的配置选择")
+    @Schema(name = "更新人标识", nullable = true, description = "NeoFlowConfig.baseUserChoose的配置选择")
     private String updateBy;
 
-    @Schema(name = "更新人名称", nullable = true, description = "Neo4jConfig.baseUserChoose的配置选择")
+    @Schema(name = "更新人名称", nullable = true, description = "NeoFlowConfig.baseUserChoose的配置选择")
     private String updateByName;
 
 }

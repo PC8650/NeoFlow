@@ -34,7 +34,7 @@ public interface VersionRepository extends Neo4jRepository<Version,Long> {
         :#{orderBy(#pageable)}
         skip :#{#pageable.offset} limit :#{#pageable.pageSize}
         return $0 as processName, v.version as version, iterateFrom, v.cycle as cycle,
-        v.createBy as createBy, v.createByName as createByName, createTime
+        v.terminateMethod as terminateMethod, v.createBy as createBy, v.createByName as createByName, createTime
     """,
     countQuery = """
         match (:Process{name:$0})-[:VERSION]->(v:Version)

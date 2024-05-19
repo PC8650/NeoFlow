@@ -57,7 +57,7 @@ public class ExecuteForm {
     @Schema(name = "版本")
     private Integer version;
 
-    @Schema(name = "操作方法")
+    @Schema(name = "节点方法")
     private String operationMethod;
 
     @Schema(name = "跳转条件")
@@ -66,7 +66,7 @@ public class ExecuteForm {
     @Schema(name = "操作用户信息")
     private UserBaseInfo operator;
 
-    @Schema(name = "业务参数")
+    @Schema(name = "节点方法业务参数")
     private Map<String, Object> params;
 
     @Schema(name = "转发类型", description = "可选范围[模型节点操作类型]")

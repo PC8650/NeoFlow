@@ -45,7 +45,7 @@ public class ModelNode {
     @Schema(name = "是否只通过才执行方法")
     private Boolean onlyPassExecute;
 
-    @Schema(name = "自动执行间隔",description = "只精确到日期（x 天后，x <= 0 立即自动执行），有值将忽略操作类型和候选人")
+    @Schema(name = "自动执行间隔",description = "只精确到日期（x 天后，x = 0 立即自动执行），有值将忽略操作类型和候选人")
     private Integer autoInterval;
 
     @Schema(name = "通过时默认的跳转条件", description = "跳转条件缺失时默认选择改值，配合自动节点")

@@ -24,7 +24,7 @@ public class QueryForOperatorForm {
 
     @Schema(name = "流程实例当前状态", nullable = true, description = "1-进行中，2-通过，3-未通过，4-强行终止")
     @Range(min = 1, max = 4, message = "流程实例当前状态只能为1-进行中，2-通过，3-未通过，4-强行终止")
-    private Integer InstanceStatus;
+    private Integer instanceStatus;
 
     @Schema(name = "流程名称", nullable = true)
     private String name;
@@ -36,10 +36,10 @@ public class QueryForOperatorForm {
     @Schema(name = "业务key", nullable = true)
     private String businessKey;
 
-    @Schema(name = "当前用户id", nullable = true, description = "Neo4jConfig.baseUserChoose的配置选择")
+    @Schema(name = "当前用户id", nullable = true, description = "NeoFlowConfig.baseUserChoose的配置选择")
     private String userId;
 
-    @Schema(name = "当前用户名称", nullable = true, description = "Neo4jConfig.baseUserChoose的配置选择")
+    @Schema(name = "当前用户名称", nullable = true, description = "NeoFlowConfig.baseUserChoose的配置选择")
     private String username;
 
     @Schema(name = "是否降序", nullable = true, defaultValue = "true")

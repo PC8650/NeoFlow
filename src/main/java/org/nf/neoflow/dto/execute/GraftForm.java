@@ -45,9 +45,8 @@ public class GraftForm {
     @Min(value = 1, message = "版本号不能小于1")
     private Integer graftVersion;
 
-    @Schema(description = "移植节点位置", nullable = true, minimum = "2")
-    @Min(value = 2, message = "节点位置不能小于2")
-    private Integer graftNum;
+    @Schema(description = "移植节点uid")
+    private String graftNodeUid;
 
     @Schema(description = "是否执行当前节点方法")
     @NotNull(message = "请选择是否执行当前节点方法")

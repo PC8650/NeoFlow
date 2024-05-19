@@ -177,8 +177,7 @@ public class FlowExecutor {
     /**
      * 实例版本移植，使其在原有基础上使用新的版本模型。
      * 仅在当前节点为待办时，由候选人可确认移植。
-     * {@link  GraftForm#getGraftNum() GraftForm.graftNum} 为空时，需要当前节点的modelNodeUid需要在移植版本的模型节点中有对应；
-     * {@link  GraftForm#getGraftNum() GraftForm.graftNum} 不为空，移植到其对应的节点。
+     * {@link  GraftForm#getGraftNodeUid() GraftForm.graftNodeUid} 为空时，需要当前节点的modelNodeUid在移植版本的模型节点中有对应；
      * 当前操作类型默认为 {@link  InstanceOperationType#PASS pass} ，将默认选择跳转到移植节点的条件，是否执行方法由 {@link  GraftForm#getExecuteMethod()}  GraftForm.executeMethod} 决定，
      * 并以移植节点模型生成下一个实例节点
      * @param form 表单
@@ -556,7 +555,10 @@ public class FlowExecutor {
             inCandidate(executeForm, current, false);
 
             //查询移植版本模型节点
-            NodeQueryDto<ModelNode> modeDto = graftVersionModelNode(form, current.getModelNodeUid());
+            if (StringUtils.isBlank(form.getGraftNodeUid())) {
+                form.setGraftNodeUid(current.getModelNodeUid());
+            }
+            NodeQueryDto<ModelNode> modeDto = graftVersionModelNode(form);
             executeForm.setOperationType(InstanceOperationType.PASS);
 
             //执行节点方法
@@ -646,7 +648,7 @@ public class FlowExecutor {
             }
 
             //校验关键数据一致性
-            if (!Objects.equals(form.getBusinessKey(), businessKey) ||
+            if ((StringUtils.isNotBlank(businessKey) && !Objects.equals(form.getBusinessKey(), businessKey)) ||
                     !Objects.equals(form.getProcessName(), processName) ||
                     !Objects.equals(form.getVersion(), version) ||
                     !Objects.equals(form.getNodeId(), nodeId) ||
@@ -1411,41 +1413,26 @@ public class FlowExecutor {
     /**
      * 获取移植版本模型节点
      * @param form 表单
-     * @param modeNodeUid 模型节点uid
      */
-    private NodeQueryDto<ModelNode> graftVersionModelNode(GraftForm form, String modeNodeUid) {
+    private NodeQueryDto<ModelNode> graftVersionModelNode(GraftForm form) {
         NeoCacheManager.CacheValue<NodeQueryDto> cacheValue;
         String cacheType;
         String cacheKey;
         NodeQueryDto<ModelNode> modelDto;
         String errorLog;
-        if (form.getGraftNum() == null) {
-            //通过nodeUid移植
-            cacheType = CacheEnums.N_M_N.getType();
-            cacheKey = cacheManager.mergeKey(form.getProcessName(), form.getGraftVersion().toString(), modeNodeUid);
-            cacheValue = cacheManager.getCache(cacheType, cacheKey, NodeQueryDto.class);
-            if (cacheValue.filter() || cacheValue.value() != null) {
-                modelDto = (NodeQueryDto<ModelNode>) cacheValue.value();
-            }else {
-                modelDto = modelNodeRepository.queryModelNode(form.getProcessName(), form.getGraftVersion(), modeNodeUid);
-                cacheManager.setCache(cacheType, cacheKey, modelDto);
-            }
-            errorLog = String.format("流程执行失败，未找到移植节点：流程 %s-版本 %s -key %s -当前节点位置 %s -移植版本 %s-移植节点uid %s",
-                    form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNum(), form.getGraftVersion(), modeNodeUid);
+        //通过nodeUid移植
+        String modeNodeUid = form.getGraftNodeUid();
+        cacheType = CacheEnums.N_M_N.getType();
+        cacheKey = cacheManager.mergeKey(form.getProcessName(), form.getGraftVersion().toString(), modeNodeUid);
+        cacheValue = cacheManager.getCache(cacheType, cacheKey, NodeQueryDto.class);
+        if (cacheValue.filter() || cacheValue.value() != null) {
+            modelDto = (NodeQueryDto<ModelNode>) cacheValue.value();
         }else {
-            //通过节点位置移植
-            cacheType = CacheEnums.M_N_U.getType();
-            cacheKey = cacheManager.mergeKey(form.getProcessName(), form.getGraftVersion().toString(), form.getGraftNum().toString());
-            cacheValue = cacheManager.getCache(cacheType, cacheKey, NodeQueryDto.class);
-            if (cacheValue.filter() || cacheValue.value() != null) {
-                modelDto = (NodeQueryDto<ModelNode>) cacheValue.value();
-            }else {
-                modelDto = modelNodeRepository.queryModelNode(form.getProcessName(), form.getGraftVersion(), form.getGraftNum());
-                cacheManager.setCache(cacheType, cacheKey, modelDto);
-            }
-            errorLog = String.format("流程执行失败，未找到移植节点：流程 %s-版本 %s -key %s -当前节点位置 %s -移植版本 %s -移植位置 %s",
-                    form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNum(), form.getGraftVersion(), form.getGraftNum());
+            modelDto = modelNodeRepository.queryModelNode(form.getProcessName(), form.getGraftVersion(), modeNodeUid);
+            cacheManager.setCache(cacheType, cacheKey, modelDto);
         }
+        errorLog = String.format("流程执行失败，未找到移植节点：流程 %s-版本 %s -key %s -当前节点位置 %s -移植版本 %s-移植节点uid %s",
+                form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNum(), form.getGraftVersion(), modeNodeUid);
 
         if (modelDto == null || StringUtils.isBlank(modelDto.getNodeJson())) {
             log.error(errorLog);
@@ -1565,20 +1552,32 @@ public class FlowExecutor {
             if (size > 0) {
                 //分配到autoNodeExecutor
                 assigned(autoNodes, size, assignedFlag);
+            }else {
+                stopScheduledAndReleaseAutoLock(assignedPendingFuture, autoLockFuture, getLock);
             }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-            lockManager.releaseLock("ea", getLock.get(), LockEnums.AUTO_EXECUTE);
-            Future<?> autoLock = autoLockFuture.get();
-            Future<?> assignedPending = assignedPendingFuture.get();
-            if (autoLock != null && !autoLock.isDone()) {
-                autoLock.cancel(true);
-            }
-            if (assignedPending != null && !assignedPending.isDone()) {
-                assignedPending.cancel(true);
-            }
+            stopScheduledAndReleaseAutoLock(assignedPendingFuture, autoLockFuture, getLock);
         }
 
+    }
+
+    /**
+     * 停止定时线程任务以及是否扫描执行自动节点的锁
+     * @param assignedPendingFuture 执行中的分配节点数量监控Future
+     * @param autoLockFuture 锁过期监控Future
+     * @param getLock 是否获取锁
+     */
+    private void stopScheduledAndReleaseAutoLock(AtomicReference<Future<?>> assignedPendingFuture, AtomicReference<Future<?>> autoLockFuture, AtomicBoolean getLock) {
+        Future<?> autoLock = autoLockFuture.get();
+        Future<?> assignedPending = assignedPendingFuture.get();
+        if (autoLock != null && !autoLock.isDone()) {
+            autoLock.cancel(true);
+        }
+        if (assignedPending != null && !assignedPending.isDone()) {
+            assignedPending.cancel(true);
+        }
+        lockManager.releaseLock("ea", getLock.get(), LockEnums.AUTO_EXECUTE);
     }
 
     /**

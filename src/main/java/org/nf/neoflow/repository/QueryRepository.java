@@ -115,7 +115,9 @@ public interface QueryRepository extends Neo4jRepository<Instance, Long> {
         optional match (p)-[:VERSION]->(v) where ($0 is null or $0 = '' or p.name contains $0)
         with p, v, b, size(nodes(path))-1 as nodeNum, n where p is not null
         with p, v, b, max(n.endTime) as doneTime,
-        collect({num: nodeNum, nodeId: id(n), nodeName: n.name, status: n.status, doneTime: n.endTime}) as doneNodes
+        collect(
+            {num: nodeNum, nodeId: id(n), nodeName: n.name, nodeIdentity: n.identity, status: n.status, graft: n.graft, doneTime: n.endTime}
+        ) as doneNodes
         :#{orderBy(#pageable)}
         skip :#{#pageable.offset} limit :#{#pageable.pageSize}
         return doneNodes,
@@ -152,7 +154,7 @@ public interface QueryRepository extends Neo4jRepository<Instance, Long> {
         optional match (v:Version)-[:INSTANCE]->(i) where ($version is null or v.version = $version)
         optional match (p:Process)-[:VERSION]->(v)where ($name is null or p.name = $name)
         with p, v, b, b.endTime as endTime, size(nodes(path))-1 as num, id(n) as nodeId, n.status as status where p is not null
-        return p.name as name, v.version as version, b.key as businessKey, num, nodeId, status
+        return p.name as name, v.version as version, b.key as businessKey, num, nodeId, status, endTime
        :#{orderBy(#pageable)}
         skip :#{#pageable.offset} limit :#{#pageable.pageSize}
     """,
@@ -190,7 +192,7 @@ public interface QueryRepository extends Neo4jRepository<Instance, Long> {
         optional match (v:Version)-[:INSTANCE]->(i) where ($version is null or v.version = $version)
         optional match (p:Process)-[:VERSION]->(v)where ($name is null or p.name = $name)
         with p, v, b, n.endTime as endTime, size(nodes(path))-1 as num, id(n) as nodeId, n.status as status where p is not null
-        return p.name as name, v.version as version, b.key as businessKey, num, nodeId, status
+        return p.name as name, v.version as version, b.key as businessKey, num, nodeId, status, endTime
        :#{orderBy(#pageable)}
         skip :#{#pageable.offset} limit :#{#pageable.pageSize}
     """,
@@ -233,7 +235,7 @@ public interface QueryRepository extends Neo4jRepository<Instance, Long> {
         n.operationRemark as operationRemark,
         n.graft as graft,
         n.beginTime as beginTime, n.endTime as endTime,
-        n.during as during
+        n.during as during, n.processDuring as processDuring
         order by beginTime
     """)
     List<OperationHistoryDto> queryInstanceOperationHistory(String businessKey, Integer num);

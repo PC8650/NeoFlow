@@ -37,18 +37,23 @@ public class ProcessQueryStatisticsForm {
     @JsonFormat(pattern = TimeFormat.DATE)
     private LocalDate endEnd;
 
-    @Schema(name = "最低流程进行数", nullable = true)
+    @Schema(name = "最低流程进行数", nullable = true, minimum = "0")
+    @Min(value = 0, message = "流程进行数不能小于0")
     private Long pending;
 
-    @Schema(name = "最低流程完成数", nullable = true)
+    @Schema(name = "最低流程完成数", nullable = true, minimum = "0")
+    @Min(value = 0, message = "流程完成数不能小于0")
     private Long complete;
 
-    @Schema(name = "最低流程拒绝数", nullable = true)
+    @Schema(name = "最低流程拒绝数", nullable = true, minimum = "0")
+    @Min(value = 0, message = "流程拒绝数不能小于0")
     private Long rejected;
 
-    @Schema(name = "最低流程终止数", nullable = true)
+    @Schema(name = "最低流程终止数", nullable = true, minimum = "0")
+    @Min(value = 0, message = "流程终止数不能小于0")
     private Long terminated;
 
-    @Schema(name = "最低流程总数", nullable = true)
+    @Schema(name = "最低流程总数", nullable = true, minimum = "0")
+    @Min(value = 0, message = "流程总数不能小于0")
     private Long total;
 }

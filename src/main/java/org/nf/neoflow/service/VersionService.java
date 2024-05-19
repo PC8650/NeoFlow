@@ -48,7 +48,7 @@ public class VersionService {
      * @return Page<VersionListDto>
      */
     public Page<VersionListDto> versionList(VersionListQueryForm form) {
-        Pageable pageable = PageUtils.initPageable(form.getPageNumber()-1, form.getPageSize(), "createTime", form.getDesc());
+        Pageable pageable = PageUtils.initPageable(form.getPageNumber(), form.getPageSize(), "createTime", form.getDesc());
         return versionRepository.queryVersionList(form.getProcessName(), pageable);
     }
 

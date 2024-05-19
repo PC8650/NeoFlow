@@ -75,7 +75,7 @@ public class InstanceNode {
     private String during;
 
     @Schema(name = "流程持续时间")
-    private String ProcessDuring;
+    private String processDuring;
 
     @Schema(name = "版本移植")
     private String graft;

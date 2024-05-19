@@ -26,6 +26,9 @@ public class IterateTreeNode {
     @Schema(name = "是否为顶层节点")
     private Boolean top;
 
+    @Schema(name = "终止方法")
+    private String terminatedMethod;
+
     @Schema(name = "创建人标识")
     private String createBy;
 

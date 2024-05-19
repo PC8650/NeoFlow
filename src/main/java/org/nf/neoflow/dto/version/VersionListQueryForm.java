@@ -15,7 +15,7 @@ public class VersionListQueryForm {
     @NotBlank(message = "流程名称不能为空")
     private String processName;
 
-    @Schema(name = "是否时间倒序", nullable = true, defaultValue = "false")
+    @Schema(name = "是否创建时间倒序", nullable = true, defaultValue = "false")
     private Boolean desc = false;
 
     @Schema(name = "页码", nullable = true, defaultValue = "1")
