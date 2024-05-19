@@ -37,7 +37,7 @@ public class VersionController {
         return ResponseEntity.ok(Result.success(versionService.versionIterateTree(form)));
     }
 
-    @Operation(description = "获取候选人选择列表")
+    @Operation(description = "创建版本时获取候选人选择列表")
     @GetMapping("/candidate")
     public ResponseEntity<Result<Object>> getCandidateList() {
         return ResponseEntity.ok(Result.success(versionService.getCandidateList()));

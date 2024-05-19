@@ -26,6 +26,9 @@ public class VersionListDto {
     @Schema(name = "允许退回发起的次数")
     private Integer cycle = 0;
 
+    @Schema(name = "终止方法")
+    private String terminateMethod;
+
     @Schema(name = "创建人标识")
     private String createBy;
 

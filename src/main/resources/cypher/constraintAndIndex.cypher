@@ -14,5 +14,7 @@ create index InstanceNode_range_endTime if not exists for (n:InstanceNode) on n.
 //TEXT Index
 create TEXT index Process_text_name if not exists for (n:Process) on n.name;
 create TEXT index ModelNode_text_nodeUid if not exists for (n:modelNode) on n.nodeUid;
+create TEXT index ModelNode_text_name if not exists for (n:modelNode) on n.name;
+create TEXT index InstancelNode_text_name if not exists for (n:InstancelNode) on n.name;
 create TEXT index InstancelNode_text_identity if not exists for (n:InstancelNode) on n.identity;
 create TEXT index InstancelNode_text_operationBy if not exists for (n:InstancelNode) on n.operationBy;

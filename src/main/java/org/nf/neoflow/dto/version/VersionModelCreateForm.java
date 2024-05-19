@@ -27,10 +27,10 @@ public class VersionModelCreateForm {
     @Schema(name = "终止方法", nullable = true, description = "对应的@ProcessMethod")
     private String terminatedMethod;
 
-    @Schema(name = "创建人标识", nullable = true, description = "Neo4jConfig.baseUserChoose的配置选择")
+    @Schema(name = "创建人标识", nullable = true, description = "NeoFlowConfig.baseUserChoose的配置选择")
     private String createBy;
 
-    @Schema(name = "创建人名称", nullable = true, description = "Neo4jConfig.baseUserChoose的配置选择")
+    @Schema(name = "创建人名称", nullable = true, description = "NeoFlowConfig.baseUserChoose的配置选择")
     private String createByName;
 
     @Schema(name = "流程模型边")

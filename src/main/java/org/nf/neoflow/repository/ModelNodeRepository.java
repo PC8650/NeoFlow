@@ -31,33 +31,12 @@ public interface ModelNodeRepository extends Neo4jRepository<ModelNode, Long> {
      */
     @Query("""
         match (p:Process{name:$0})-[:VERSION]->(v:Version{version:$1})-[:MODEL]->(f:ModelNode) where f is not null
-        optional match (f)-[:NEXT*0..]->(:ModelNode)-[n:NEXT]->(c:ModelNode{nodeUid:$2})
+        optional match (f)-[:NEXT*0..]->(:ModelNode)-[n:NEXT]->(c:ModelNode{nodeUid:$2}) where c.location <> 1
         with v, n, c where c is not null
         return v.version as version, n.condition as condition,
         apoc.convert.toJson(apoc.map.merge(properties(c),{id:id(c)})) as nodeJson
     """)
     NodeQueryDto<ModelNode> queryModelNode(String processName, Integer version, String nodeUid);
-
-    /**
-     * 查询模型节点
-     * @param processName 流程名称
-     * @param version 版本
-     * @param num 模型节点位置
-     * @return NodeQueryDto<ModelNode>
-     */
-    @Query("""
-        match (p:Process{name:$0})-[:VERSION]->(v:Version{version:$1})-[:MODEL]->(f:ModelNode) where f is not null
-        call apoc.path.expandConfig(f, {
-            relationshipFilter: "NEXT>",
-            minLevel: $2-1,
-            maxLevel: $2-1,
-            limit: 1
-        }) yield path
-        with v, last(relationships(path)) as n, last(nodes(path)) as c
-        return v.version as version, n.condition as condition,
-        apoc.convert.toJson(apoc.map.merge(properties(c),{id:id(c)})) as nodeJson
-    """)
-    NodeQueryDto<ModelNode> queryModelNode(String processName, Integer version, Integer num);
 
     /**
      * 查询下一模型节点

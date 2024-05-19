@@ -17,9 +17,9 @@ public class OperatorOfPendingForm {
     @Min(value = 1, message = "流程版本必须大于等于1")
     private Integer version;
 
-    @Schema(name = "当前用户id", nullable = true, description = "Neo4jConfig.baseUserChoose的配置选择")
+    @Schema(name = "当前用户id", nullable = true, description = "NeoFlowConfig.baseUserChoose的配置选择")
     private String userId;
 
-    @Schema(name = "当前用户名称", nullable = true, description = "Neo4jConfig.baseUserChoose的配置选择")
+    @Schema(name = "当前用户名称", nullable = true, description = "NeoFlowConfig.baseUserChoose的配置选择")
     private String username;
 }

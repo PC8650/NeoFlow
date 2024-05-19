@@ -29,16 +29,16 @@ public class ModelNodeDto {
     @Schema(name = "节点操作类型", description = "根据业务自定义")
     private Integer operationType;
 
-    @Schema(name = "指定节点操作候选人", description = "配合operationType自定义")
+    @Schema(name = "节点操作候选人", description = "配合operationType自定义")
     private List<UserBaseInfo> operationCandidateInfo;
 
     @Schema(name = "节点操作方法", description = "对应的@ProcessMethod")
     private String operationMethod;
 
-    @Schema(name = "是否只通过才执行方法", nullable = true, defaultValue = "true")
+    @Schema(name = "是否只同意通过才执行方法", nullable = true, defaultValue = "true")
     private Boolean onlyPassExecute = true;
 
-    @Schema(name = "自动执行间隔", description = "只精确到日期（x 天后，x <= 0 立即自动执行），有值将忽略操作类型和候选人")
+    @Schema(name = "自动执行间隔", description = "只精确到日期（x 天后，x = 0 立即自动执行），有值将忽略操作类型和候选人")
     private Integer autoInterval;
 
     @Schema(name = "默认通过时的跳转条件", description = "跳转条件缺失时默认选择改值，配合自动节点")
@@ -67,8 +67,13 @@ public class ModelNodeDto {
         if (location == null) {
             throw new NeoProcessException("节点位置不能为空");
         }
-        if (autoInterval != null && NodeLocationType.MIDDLE.equals(location) && defaultPassCondition == null) {
-            throw new NeoProcessException("中间自动节点默认通过跳转条件不能为空");
+        if (autoInterval != null) {
+            if (NodeLocationType.MIDDLE.equals(location) && defaultPassCondition == null) {
+                throw new NeoProcessException("自动执行的中间节点默认通过跳转条件不能为空");
+            }
+            if (autoInterval < 0) {
+                throw new NeoProcessException("自动节点执行间隔不能小于0");
+            }
         }
         if (Objects.equals(location, NodeLocationType.INITIATE) && !Objects.equals(autoInterval, 0)) {
             throw new NeoProcessException("发起节点只能设置为[立即自动执行]");

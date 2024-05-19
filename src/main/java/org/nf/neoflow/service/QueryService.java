@@ -53,7 +53,7 @@ public class QueryService {
             return queryRepository.queryForOperatorInitiate(form.getName(), form.getVersion(), form.getBusinessKey(), query, form.getInstanceStatus(), pageable);
         }
 
-        pageable = PageUtils.initPageable(form.getPageNumber(), form.getPageSize(), "b.endTime", form.getDesc());
+        pageable = PageUtils.initPageable(form.getPageNumber(), form.getPageSize(), "doneTime", form.getDesc());
         return queryRepository.queryForOperatorDone(form.getName(), form.getVersion(), form.getBusinessKey(), query, form.getNodeStatus(), pageable);
     }
 

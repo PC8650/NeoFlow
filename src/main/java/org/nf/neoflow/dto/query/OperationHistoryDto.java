@@ -45,4 +45,7 @@ public class OperationHistoryDto {
 
     @Schema(name = "节点持续时间")
     private String during;
+
+    @Schema(name = "流程持续时间")
+    private String processDuring;
 }

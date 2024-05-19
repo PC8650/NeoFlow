@@ -20,7 +20,7 @@ public class ProcessChangeActiveForm {
     @NotNull(message = "启用状态不能为空")
     private Boolean active;
 
-    @Schema(name = "更新人标识", nullable = true, description = "Neo4jConfig.baseUserChoose的配置选择")
+    @Schema(name = "更新人标识", nullable = true, description = "NeoFlowConfig.baseUserChoose的配置选择")
     private String updateBy;
 
 }

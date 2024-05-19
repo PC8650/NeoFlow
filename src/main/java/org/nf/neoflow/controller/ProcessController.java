@@ -24,7 +24,7 @@ public class ProcessController {
 
     @Operation(description = "新建流程")
     @PostMapping("/create")
-    public ResponseEntity<Result<Process>> create(@RequestBody ProcessCreateForm form) {
+    public ResponseEntity<Result<Process>> create(@Valid @RequestBody ProcessCreateForm form) {
         return ResponseEntity.ok(Result.success(processService.create(form)));
     }
 
@@ -47,7 +47,7 @@ public class ProcessController {
         return ResponseEntity.ok(Result.success());
     }
 
-    @Operation(description = "变更流程启用版本")
+    @Operation(description = "查询流程版本启用历史")
     @GetMapping("/activeHistory")
     public ResponseEntity<Result<List<ActiveVersionHistoryDto>>> activeVersionHistory(@RequestParam String name) {
         return ResponseEntity.ok(Result.success(processService.activeVersionHistory(name)));
@@ -59,7 +59,7 @@ public class ProcessController {
         return ResponseEntity.ok(Result.success(processService.queryProcessForStatistics(form)));
     }
 
-    @Operation(description = "查询所有流程名称")
+    @Operation(description = "查询流程名称列表")
     @GetMapping("/name")
     public ResponseEntity<Result<List<String>>> queryAllProcessName() {
         return ResponseEntity.ok(Result.success(processService.queryAllProcessName()));

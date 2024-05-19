@@ -49,6 +49,11 @@ public class ProcessService {
         if (processRepository.existsProcessByName(form.getName())) {
             throw NeoProcessException.duplicateName(form.getName());
         }
+
+        //删除流程名称缓存
+        String cacheType = CacheEnums.A_P_N.getType();
+        cacheManager.deleteCache(cacheType);
+
         return processRepository.save(new Process(form.getName(), form.getCreateBy()));
     }
 
@@ -58,7 +63,7 @@ public class ProcessService {
      * @return Page<Process>
      */
     public Page<Process> processList(ProcessQueryForm form) {
-        Pageable pageable = PageUtils.initPageable(form.getPageNumber()-1, form.getPageSize(), "createTime", form.getDesc());
+        Pageable pageable = PageUtils.initPageable(form.getPageNumber(), form.getPageSize(), "createTime", form.getDesc());
         return processRepository.queryProcessList(form.getName(), form.getCreateBy(), pageable);
     }
 

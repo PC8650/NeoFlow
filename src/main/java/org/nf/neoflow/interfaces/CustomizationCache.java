@@ -54,7 +54,6 @@ public interface CustomizationCache {
 
     /**
      * 删除缓存
-     * not must：未耦合在逻辑中，根据需求实现扩展
      * @param cacheType {@link CacheEnums CacheType}缓存类型
      */
     void deleteCache(String... cacheType);

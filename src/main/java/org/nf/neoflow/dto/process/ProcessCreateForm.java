@@ -15,7 +15,7 @@ public class ProcessCreateForm {
     @Schema(name = "流程名称")
     private String name;
 
-    @Schema(name = "创建人唯一标识", nullable = true, description = "Neo4jConfig.baseUserChoose的配置选择")
+    @Schema(name = "创建人唯一标识", nullable = true, description = "NeoFlowConfig.baseUserChoose的配置选择")
     private String createBy;
     
 }
