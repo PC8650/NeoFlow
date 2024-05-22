@@ -58,25 +58,30 @@ public class VersionService {
      * @return VersionModelViewDto
      */
     public VersionModelViewDto versionView(VersionViewQueryForm form) {
-        String cacheKey = cacheManager.mergeKey(form.getProcessName(), form.getVersion().toString());
-        String cacheType = CacheEnums.V_M.getType();
-        NeoCacheManager.CacheValue<VersionModelViewDto> value =cacheManager.getCache(cacheType, cacheKey, VersionModelViewDto.class);
-        if (value.filter()) {
-            throw new NeoProcessException("流程版本模型不存在");
-        }else if (value.value() != null) {
-            return value.value();
+        String processName = form.processName();
+        Integer version = form.version();
+        VersionModelViewDto dto;
+
+        //版本为空，返回组件模型
+        if (version == null) {
+            dto = new VersionModelViewDto();
+            dto.setProcessName(processName);
+            dto.setComponentModel(componentModelInit());
+            return dto;
         }
 
-        VersionModelViewDto dto;
-        if (form.getVersion() != null) {
-            dto = versionRepository.queryVersionView(form.getProcessName(), form.getVersion());
-            if (dto == null) {
-                cacheManager.setCache(cacheType, cacheKey, null);
-                throw new NeoProcessException("流程版本模型不存在");
-            }
+        //版本不为空，查询版本视图
+        String cacheKey = cacheManager.mergeKey(processName, version.toString());
+        String cacheType = CacheEnums.V_M.getType();
+        NeoCacheManager.CacheValue<VersionModelViewDto> value =cacheManager.getCache(cacheType, cacheKey, VersionModelViewDto.class);
+        if (value.filter() || value.value() != null) {
+            dto = value.value();
         }else {
-            dto = new VersionModelViewDto();
-            dto.setProcessName(form.getProcessName());
+            dto = versionRepository.queryVersionView(processName, version);
+        }
+        if (dto == null) {
+            cacheManager.setCache(cacheType, cacheKey, null);
+            throw new NeoProcessException("流程版本模型不存在");
         }
         dto.setComponentModel(componentModelInit());
         cacheManager.setCache(cacheType, cacheKey, dto);
@@ -234,19 +239,23 @@ public class VersionService {
     private void validateEdges(Set<ProcessNodeEdge> edges, Map<String, ModelNodeDto> nodeMap, Set<Map<String,Object>> edgesSet){
         ModelNodeDto startNode;
         ModelNodeDto endNode;
+        String startNodeUid;
+        String endNodeUid;
         Set<String> includeNodes = new HashSet<>(nodeMap.size());
         for (ProcessNodeEdge edge : edges) {
             //自检基本属性
             edge.check();
 
+            startNodeUid = edge.getStartNode();
+            endNodeUid = edge.getEndNode();
             //校验节点存在性
-            if (!nodeMap.containsKey(edge.getStartNode()) || !nodeMap.containsKey(edge.getEndNode())) {
-                throw new NeoProcessException(String.format("边端点不存在 (%s)-->(%s)", edge.getStartNode(), edge.getEndNode()));
+            if (!nodeMap.containsKey(startNodeUid) || !nodeMap.containsKey(endNodeUid)) {
+                throw new NeoProcessException(String.format("边端点不存在 (%s)-->(%s)", startNodeUid, endNodeUid));
             }
 
             //校验结构
-            startNode = nodeMap.get(edge.getStartNode());
-            endNode = nodeMap.get(edge.getEndNode());
+            startNode = nodeMap.get(startNodeUid);
+            endNode = nodeMap.get(endNodeUid);
             if (Objects.equals(endNode.getLocation(), NodeLocationType.INITIATE)) {
                 throw new NeoProcessException("不能指向开始节点");
             }
@@ -255,8 +264,8 @@ public class VersionService {
                 throw new NeoProcessException("完成、终止 节点不能有后续");
             }
 
-            includeNodes.add(edge.getStartNode());
-            includeNodes.add(edge.getEndNode());
+            includeNodes.add(startNodeUid);
+            includeNodes.add(endNodeUid);
 
             Map<String,Object> edgeMap = JacksonUtils.objToMap(edge);
             edgesSet.add(edgeMap);
@@ -278,21 +287,21 @@ public class VersionService {
 
         //转成map，用于遍历时被调用更新迭代列表
         Map<Integer, IterateTreeNode> map = treeNodes.stream()
-                .collect(Collectors.toMap(IterateTreeNode::getVersion, Function.identity()));
+                .collect(Collectors.toMap(IterateTreeNode::version, Function.identity()));
 
         //返回的结果，顶层node列表
         List<IterateTreeNode> topNodes = new ArrayList<>();
 
         //循环填充迭代
         for (IterateTreeNode node : treeNodes) {
-            if (node.getTop()) {
+            if (node.top()) {
                 topNodes.add(node);
             }
-            if (CollectionUtils.isEmpty(node.getIterateVersion())) {
+            if (CollectionUtils.isEmpty(node.iterateVersion())) {
                 continue;
             }
-            for (Integer version : node.getIterateVersion()) {
-                node.getIterate().add(map.get(version));
+            for (Integer version : node.iterateVersion()) {
+                node.iterate().add(map.get(version));
             }
         }
 

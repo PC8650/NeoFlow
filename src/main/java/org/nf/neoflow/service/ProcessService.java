@@ -140,9 +140,9 @@ public class ProcessService {
      * @return List<ProcessQueryStatisticsDto>
      */
     public List<ProcessQueryStatisticsDto> queryProcessForStatistics(ProcessQueryStatisticsForm form) {
-        return processRepository.queryProcessForStatistics(form.getName(), form.getVersion(),
-                form.getBeginStart(), form.getBeginEnd(), form.getEndStart(), form.getEndEnd(),
-                form.getPending(), form.getComplete(), form.getRejected(), form.getTerminated(), form.getTotal());
+        return processRepository.queryProcessForStatistics(form.name(), form.version(),
+                form.beginStart(), form.beginEnd(), form.endStart(), form.endEnd(),
+                form.pending(), form.complete(), form.rejected(), form.terminated(), form.total());
     }
 
     /**

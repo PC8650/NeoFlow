@@ -3,6 +3,10 @@ package org.nf.neoflow.dto.process;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+/**
+ * 流程查询表单
+ * @author PC8650
+ */
 @Data
 public class ProcessQueryForm {
 

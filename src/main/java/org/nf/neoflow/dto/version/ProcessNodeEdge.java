@@ -1,5 +1,6 @@
 package org.nf.neoflow.dto.version;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
@@ -13,6 +14,7 @@ import java.util.List;
  * @author PC8650
  */
 @Data
+@JsonInclude(value = JsonInclude.Include.ALWAYS, content = JsonInclude.Include.ALWAYS)
 public class ProcessNodeEdge {
 
     @Schema(name = "开始节点标识")
@@ -41,5 +43,4 @@ public class ProcessNodeEdge {
             throw new NeoProcessException("边坐标不能为空");
         }
     }
-
 }

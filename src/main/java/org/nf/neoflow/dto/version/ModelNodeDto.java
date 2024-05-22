@@ -1,5 +1,6 @@
 package org.nf.neoflow.dto.version;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
@@ -15,6 +16,7 @@ import java.util.Objects;
  * @author PC8650
  */
 @Data
+@JsonInclude(value = JsonInclude.Include.ALWAYS, content = JsonInclude.Include.ALWAYS)
 public class ModelNodeDto {
 
     @Schema(name = "创建模型时前端生成的uid")

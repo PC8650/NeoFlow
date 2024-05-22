@@ -8,8 +8,6 @@ import lombok.Data;
 import org.nf.neoflow.dto.user.UserBaseInfo;
 import org.nf.neoflow.exception.NeoExecuteException;
 
-import java.util.Objects;
-
 /**
  * 实例版本移植表单
  * @author PC8650

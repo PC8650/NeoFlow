@@ -54,27 +54,26 @@ public class QueryForOperatorDto {
 
     /**
      * 已办节点
-     * @param num 已办节点位置
-     * @param nodeId 已办节点id
-     * @param nodeName 已办节点名称
-     * @param nodeIdentity 已办节点标识
-     * @param status 已办节点状态
-     * @param graft 版本移植
-     * @param doneTime 已办节点处理时间
      */
     private record DoneNode(
             @Schema(name = "已办节点位置")
             Integer num,
+
             @Schema(name = "已办节点id")
             Long nodeId,
+
             @Schema(name = "已办节点名称")
             String nodeName,
+
             @Schema(name = "已办节点标识")
             String nodeIdentity,
+
             @Schema(name = "已办节点状态", description = "2-同意，3-拒绝，4-转发，5-终止")
             Integer status,
+
             @Schema(name = "版本移植")
             String graft,
+
             @Schema(name = "已办节点处理时间")
             @JsonFormat(pattern = TimeFormat.DATE_TIME)
             LocalDateTime doneTime
