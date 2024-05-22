@@ -30,8 +30,8 @@ public class QueryService {
      * @param form 查询表单
      */
     public List<OperatorOfPendingDto> queryForOperatorOfPending(OperatorOfPendingForm form){
-        String query = userChoose.getCandidateRange(form.getUserId(), form.getUsername(), QueryForOperatorType.PENDING);
-        return queryRepository.queryForOperatorOfPending(form.getName(), form.getVersion(), query);
+        String query = userChoose.getCandidateRange(form.userId(), form.username(), QueryForOperatorType.PENDING);
+        return queryRepository.queryForOperatorOfPending(form.name(), form.version(), query);
     }
 
     /**

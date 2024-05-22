@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 /**
  * 流程执行组件
@@ -304,7 +303,7 @@ public class FlowExecutor {
         //若线程池异常/判断或构建表单异常，需要释放锁
         try {
             //按需自动执行下一节点
-            if (updateResult != null && updateResult.autoRigNow()) {
+            if (updateResult != null && updateResult.autoRightNow()) {
                 ExecuteForm nextForm = autoNextForm(updateResult);
                 autoNodeExecutor.execute(() -> executor(nextForm, updateResult.getLock()));
             }
@@ -356,7 +355,7 @@ public class FlowExecutor {
             cacheManager.setCache(CacheEnums.I_B_T.getType(), form.getBusinessKey(), dto.getNode().getBeginTime());
             //更新流程
             UpdateResult ur = updateFlowAfterPass(form, dto.getNode(), getLock);
-            autoNextRightNow = ur.autoRigNow();
+            autoNextRightNow = ur.autoRightNow();
 
             return ur;
         } catch (Exception e) {
@@ -396,7 +395,7 @@ public class FlowExecutor {
 
             //更新流程
             UpdateResult ur = updateFlowAfterPass(form, dto.getNode(), getLock);
-            autoNextRightNow = ur.autoRigNow();
+            autoNextRightNow = ur.autoRightNow();
 
             return ur;
         } catch (Exception e) {
@@ -436,7 +435,7 @@ public class FlowExecutor {
 
             //更新流程
             UpdateResult ur = updateFlowAfterReject(form, dto.getNode(), getLock);
-            autoNextRightNow = ur.autoRigNow();
+            autoNextRightNow = ur.autoRightNow();
 
             return ur;
         } catch (Exception e) {
@@ -476,7 +475,7 @@ public class FlowExecutor {
 
             //更新流程
             UpdateResult ur = updateFlowAfterForward(form, dto.getNode(), getLock);
-            autoNextRightNow = ur.autoRigNow();
+            autoNextRightNow = ur.autoRightNow();
 
             return ur;
         } catch (Exception e) {
@@ -517,7 +516,7 @@ public class FlowExecutor {
 
             //更新流程
             UpdateResult ur = updateFlowAfterTerminate(form, dto.getNode(), getLock);
-            autoNextRightNow = ur.autoRigNow();
+            autoNextRightNow = ur.autoRightNow();
 
             return ur;
         } catch (Exception e) {
@@ -582,7 +581,7 @@ public class FlowExecutor {
 
             //更新流程
             UpdateResult updateResult = updateInstanceByGraft(current, next, executeForm, form);
-            autoNextRightNow = updateResult.autoRigNow();
+            autoNextRightNow = updateResult.autoRightNow();
             return updateResult;
         } catch (Exception e) {
             lockManager.releaseLock(businessKey, getLock, LockEnums.FLOW_EXECUTE);
@@ -1671,7 +1670,7 @@ public class FlowExecutor {
             InstanceNode current = autoCurrentNode(autoNodeDto);
             operateMethod(form, current,null,false);
             UpdateResult updateResult = updateFlowAfterPass(form, current, getLock);
-            autoNextRightNow = updateResult.autoRigNow();
+            autoNextRightNow = updateResult.autoRightNow();
             log.info("完成自动节点：流程{} -版本{}- businessKey{}- 当前节点位置{}",
                     autoNodeDto.processName(), autoNodeDto.version(), businessKey, autoNodeDto.num());
             return updateResult;

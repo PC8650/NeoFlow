@@ -313,7 +313,12 @@ public class NeoCacheManager {
      * @param defaultRule 默认策略规则
      * @param customRule 自定义策略规则
      */
-    public record CacheType(String type, String info, String defaultRule, String customRule) {
+    public record CacheType(
+            String type,
+            String info,
+            String defaultRule,
+            String customRule
+    ) {
         public CacheType(CacheEnums ce) {
             this(ce.getType(), ce.getInfo(), ce.getDefaultRule(), ce.getCustomRule());
         }
@@ -332,11 +337,18 @@ public class NeoCacheManager {
      * @param evictionCount 驱逐缓存数量
      * @param estimatedKeys 估计存在的key
      */
-    public record CacheStatistics(CacheType cacheType, Long estimatedSize,
-                                  Long requestCount, Double hitRate, Double missRate,
-                                  Long loadSuccessCount, Long loadFailureCount,
-                                  Double averageLoadPenalty, Long evictionCount, Set<Object> estimatedKeys) {
-
+    public record CacheStatistics(
+            CacheType cacheType,
+            Long estimatedSize,
+            Long requestCount,
+            Double hitRate,
+            Double missRate,
+            Long loadSuccessCount,
+            Long loadFailureCount,
+            Double averageLoadPenalty,
+            Long evictionCount,
+            Set<Object> estimatedKeys
+    ) {
         public CacheStatistics(CacheEnums ce, CacheStats stats, Set<Object> estimatedKeys) {
             this(new CacheType(ce), (long) estimatedKeys.size(),
                     stats.requestCount(), stats.hitRate(), stats.missRate(),
