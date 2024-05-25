@@ -1289,7 +1289,7 @@ null
 | terminatedMethod | string | N   | 终止方法        |                                    |
 | createBy         | string | N   | 创建人标识       | 根据配置NeoFlowConfig.baseUserChoose决定 |
 | createByName     | string | N   | 创建人名称       | 根据配置NeoFlowConfig.baseUserChoose决定 |
-| nodes            | array  | Y   | 流程模型边       |                                    |
+| nodes            | array  | Y   | 流程模型节点       |                                    |
 | edges            | array  | Y   | 流程模型边       |                                    |
 
 <font color=red>nodes</font>
@@ -1306,8 +1306,8 @@ null
 | autoInterval           | number  | N   | 自动执行间隔       | >=0,，只精确到日期（x 天后，x = 0 立即自动执行），有值将忽略操作类型和候选人 |
 | defaultPassCondition   | number  | N   | 默认通过时的跳转条件   | 自动执行的中间节点默认通过跳转条件不能为空                        |
 | location               | number  | Y   | 节点位置         | 1-开始，2-中间，3-完成，4-终止                          |
-| x                      | number  | Y   | 展示位置的x坐标     |                                              |
-| y                      | number  | Y   | 展示位置的y坐标     |                                              |
+| x                      | number  | N   | 展示位置的x坐标     |                                              |
+| y                      | number  | N   | 展示位置的y坐标     |                                              |
 
 <font color=red>edges</font>
 
@@ -1316,8 +1316,8 @@ null
 | startNode     | string         | Y   | 开始节点uid   |     |
 | endNode       | string         | Y   | 结束节点uid   |     |
 | condition     | number         | Y   | 条件        |     |
-| startLocation | array\<number> | Y   | 展示位置的起始坐标 |     |
-| endLocation   | array\<number> | Y   | 展示位置的结束坐标 |     |
+| startLocation | array\<number> | N   | 展示位置的起始坐标 |     |
+| endLocation   | array\<number> | N   | 展示位置的结束坐标 |     |
 
 **响应参数**
 
