@@ -33,7 +33,7 @@ public class VersionModelCreateForm {
     @Schema(name = "创建人名称", nullable = true, description = "NeoFlowConfig.baseUserChoose的配置选择")
     private String createByName;
 
-    @Schema(name = "流程模型边")
+    @Schema(name = "流程模型节点")
     @NotEmpty(message = "节点不能为空")
     private Set<ModelNodeDto> nodes;
 
