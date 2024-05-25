@@ -49,10 +49,10 @@ public class ModelNodeDto {
     @Schema(name = "节点位置", description = "1-开始，2-中间，3-完成，4-终止")
     private Integer location;
 
-    @Schema(name = "x坐标")
+    @Schema(name = "x坐标", nullable = true)
     private Double x;
 
-    @Schema(name = "y坐标")
+    @Schema(name = "y坐标", nullable = true)
     private Double y;
 
 
@@ -79,9 +79,6 @@ public class ModelNodeDto {
         }
         if (Objects.equals(location, NodeLocationType.INITIATE) && !Objects.equals(autoInterval, 0)) {
             throw new NeoProcessException("发起节点只能设置为[立即自动执行]");
-        }
-        if (x == null || y == null) {
-            throw new NeoProcessException("节点坐标不能为空");
         }
     }
 
