@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.nf.neoflow.exception.NeoProcessException;
-import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 
@@ -26,10 +25,10 @@ public class ProcessNodeEdge {
     @Schema(name = "条件")
     Integer condition;
 
-    @Schema(name = "起始坐标")
+    @Schema(name = "起始坐标", nullable = true)
     List<Double> startLocation;
 
-    @Schema(name = "结束坐标")
+    @Schema(name = "结束坐标", nullable = true)
     List<Double> endLocation;
 
     public void check() {
@@ -38,9 +37,6 @@ public class ProcessNodeEdge {
         }
         if (condition == null) {
             throw new NeoProcessException("边条件不能为空");
-        }
-        if (CollectionUtils.isEmpty(startLocation) || CollectionUtils.isEmpty(endLocation)) {
-            throw new NeoProcessException("边坐标不能为空");
         }
     }
 }

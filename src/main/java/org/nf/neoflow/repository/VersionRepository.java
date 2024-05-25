@@ -52,15 +52,17 @@ public interface VersionRepository extends Neo4jRepository<Version,Long> {
         match (p:Process{name:$0})-[:VERSION]->(v:Version{version:$1})-[:MODEL]->(s:ModelNode) where s is not null
         match path = (s)-[n:NEXT*1..]->(e:ModelNode) where e.location in [3,4]
         optional match (i:Version)-[:ITERATE]->(v)
-        with p, i, v, path
-        unwind nodes(path) as n
-        with p, i , v, apoc.convert.toMap(n) as nm, path
-        unwind relationships(path) as rels
+        with p, i, v, path, nodes(path) as n, relationships(path) as rels
+        with p, i , v, [x in n | apoc.convert.toMap(x)] as nl, rels
+        unwind nl as nm
+        with p, i, v, nm, rels, {operationCandidateInfo: apoc.convert.fromJsonList(nm.operationCandidate)} as oc
+        with p, i, v, rels, apoc.map.merge(apoc.map.removeKeys(nm, ['operationCandidate']), oc) as versionNode
         unwind rels as rel
-        with p, i, v, nm, {operationCandidateInfo:apoc.convert.fromJsonList(nm.operationCandidate)} as oc, rel
+        with p, i, v, versionNode,
+        {startNode: startNode(rel).nodeUid, endNode: endNode(rel).nodeUid, condition: rel.condition, startLocation: rel.startLocation, endLocation: rel.endLocation} as versionEdge
         return p.name as processName, i.version as iterateFrom, v.version as version, v.cycle as cycle, v.terminatedMethod as terminatedMethod,
-        collect(distinct apoc.map.merge(apoc.map.removeKeys(nm, ['operationCandidate']),oc)) as versionNodes,
-        collect(distinct {startNode: startNode(rel).nodeUid, endNode: endNode(rel).nodeUid, condition: rel.condition, startLocation: rel.startLocation, endLocation: rel.endLocation}) as versionEdges
+        collect(distinct versionNode) as versionNodes,
+        collect(distinct versionEdge) as versionEdges
     """)
     VersionModelViewDto queryVersionView(String processName, Integer version);
 
