@@ -81,7 +81,9 @@
  
 ## 数据建模
 
-![NeoFlow数据建模](https://github.com/PC8650/NeoFlow/assets/70273864/e8b83524-ec46-484e-ac50-ee4d63a020b3)
+
+![NeoFlow数据建模](https://github.com/PC8650/NeoFlow/assets/70273864/7db207ce-dbee-48cb-9716-4086a80e6f2f)
+
 
 ## 配置
 
@@ -1590,15 +1592,16 @@ null
 
 **发起 operationType=1**
 
-| 名称              | 类型     | 必填  | 含义        | 备注                                    |
-| --------------- | ------ | --- | --------- | ------------------------------------- |
-| processName     | string | Y   | 流程名称      |                                       |
-| operationType   | number | Y   | 操作类型      | 1                                     |
-| businessKey     | string | N   | 流程实例业务key | 若不执行节点方法或节点方法不填充表单businessKey，则必填     |
-| condition       | number | N   | 跳转条件      | 若不执行节点方法或节点方法不填充表单跳转条件，则必填（业务约定的通过条件） |
-| operator        | map    | N   | 操作用户信息    | 根据配置NeoFlowConfig.baseUserChoose决定    |
-| params          | map    | N   | 节点方法业务参数  | 根据节点模型配置的方法具体实现决定                     |
-| operationRemark | string | N   | 操作备注      |                                       |
+| 名称              | 类型     | 必填  | 含义        | 备注                                                |
+| --------------- | ------ | --- | --------- | ------------------------------------------------- |
+| processName     | string | Y   | 流程名称      |                                                   |
+| operationType   | number | Y   | 操作类型      | 1                                                 |
+| businessKey     | string | N   | 流程实例业务key | 若不执行节点方法或节点方法不填充表单businessKey，则必填                 |
+| condition       | number | N   | 跳转条件      | 若不执行节点方法或节点方法不填充表单跳转条件，则必填（业务约定的通过条件）             |
+| operator        | map    | N   | 操作用户信息    | 根据配置NeoFlowConfig.baseUserChoose决定                |
+| params          | map    | N   | 节点方法业务参数  | 根据节点模型配置的方法具体实现决定                                 |
+| operationRemark | string | N   | 操作备注      |                                                   |
+| listData        | string | N   | 流程业务列表数据  | 序列化的业务数据，用于在流程列表查询时带出。建议是不变或随节点变动的数据。为null则不会更新数据 |
 
 <font color=red>operator</font>
 
@@ -1609,64 +1612,68 @@ null
 
 **通过 operationType=2**
 
-| 名称              | 类型     | 必填  | 含义        | 备注                                    |
-| --------------- | ------ | --- | --------- | ------------------------------------- |
-| processName     | string | Y   | 流程名称      |                                       |
-| operationType   | number | Y   | 操作类型      | 2                                     |
-| num             | number | Y   | 实例节点位置    | >=2                                   |
-| nodeId          | number | Y   | 节点id      | >=1                                   |
-| businessKey     | string | Y   | 流程实例业务key |                                       |
-| version         | number | Y   | 版本        | >=1                                   |
-| condition       | number | N   | 跳转条件      | 若不执行节点方法或节点方法不填充表单跳转条件，则必填（业务约定的通过条件） |
-| operator        | map    | N   | 操作用户信息    | 参考 **发起 operationType=1**             |
-| params          | map    | N   | 节点方法业务参数  | 根据节点模型配置的方法具体实现决定                     |
-| operationRemark | string | N   | 操作备注      |                                       |
+| 名称              | 类型     | 必填  | 含义        | 备注                                                |
+| --------------- | ------ | --- | --------- | ------------------------------------------------- |
+| processName     | string | Y   | 流程名称      |                                                   |
+| operationType   | number | Y   | 操作类型      | 2                                                 |
+| num             | number | Y   | 实例节点位置    | >=2                                               |
+| nodeId          | number | Y   | 节点id      | >=1                                               |
+| businessKey     | string | Y   | 流程实例业务key |                                                   |
+| version         | number | Y   | 版本        | >=1                                               |
+| condition       | number | N   | 跳转条件      | 若不执行节点方法或节点方法不填充表单跳转条件，则必填（业务约定的通过条件）             |
+| operator        | map    | N   | 操作用户信息    | 参考 **发起 operationType=1**                         |
+| params          | map    | N   | 节点方法业务参数  | 根据节点模型配置的方法具体实现决定                                 |
+| operationRemark | string | N   | 操作备注      |                                                   |
+| listData        | string | N   | 流程业务列表数据  | 序列化的业务数据，用于在流程列表查询时带出。建议是不变或随节点变动的数据。为null则不会更新数据 |
 
 **拒绝 operationType=3**
 
-| 名称              | 类型     | 必填  | 含义        | 备注                                    |
-| --------------- | ------ | --- | --------- | ------------------------------------- |
-| processName     | string | Y   | 流程名称      |                                       |
-| operationType   | number | Y   | 操作类型      | 3                                     |
-| num             | number | Y   | 实例节点位置    | >=2                                   |
-| nodeId          | number | Y   | 节点id      | >=1                                   |
-| businessKey     | string | Y   | 流程实例业务key |                                       |
-| version         | number | Y   | 版本        | >=1                                   |
-| condition       | number | N   | 跳转条件      | 如果拒绝并不是执行”退回/结束 流程“的操作，而是作为路径筛选条件，则必填 |
-| operator        | map    | N   | 操作用户信息    | 参考 **发起 operationType=1**             |
-| params          | map    | N   | 节点方法业务参数  | 根据节点模型配置的方法具体实现决定                     |
-| operationRemark | string | N   | 操作备注      |                                       |
+| 名称              | 类型     | 必填  | 含义        | 备注                                                |
+| --------------- | ------ | --- | --------- | ------------------------------------------------- |
+| processName     | string | Y   | 流程名称      |                                                   |
+| operationType   | number | Y   | 操作类型      | 3                                                 |
+| num             | number | Y   | 实例节点位置    | >=2                                               |
+| nodeId          | number | Y   | 节点id      | >=1                                               |
+| businessKey     | string | Y   | 流程实例业务key |                                                   |
+| version         | number | Y   | 版本        | >=1                                               |
+| condition       | number | N   | 跳转条件      | 如果拒绝并不是执行”退回/结束 流程“的操作，而是作为路径筛选条件，则必填             |
+| operator        | map    | N   | 操作用户信息    | 参考 **发起 operationType=1**                         |
+| params          | map    | N   | 节点方法业务参数  | 根据节点模型配置的方法具体实现决定                                 |
+| operationRemark | string | N   | 操作备注      |                                                   |
+| listData        | string | N   | 流程业务列表数据  | 序列化的业务数据，用于在流程列表查询时带出。建议是不变或随节点变动的数据。为null则不会更新数据 |
 
 **转发 operationType=4**
 
-| 名称                   | 类型     | 必填  | 含义        | 备注                        |
-| -------------------- | ------ | --- | --------- | ------------------------- |
-| processName          | string | Y   | 流程名称      |                           |
-| operationType        | number | Y   | 操作类型      | 4                         |
-| num                  | number | Y   | 实例节点位置    | >=2                       |
-| nodeId               | number | Y   | 节点id      | >=1                       |
-| businessKey          | string | Y   | 流程实例业务key |                           |
-| version              | number | Y   | 版本        | >=1                       |
-| operator             | map    | N   | 操作用户信息    | 参考 **发起 operationType=1** |
-| forwardOperationType | number | Y   | 转发类型      | 业务约定的节点操作类型               |
-| forwardOperator      | array  | Y   | 转发对象      |                           |
-| operationRemark      | string | N   | 操作备注      |                           |
+| 名称                   | 类型     | 必填  | 含义        | 备注                                                |
+| -------------------- | ------ | --- | --------- | ------------------------------------------------- |
+| processName          | string | Y   | 流程名称      |                                                   |
+| operationType        | number | Y   | 操作类型      | 4                                                 |
+| num                  | number | Y   | 实例节点位置    | >=2                                               |
+| nodeId               | number | Y   | 节点id      | >=1                                               |
+| businessKey          | string | Y   | 流程实例业务key |                                                   |
+| version              | number | Y   | 版本        | >=1                                               |
+| operator             | map    | N   | 操作用户信息    | 参考 **发起 operationType=1**                         |
+| forwardOperationType | number | Y   | 转发类型      | 业务约定的节点操作类型                                       |
+| forwardOperator      | array  | Y   | 转发对象      |                                                   |
+| operationRemark      | string | N   | 操作备注      |                                                   |
+| listData             | string | N   | 流程业务列表数据  | 序列化的业务数据，用于在流程列表查询时带出。建议是不变或随节点变动的数据。为null则不会更新数据 |
 
 <font color=red>forwardOperator</font> 参考 **发起 operationType=1**
 
 **强行终止 operationType=5**
 
-| 名称              | 类型     | 必填  | 含义        | 备注                        |
-| --------------- | ------ | --- | --------- | ------------------------- |
-| processName     | string | Y   | 流程名称      |                           |
-| operationType   | number | Y   | 操作类型      | 5                         |
-| num             | number | Y   | 实例节点位置    | >=2                       |
-| nodeId          | number | Y   | 节点id      | >=1                       |
-| businessKey     | string | Y   | 流程实例业务key |                           |
-| version         | number | Y   | 版本        | >=1                       |
-| operator        | map    | N   | 操作用户信息    | 参考 **发起 operationType=1** |
-| params          | map    | N   | 节点方法业务参数  | 根据版本配置的终止方法具体实现决定         |
-| operationRemark | string | N   | 操作备注      |                           |
+| 名称              | 类型     | 必填  | 含义        | 备注                                                |
+| --------------- | ------ | --- | --------- | ------------------------------------------------- |
+| processName     | string | Y   | 流程名称      |                                                   |
+| operationType   | number | Y   | 操作类型      | 5                                                 |
+| num             | number | Y   | 实例节点位置    | >=2                                               |
+| nodeId          | number | Y   | 节点id      | >=1                                               |
+| businessKey     | string | Y   | 流程实例业务key |                                                   |
+| version         | number | Y   | 版本        | >=1                                               |
+| operator        | map    | N   | 操作用户信息    | 参考 **发起 operationType=1**                         |
+| params          | map    | N   | 节点方法业务参数  | 根据版本配置的终止方法具体实现决定                                 |
+| operationRemark | string | N   | 操作备注      |                                                   |
+| listData        | string | N   | 流程业务列表数据  | 序列化的业务数据，用于在流程列表查询时带出。建议是不变或随节点变动的数据。为null则不会更新数据 |
 
 **响应参数**
 
@@ -2097,18 +2104,19 @@ null
 
 <font color=red>content</font>
 
-| 名称            | 类型     | 含义          | 备注                                                                     |
-| ------------- | ------ | ----------- | ---------------------------------------------------------------------- |
-| name          | string | 流程名称        |                                                                        |
-| activeVersion | number | 激活版本        |                                                                        |
-| version       | number | 当前实例版本      |                                                                        |
-| businessKey   | string | 业务key       |                                                                        |
-| initiateTime  | string | 发起时间        |                                                                        |
-| updateTime    | string | 实例更新时间      |                                                                        |
-| num           | number | 当前实例节点长度    |                                                                        |
-| nodeId        | number | 当前实例最后的节点id |                                                                        |
-| status        | number | 状态          | 发起列表，当前流程实例状态：1-进行中，2-通过，3-未通过，4-强行终止；  <br>已办列表：null；  <br>待办列表：null. |
-| doneNodes     | array  | 已办列表-已办节点列表 |                                                                        |
+| 名称            | 类型     | 含义          | 备注                                                                     |                       |
+| ------------- | ------ | ----------- | ---------------------------------------------------------------------- | --------------------- |
+| name          | string | 流程名称        |                                                                        |                       |
+| activeVersion | number | 激活版本        |                                                                        |                       |
+| version       | number | 当前实例版本      |                                                                        |                       |
+| businessKey   | string | 业务key       |                                                                        |                       |
+| initiateTime  | string | 发起时间        |                                                                        |                       |
+| updateTime    | string | 实例更新时间      |                                                                        |                       |
+| num           | number | 当前实例节点长度    |                                                                        |                       |
+| nodeId        | number | 当前实例最后的节点id |                                                                        |                       |
+| status        | number | 状态          | 发起列表，当前流程实例状态：1-进行中，2-通过，3-未通过，4-强行终止；  <br>已办列表：null；  <br>待办列表：null. |                       |
+| listData      | string | N           | 流程业务列表数据                                                               | 序列化的业务数据，用于在流程列表查询时带出 |
+| doneNodes     | array  | 已办列表-已办节点列表 |                                                                        |                       |
 
 <font color=red>doneNodes</font>
 
@@ -2247,15 +2255,16 @@ null
 
 <font color=red>content</font>
 
-| 名称          | 类型     | 含义     | 备注                            |
-| ----------- | ------ | ------ | ----------------------------- |
-| name        | string | 流程名称   |                               |
-| version     | number | 流程版本   |                               |
-| businessKey | string | 业务key  |                               |
-| num         | number | 查询节点位置 |                               |
-| nodeId      | number | 查询节点id |                               |
-| status      | number | 查询节点状态 | 1-待办，2-同意，3-拒绝，4-转发，5-终止      |
-| endTime     | string | 结束时间   | 待办：上一节点结束时间;  <br>已办：查询节点结束时间 |
+| 名称          | 类型     | 含义     | 备注                            |                       |
+| ----------- | ------ | ------ | ----------------------------- | --------------------- |
+| name        | string | 流程名称   |                               |                       |
+| version     | number | 流程版本   |                               |                       |
+| businessKey | string | 业务key  |                               |                       |
+| num         | number | 查询节点位置 |                               |                       |
+| nodeId      | number | 查询节点id |                               |                       |
+| status      | number | 查询节点状态 | 1-待办，2-同意，3-拒绝，4-转发，5-终止      |                       |
+| endTime     | string | 结束时间   | 待办：上一节点结束时间;  <br>已办：查询节点结束时间 |                       |
+| listData    | string | N      | 流程业务列表数据                      | 序列化的业务数据，用于在流程列表查询时带出 |
 
 **请求示例**
 
