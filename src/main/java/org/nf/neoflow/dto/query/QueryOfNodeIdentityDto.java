@@ -34,6 +34,9 @@ public record QueryOfNodeIdentityDto(
         已办：查询节点结束时间
     """)
     @JsonFormat(pattern = TimeFormat.DATE_TIME)
-    LocalDateTime endTime
+    LocalDateTime endTime,
+
+    @Schema(name = "序列化的流程列表业务数据")
+    String listData
 ) {
 }

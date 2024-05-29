@@ -78,6 +78,9 @@ public class ExecuteForm {
     @Schema(name = "操作备注")
     private String operationRemark;
 
+    @Schema(name = "流程业务列表数据", description = "序列化的业务数据，用于在流程列表查询时带出。建议是不变或随节点变动的数据")
+    private String listData;
+
     public void baseCheck() {
         if (num == null || num < 2) {
             throw new NeoExecuteException("实例节点位置应 >= 2");
