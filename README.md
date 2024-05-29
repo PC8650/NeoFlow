@@ -43,7 +43,7 @@
 
 - jdk 21
 - Spring Boot 3.2.4
-- Neo4j 5.18.1
+- Neo4j 5.18.1 (需安装APOC库)
 
 ## 主要功能
 
