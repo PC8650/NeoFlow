@@ -53,7 +53,7 @@ public interface QueryRepository extends Neo4jRepository<Instance, Long> {
         with p, v, b where p is not null
         return p.name as name, p.activeVersion as activeVersion, v.version as version,
         b.beginTime as initiateTime, b.endTime as updateTime, b.status as status,
-        b.key as businessKey, b.num as num, b.currentNodeId as nodeId
+        b.key as businessKey, b.num as num, b.currentNodeId as nodeId, b.listData as listData
         :#{orderBy(#pageable)}
         skip :#{#pageable.offset} limit :#{#pageable.pageSize}
     """,
@@ -84,7 +84,7 @@ public interface QueryRepository extends Neo4jRepository<Instance, Long> {
         with p, v, b where p is not null
         return p.name as name, p.activeVersion as activeVersion, v.version as version,
         b.beginTime as initiateTime, b.endTime as updateTime,
-        b.key as businessKey, b.num as num, b.currentNodeId as nodeId
+        b.key as businessKey, b.num as num, b.currentNodeId as nodeId, b.listData as listData
         :#{orderBy(#pageable)}
         skip :#{#pageable.offset} limit :#{#pageable.pageSize}
     """,
@@ -123,7 +123,7 @@ public interface QueryRepository extends Neo4jRepository<Instance, Long> {
         return doneNodes,
         p.name as name, p.activeVersion as activeVersion, v.version as version,
         b.beginTime as initiateTime, b.endTime as updateTime,
-        b.key as businessKey, b.num as num, b.currentNodeId as nodeId
+        b.key as businessKey, b.num as num, b.currentNodeId as nodeId, b.listData as listData
     """,
     countQuery = """
         match path = (i:Instance)-[b:BUSINESS]->(:InstanceNode)-[:NEXT*]->(n:InstanceNode{operationBy: $3})
@@ -154,7 +154,7 @@ public interface QueryRepository extends Neo4jRepository<Instance, Long> {
         optional match (v:Version)-[:INSTANCE]->(i) where ($version is null or v.version = $version)
         optional match (p:Process)-[:VERSION]->(v)where ($name is null or p.name = $name)
         with p, v, b, b.endTime as endTime, size(nodes(path))-1 as num, id(n) as nodeId, n.status as status where p is not null
-        return p.name as name, v.version as version, b.key as businessKey, num, nodeId, status, endTime
+        return p.name as name, v.version as version, b.key as businessKey, b.listData as listData, num, nodeId, status, endTime
        :#{orderBy(#pageable)}
         skip :#{#pageable.offset} limit :#{#pageable.pageSize}
     """,
@@ -192,7 +192,7 @@ public interface QueryRepository extends Neo4jRepository<Instance, Long> {
         optional match (v:Version)-[:INSTANCE]->(i) where ($version is null or v.version = $version)
         optional match (p:Process)-[:VERSION]->(v)where ($name is null or p.name = $name)
         with p, v, b, n.endTime as endTime, size(nodes(path))-1 as num, id(n) as nodeId, n.status as status where p is not null
-        return p.name as name, v.version as version, b.key as businessKey, num, nodeId, status, endTime
+        return p.name as name, v.version as version, b.key as businessKey, b.listData as listData, num, nodeId, status, endTime
        :#{orderBy(#pageable)}
         skip :#{#pageable.offset} limit :#{#pageable.pageSize}
     """,

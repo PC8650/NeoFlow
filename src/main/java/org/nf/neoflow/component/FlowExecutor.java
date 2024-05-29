@@ -786,10 +786,10 @@ public class FlowExecutor {
         log.info("更新流程状态：流程 {}-版本 {}-key {}", form.getProcessName(), form.getVersion(), form.getBusinessKey());
         if (form.getNum() < 5) {
             nextId = instanceNodeRepository.updateFlowInstance(form.getProcessName(), form.getVersion(),
-                    form.getNodeId(), form.getBusinessKey(), form.getCondition(), flowStatus, cMap, nMap);
+                    form.getNodeId(), form.getBusinessKey(), form.getCondition(), flowStatus, form.getListData(), cMap, nMap);
         } else {
             nextId = instanceNodeRepository.updateFlowInstanceTooLong(form.getProcessName(), form.getVersion(),
-                    form.getNodeId(), form.getNum(), form.getBusinessKey(), form.getCondition(), flowStatus, cMap, nMap);
+                    form.getNodeId(), form.getNum(), form.getBusinessKey(), form.getCondition(), flowStatus, form.getListData(), cMap, nMap);
         }
         log.info("流程状态更新：流程 {}-版本 {}-key {}", form.getProcessName(), form.getVersion(), form.getBusinessKey());
 
