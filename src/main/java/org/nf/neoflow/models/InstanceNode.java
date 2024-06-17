@@ -80,6 +80,14 @@ public class InstanceNode {
     @Schema(name = "版本移植")
     private String graft;
 
+    @Schema(name = "流程业务变量数据",
+            description = """
+                序列化的业务数据，用于保留会随流程节点变动，但又需要在变动 前/后 留痕的数据(保留变动 前/后 可由实际需求决定)。
+                建议只保留需要因变动留痕的关键数据。
+                自动节点需要配合节点方法才能传递。
+            """)
+    private String variableData;
+
     /**
      * 复制忽略属性
      * @return String[]

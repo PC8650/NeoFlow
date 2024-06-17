@@ -177,7 +177,8 @@ public class FlowExecutor {
      * 实例版本移植，使其在原有基础上使用新的版本模型。
      * 仅在当前节点为待办时，由候选人可确认移植。
      * {@link  GraftForm#getGraftNodeUid() GraftForm.graftNodeUid} 为空时，需要当前节点的modelNodeUid在移植版本的模型节点中有对应；
-     * 当前操作类型默认为 {@link  InstanceOperationType#PASS pass} ，将默认选择跳转到移植节点的条件，是否执行方法由 {@link  GraftForm#getExecuteMethod()}  GraftForm.executeMethod} 决定，
+     * 当前操作类型默认为 {@link  InstanceOperationType#PASS pass} ，将默认选择跳转到移植节点的条件，
+     * 是否执行方法由 {@link  GraftForm#getExecuteMethod() GraftForm.executeMethod}决定，默认false
      * 并以移植节点模型生成下一个实例节点
      * @param form 表单
      */
@@ -740,10 +741,12 @@ public class FlowExecutor {
                 executeForm.getProcessName(), executeForm.getVersion(), executeForm.getBusinessKey(), graftForm.getGraftVersion());
         if (executeForm.getNum() < 5) {
             nextId = instanceNodeRepository.updateFlowInstanceByGraft(executeForm.getProcessName(), executeForm.getVersion(),
-                    executeForm.getNodeId(), executeForm.getBusinessKey(), executeForm.getCondition(), flowStatus, graftForm.getGraftVersion(), cMap, nMap);
+                    executeForm.getNodeId(), executeForm.getBusinessKey(), executeForm.getCondition(), flowStatus, graftForm.getGraftVersion(),
+                    graftForm.getListData(), graftForm.getVariableData(), cMap, nMap);
         } else {
             nextId = instanceNodeRepository.updateFlowInstanceByGraftTooLong(executeForm.getProcessName(), executeForm.getVersion(),
-                    executeForm.getNodeId(), graftForm.getNum(), executeForm.getBusinessKey(), executeForm.getCondition(), flowStatus, graftForm.getGraftVersion(), cMap, nMap);
+                    executeForm.getNodeId(), graftForm.getNum(), executeForm.getBusinessKey(), executeForm.getCondition(), flowStatus, graftForm.getGraftVersion(),
+                    graftForm.getListData(), graftForm.getVariableData(), cMap, nMap);
         }
         log.info("流程状态移植：流程 {}-版本 {}-key {} -移植版本 {}",
                 executeForm.getProcessName(), executeForm.getVersion(), executeForm.getBusinessKey(), graftForm.getGraftVersion());
@@ -786,10 +789,10 @@ public class FlowExecutor {
         log.info("更新流程状态：流程 {}-版本 {}-key {}", form.getProcessName(), form.getVersion(), form.getBusinessKey());
         if (form.getNum() < 5) {
             nextId = instanceNodeRepository.updateFlowInstance(form.getProcessName(), form.getVersion(),
-                    form.getNodeId(), form.getBusinessKey(), form.getCondition(), flowStatus, form.getListData(), cMap, nMap);
+                    form.getNodeId(), form.getBusinessKey(), form.getCondition(), flowStatus, form.getListData(), form.getVariableData(), cMap, nMap);
         } else {
             nextId = instanceNodeRepository.updateFlowInstanceTooLong(form.getProcessName(), form.getVersion(),
-                    form.getNodeId(), form.getNum(), form.getBusinessKey(), form.getCondition(), flowStatus, form.getListData(), cMap, nMap);
+                    form.getNodeId(), form.getNum(), form.getBusinessKey(), form.getCondition(), flowStatus, form.getListData(), form.getVariableData(), cMap, nMap);
         }
         log.info("流程状态更新：流程 {}-版本 {}-key {}", form.getProcessName(), form.getVersion(), form.getBusinessKey());
 

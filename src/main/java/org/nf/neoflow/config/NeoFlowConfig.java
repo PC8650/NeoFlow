@@ -230,7 +230,7 @@ public class NeoFlowConfig {
     private Boolean enableVirtual = false;
 
     /**
-     * 虚拟线程池达到上线后，新任务等待时间，单位：秒
+     * 虚拟线程池达到上限后，新任务等待时间，单位：秒
      * 默认 5
      */
     private int virtualAwaitTime = 5;

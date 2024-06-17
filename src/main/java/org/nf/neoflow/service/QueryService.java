@@ -11,6 +11,7 @@ import org.nf.neoflow.utils.PageUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 
@@ -77,27 +78,34 @@ public class QueryService {
 
     /**
      * 查询流程实例操作历史
-     * @param businessKey 业务key
-     * @param num 截至到 第 num 个节点
+     * @param form 表单
      * @return List<OperationHistoryDto>
      */
-    public List<OperationHistoryDto> queryInstanceOperationHistory(String businessKey, Integer num) {
+    public OperationHistoryDto queryInstanceOperationHistory(OperationHistoryForm form) {
         String cacheType = CacheEnums.I_O_H.getType();
+        Integer num = form.getNum();
+        String businessKey = form.getBusinessKey();
         String key;
         if (num == null) {
-            key = businessKey;
+            key = form.getBusinessKey();
         }else {
             key = cacheManager.mergeKey(businessKey, num.toString());
         }
         NeoCacheManager.CacheValue<List> cache = cacheManager.getCache(cacheType, key, List.class);
-        List<OperationHistoryDto> historyList;
+        List<OperationHistoryDto.ListDto> historyList;
         if (cache.filter() || cache.value() != null) {
             historyList =  cache.value();
         } else {
             historyList = queryRepository.queryInstanceOperationHistory(businessKey, num);
             cacheManager.setCache(cacheType, key, historyList);
         }
-        return historyList;
+
+        OperationHistoryDto dto = new OperationHistoryDto(historyList);
+
+        if (form.isVariableData() && !CollectionUtils.isEmpty(historyList)) {
+           dto.setVariableData(queryRepository.queryNodeVariableData(historyList.getLast().nodeId()));
+        }
+        return dto;
     }
 
 }

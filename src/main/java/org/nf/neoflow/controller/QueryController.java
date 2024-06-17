@@ -46,12 +46,8 @@ public class QueryController {
 
     @Operation(description = "查询流程实例操作历史")
     @GetMapping("/history")
-    public ResponseEntity<Result<List<OperationHistoryDto>>> queryInstanceOperationHistory(@RequestParam String businessKey,
-                                                                                           @RequestParam(required = false) Integer num) {
-        if (num != null && num < 1) {
-            throw new IllegalArgumentException("num 必须大于 0");
-        }
-        return ResponseEntity.ok(Result.success(queryService.queryInstanceOperationHistory(businessKey, num)));
+    public ResponseEntity<Result<OperationHistoryDto>> queryInstanceOperationHistory(@Valid @ModelAttribute OperationHistoryForm form) {
+        return ResponseEntity.ok(Result.success(queryService.queryInstanceOperationHistory(form)));
     }
 
 }
