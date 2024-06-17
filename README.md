@@ -82,7 +82,7 @@
 ## 数据建模
 
 
-![NeoFlow数据建模](https://github.com/PC8650/NeoFlow/assets/70273864/7db207ce-dbee-48cb-9716-4086a80e6f2f)
+![NeoFlow数据建模](https://github.com/PC8650/NeoFlow/assets/70273864/fbfa0760-e016-40e8-bfd0-fbdb472b468e)
 
 
 ## 配置
@@ -1592,16 +1592,17 @@ null
 
 **发起 operationType=1**
 
-| 名称              | 类型     | 必填  | 含义        | 备注                                                |
-| --------------- | ------ | --- | --------- | ------------------------------------------------- |
-| processName     | string | Y   | 流程名称      |                                                   |
-| operationType   | number | Y   | 操作类型      | 1                                                 |
-| businessKey     | string | N   | 流程实例业务key | 若不执行节点方法或节点方法不填充表单businessKey，则必填                 |
-| condition       | number | N   | 跳转条件      | 若不执行节点方法或节点方法不填充表单跳转条件，则必填（业务约定的通过条件）             |
-| operator        | map    | N   | 操作用户信息    | 根据配置NeoFlowConfig.baseUserChoose决定                |
-| params          | map    | N   | 节点方法业务参数  | 根据节点模型配置的方法具体实现决定                                 |
-| operationRemark | string | N   | 操作备注      |                                                   |
-| listData        | string | N   | 流程业务列表数据  | 序列化的业务数据，用于在流程列表查询时带出。建议是不变或随节点变动的数据。为null则不会更新数据 |
+| 名称              | 类型     | 必填  | 含义        | 备注                                                                                            |
+| --------------- | ------ | --- | --------- | --------------------------------------------------------------------------------------------- |
+| processName     | string | Y   | 流程名称      |                                                                                               |
+| operationType   | number | Y   | 操作类型      | 1                                                                                             |
+| businessKey     | string | N   | 流程实例业务key | 若不执行节点方法或节点方法不填充表单businessKey，则必填                                                             |
+| condition       | number | N   | 跳转条件      | 若不执行节点方法或节点方法不填充表单跳转条件，则必填（业务约定的通过条件）                                                         |
+| operator        | map    | N   | 操作用户信息    | 根据配置NeoFlowConfig.baseUserChoose决定                                                            |
+| params          | map    | N   | 节点方法业务参数  | 根据节点模型配置的方法具体实现决定                                                                             |
+| operationRemark | string | N   | 操作备注      |                                                                                               |
+| listData        | string | N   | 流程业务列表数据  | 序列化的业务数据，用于在流程列表查询时带出。建议是不变或随节点变动的数据。为null则不会更新数据                                             |
+| variableData    | string | N   | 流程业务变量数据  | 序列化的业务数据，用于保留会随流程节点变动，但又需要在变动 前/后 留痕的数据(保留变动 前/后 可由实际需求决定)。建议只保留需要因变动留痕的关键数据。自动节点需要配合节点方法才能传递 |
 
 <font color=red>operator</font>
 
@@ -1612,68 +1613,72 @@ null
 
 **通过 operationType=2**
 
-| 名称              | 类型     | 必填  | 含义        | 备注                                                |
-| --------------- | ------ | --- | --------- | ------------------------------------------------- |
-| processName     | string | Y   | 流程名称      |                                                   |
-| operationType   | number | Y   | 操作类型      | 2                                                 |
-| num             | number | Y   | 实例节点位置    | >=2                                               |
-| nodeId          | number | Y   | 节点id      | >=1                                               |
-| businessKey     | string | Y   | 流程实例业务key |                                                   |
-| version         | number | Y   | 版本        | >=1                                               |
-| condition       | number | N   | 跳转条件      | 若不执行节点方法或节点方法不填充表单跳转条件，则必填（业务约定的通过条件）             |
-| operator        | map    | N   | 操作用户信息    | 参考 **发起 operationType=1**                         |
-| params          | map    | N   | 节点方法业务参数  | 根据节点模型配置的方法具体实现决定                                 |
-| operationRemark | string | N   | 操作备注      |                                                   |
-| listData        | string | N   | 流程业务列表数据  | 序列化的业务数据，用于在流程列表查询时带出。建议是不变或随节点变动的数据。为null则不会更新数据 |
+| 名称              | 类型     | 必填  | 含义        | 备注                                                                                            |
+| --------------- | ------ | --- | --------- | --------------------------------------------------------------------------------------------- |
+| processName     | string | Y   | 流程名称      |                                                                                               |
+| operationType   | number | Y   | 操作类型      | 2                                                                                             |
+| num             | number | Y   | 实例节点位置    | >=2                                                                                           |
+| nodeId          | number | Y   | 节点id      | >=1                                                                                           |
+| businessKey     | string | Y   | 流程实例业务key |                                                                                               |
+| version         | number | Y   | 版本        | >=1                                                                                           |
+| condition       | number | N   | 跳转条件      | 若不执行节点方法或节点方法不填充表单跳转条件，则必填（业务约定的通过条件）                                                         |
+| operator        | map    | N   | 操作用户信息    | 参考 **发起 operationType=1**                                                                     |
+| params          | map    | N   | 节点方法业务参数  | 根据节点模型配置的方法具体实现决定                                                                             |
+| operationRemark | string | N   | 操作备注      |                                                                                               |
+| listData        | string | N   | 流程业务列表数据  | 序列化的业务数据，用于在流程列表查询时带出。建议是不变或随节点变动的数据。为null则不会更新数据                                             |
+| variableData    | string | N   | 流程业务变量数据  | 序列化的业务数据，用于保留会随流程节点变动，但又需要在变动 前/后 留痕的数据(保留变动 前/后 可由实际需求决定)。建议只保留需要因变动留痕的关键数据。自动节点需要配合节点方法才能传递 |
 
 **拒绝 operationType=3**
 
-| 名称              | 类型     | 必填  | 含义        | 备注                                                |
-| --------------- | ------ | --- | --------- | ------------------------------------------------- |
-| processName     | string | Y   | 流程名称      |                                                   |
-| operationType   | number | Y   | 操作类型      | 3                                                 |
-| num             | number | Y   | 实例节点位置    | >=2                                               |
-| nodeId          | number | Y   | 节点id      | >=1                                               |
-| businessKey     | string | Y   | 流程实例业务key |                                                   |
-| version         | number | Y   | 版本        | >=1                                               |
-| condition       | number | N   | 跳转条件      | 如果拒绝并不是执行”退回/结束 流程“的操作，而是作为路径筛选条件，则必填             |
-| operator        | map    | N   | 操作用户信息    | 参考 **发起 operationType=1**                         |
-| params          | map    | N   | 节点方法业务参数  | 根据节点模型配置的方法具体实现决定                                 |
-| operationRemark | string | N   | 操作备注      |                                                   |
-| listData        | string | N   | 流程业务列表数据  | 序列化的业务数据，用于在流程列表查询时带出。建议是不变或随节点变动的数据。为null则不会更新数据 |
+| 名称              | 类型     | 必填  | 含义        | 备注                                                                                            |
+| --------------- | ------ | --- | --------- | --------------------------------------------------------------------------------------------- |
+| processName     | string | Y   | 流程名称      |                                                                                               |
+| operationType   | number | Y   | 操作类型      | 3                                                                                             |
+| num             | number | Y   | 实例节点位置    | >=2                                                                                           |
+| nodeId          | number | Y   | 节点id      | >=1                                                                                           |
+| businessKey     | string | Y   | 流程实例业务key |                                                                                               |
+| version         | number | Y   | 版本        | >=1                                                                                           |
+| condition       | number | N   | 跳转条件      | 如果拒绝并不是执行”退回/结束 流程“的操作，而是作为路径筛选条件，则必填                                                         |
+| operator        | map    | N   | 操作用户信息    | 参考 **发起 operationType=1**                                                                     |
+| params          | map    | N   | 节点方法业务参数  | 根据节点模型配置的方法具体实现决定                                                                             |
+| operationRemark | string | N   | 操作备注      |                                                                                               |
+| listData        | string | N   | 流程业务列表数据  | 序列化的业务数据，用于在流程列表查询时带出。建议是不变或随节点变动的数据。为null则不会更新数据                                             |
+| variableData    | string | N   | 流程业务变量数据  | 序列化的业务数据，用于保留会随流程节点变动，但又需要在变动 前/后 留痕的数据(保留变动 前/后 可由实际需求决定)。建议只保留需要因变动留痕的关键数据。自动节点需要配合节点方法才能传递 |
 
 **转发 operationType=4**
 
-| 名称                   | 类型     | 必填  | 含义        | 备注                                                |
-| -------------------- | ------ | --- | --------- | ------------------------------------------------- |
-| processName          | string | Y   | 流程名称      |                                                   |
-| operationType        | number | Y   | 操作类型      | 4                                                 |
-| num                  | number | Y   | 实例节点位置    | >=2                                               |
-| nodeId               | number | Y   | 节点id      | >=1                                               |
-| businessKey          | string | Y   | 流程实例业务key |                                                   |
-| version              | number | Y   | 版本        | >=1                                               |
-| operator             | map    | N   | 操作用户信息    | 参考 **发起 operationType=1**                         |
-| forwardOperationType | number | Y   | 转发类型      | 业务约定的节点操作类型                                       |
-| forwardOperator      | array  | Y   | 转发对象      |                                                   |
-| operationRemark      | string | N   | 操作备注      |                                                   |
-| listData             | string | N   | 流程业务列表数据  | 序列化的业务数据，用于在流程列表查询时带出。建议是不变或随节点变动的数据。为null则不会更新数据 |
+| 名称                   | 类型     | 必填  | 含义        | 备注                                                                                            |
+| -------------------- | ------ | --- | --------- | --------------------------------------------------------------------------------------------- |
+| processName          | string | Y   | 流程名称      |                                                                                               |
+| operationType        | number | Y   | 操作类型      | 4                                                                                             |
+| num                  | number | Y   | 实例节点位置    | >=2                                                                                           |
+| nodeId               | number | Y   | 节点id      | >=1                                                                                           |
+| businessKey          | string | Y   | 流程实例业务key |                                                                                               |
+| version              | number | Y   | 版本        | >=1                                                                                           |
+| operator             | map    | N   | 操作用户信息    | 参考 **发起 operationType=1**                                                                     |
+| forwardOperationType | number | Y   | 转发类型      | 业务约定的节点操作类型                                                                                   |
+| forwardOperator      | array  | Y   | 转发对象      |                                                                                               |
+| operationRemark      | string | N   | 操作备注      |                                                                                               |
+| listData             | string | N   | 流程业务列表数据  | 序列化的业务数据，用于在流程列表查询时带出。建议是不变或随节点变动的数据。为null则不会更新数据                                             |
+| variableData         | string | N   | 流程业务变量数据  | 序列化的业务数据，用于保留会随流程节点变动，但又需要在变动 前/后 留痕的数据(保留变动 前/后 可由实际需求决定)。建议只保留需要因变动留痕的关键数据。自动节点需要配合节点方法才能传递 |
 
 <font color=red>forwardOperator</font> 参考 **发起 operationType=1**
 
 **强行终止 operationType=5**
 
-| 名称              | 类型     | 必填  | 含义        | 备注                                                |
-| --------------- | ------ | --- | --------- | ------------------------------------------------- |
-| processName     | string | Y   | 流程名称      |                                                   |
-| operationType   | number | Y   | 操作类型      | 5                                                 |
-| num             | number | Y   | 实例节点位置    | >=2                                               |
-| nodeId          | number | Y   | 节点id      | >=1                                               |
-| businessKey     | string | Y   | 流程实例业务key |                                                   |
-| version         | number | Y   | 版本        | >=1                                               |
-| operator        | map    | N   | 操作用户信息    | 参考 **发起 operationType=1**                         |
-| params          | map    | N   | 节点方法业务参数  | 根据版本配置的终止方法具体实现决定                                 |
-| operationRemark | string | N   | 操作备注      |                                                   |
-| listData        | string | N   | 流程业务列表数据  | 序列化的业务数据，用于在流程列表查询时带出。建议是不变或随节点变动的数据。为null则不会更新数据 |
+| 名称              | 类型     | 必填  | 含义        | 备注                                                                                            |
+| --------------- | ------ | --- | --------- | --------------------------------------------------------------------------------------------- |
+| processName     | string | Y   | 流程名称      |                                                                                               |
+| operationType   | number | Y   | 操作类型      | 5                                                                                             |
+| num             | number | Y   | 实例节点位置    | >=2                                                                                           |
+| nodeId          | number | Y   | 节点id      | >=1                                                                                           |
+| businessKey     | string | Y   | 流程实例业务key |                                                                                               |
+| version         | number | Y   | 版本        | >=1                                                                                           |
+| operator        | map    | N   | 操作用户信息    | 参考 **发起 operationType=1**                                                                     |
+| params          | map    | N   | 节点方法业务参数  | 根据版本配置的终止方法具体实现决定                                                                             |
+| operationRemark | string | N   | 操作备注      |                                                                                               |
+| listData        | string | N   | 流程业务列表数据  | 序列化的业务数据，用于在流程列表查询时带出。建议是不变或随节点变动的数据。为null则不会更新数据                                             |
+| variableData    | string | N   | 流程业务变量数据  | 序列化的业务数据，用于保留会随流程节点变动，但又需要在变动 前/后 留痕的数据(保留变动 前/后 可由实际需求决定)。建议只保留需要因变动留痕的关键数据。自动节点需要配合节点方法才能传递 |
 
 **响应参数**
 
@@ -1853,18 +1858,20 @@ null
 
 **请求参数**
 
-| 名称              | 类型      | 必填  | 含义         | 备注                                                               |
-| --------------- | ------- | --- | ---------- | ---------------------------------------------------------------- |
-| processName     | string  | Y   | 流程名称       |                                                                  |
-| version         | number  | Y   | 版本         | >=1                                                              |
-| num             | number  | Y   | 实例节点位置     | >=2                                                              |
-| nodeId          | number  | Y   | 节点id       |                                                                  |
-| businessKey     | string  | Y   | 业务key      |                                                                  |
-| graftVersion    | number  | Y   | 移植版本       | >=1 & != version                                                 |
-| graftNodeUid    | string  | N   | 移植节点位置     | 为空时，会以当前实例节点对应的模型节点uid去查找，若移植版本模型没有对应节点则异常<br><br>移植节点为发起节点，也会异常 |
-| executeMethod   | boolean | Y   | 是否执行当前节点方法 |                                                                  |
-| operationRemark | string  | N   | 操作备注       |                                                                  |
-| operator        | map     | N   | 操作用户信息     | 根据配置NeoFlowConfig.baseUserChoose决定                               |
+| 名称              | 类型      | 必填  | 含义         | 备注                                                                                            |
+| --------------- | ------- | --- | ---------- | --------------------------------------------------------------------------------------------- |
+| processName     | string  | Y   | 流程名称       |                                                                                               |
+| version         | number  | Y   | 版本         | >=1                                                                                           |
+| num             | number  | Y   | 实例节点位置     | >=2                                                                                           |
+| nodeId          | number  | Y   | 节点id       |                                                                                               |
+| businessKey     | string  | Y   | 业务key      |                                                                                               |
+| graftVersion    | number  | Y   | 移植版本       | >=1 & != version                                                                              |
+| graftNodeUid    | string  | N   | 移植节点位置     | 为空时，会以当前实例节点对应的模型节点uid去查找，若移植版本模型没有对应节点则异常<br><br>移植节点为发起节点，也会异常                              |
+| executeMethod   | boolean | Y   | 是否执行当前节点方法 |                                                                                               |
+| operationRemark | string  | N   | 操作备注       |                                                                                               |
+| operator        | map     | N   | 操作用户信息     | 根据配置NeoFlowConfig.baseUserChoose决定                                                            |
+| listData        | string  | N   | 流程业务列表数据   | 序列化的业务数据，用于在流程列表查询时带出。建议是不变或随节点变动的数据。为null则不会更新数据                                             |
+| variableData    | string  | N   | 流程业务变量数据   | 序列化的业务数据，用于保留会随流程节点变动，但又需要在变动 前/后 留痕的数据(保留变动 前/后 可由实际需求决定)。建议只保留需要因变动留痕的关键数据。自动节点需要配合节点方法才能传递 |
 
 <font color=red>operator</font>
 
@@ -2342,21 +2349,24 @@ null
 
 **请求参数**
 
-| 名称          | 类型     | 必填  | 含义    | 备注  |
-| ----------- | ------ | --- | ----- | --- |
-| businessKey | string | Y   | 业务key |     |
-| num         | number | N   | 节点位置  | >=1 |
+| 名称           | 类型      | 必填  | 含义           | 备注                                    |
+| ------------ | ------- | --- | ------------ | ------------------------------------- |
+| businessKey  | string  | Y   | 业务key        |                                       |
+| num          | number  | N   | 节点位置         | >=1                                   |
+| variableData | boolean | N   | 是否查询指定节点变量数据 | 默认false，num为空，则查询实例当前最新节点，否则为num指定的节点 |
 
 **响应参数**
 
-| 名称  | 类型    | 含义  | 备注  |
-| --- | ----- | --- | --- |
-|     | array |     |     |
+| 名称           | 类型     | 含义     | 备注  |
+| ------------ | ------ | ------ | --- |
+| history      | array  | 操作历史   |     |
+| variableData | String | 节点变量数据 |     |
 
-<font color=red>array</font>
+<font color=red>history</font>
 
 | 名称              | 类型     | 含义           | 备注                       |
 | --------------- | ------ | ------------ | ------------------------ |
+| num             | number | 节点位置         |                          |
 | nodeName        | string | 节点名称         |                          |
 | candidate       | array  | 节点候选人        |                          |
 | operator        | map    | 节点操作人        |                          |
@@ -2377,89 +2387,33 @@ null
 
 **请求示例**
 
-`/neo/query/history?businessKey=42393457-c39d-4b9d-a095-64c2aab9704a`
+`/neo/query/history?businessKey=82a4c134-a71b-47a7-9aa3-71742c803911&variableData=true&num=1`
 
 **响应示例**
 
 ```json
 {
-	"data": [
-		{
-			"nodeName": "发起",
-			"candidate": null,
-			"operator": {
-				"id": "2",
-				"name": "张三"
-			},
-			"operationResult": 2,
-			"graft": null,
-			"operationRemark": null,
-			"beginTime": "2024-05-19 21:28:46",
-			"endTime": "2024-05-19 21:28:46",
-			"during": "0S",
-			"processDuring": null
-		},
-		{
-			"nodeName": "中间节点1",
-			"candidate": [
-				{
+	"data": {
+		"history": [
+			{
+				"num": 1,
+				"nodeName": "发起",
+				"candidate": null,
+				"operator": {
 					"id": "2",
 					"name": "张三"
-				}
-			],
-			"operator": {
-				"id": "2",
-				"name": "张三"
-			},
-			"operationResult": 2,
-			"graft": "1-->2",
-			"operationRemark": null,
-			"beginTime": "2024-05-19 21:28:47",
-			"endTime": "2024-05-19 21:36:45",
-			"during": "7M58S",
-			"processDuring": "7M58S"
-		},
-		{
-			"nodeName": "中间节点1",
-			"candidate": [
-				{
-					"id": "2",
-					"name": "张三"
-				}
-			],
-			"operator": {
-				"id": "2",
-				"name": "张三"
-			},
-			"operationResult": 2,
-			"graft": null,
-			"operationRemark": null,
-			"beginTime": "2024-05-19 21:36:45",
-			"endTime": "2024-05-19 21:43:49",
-			"during": "7M4S",
-			"processDuring": "15M2S"
-		},
-		{
-			"nodeName": "中间节点2",
-			"candidate": [
-				{
-					"id": "2",
-					"name": "张三"
-				}
-			],
-			"operator": {
-				"id": null,
-				"name": null
-			},
-			"operationResult": 1,
-			"graft": null,
-			"operationRemark": null,
-			"beginTime": "2024-05-19 21:43:49",
-			"endTime": null,
-			"during": null,
-			"processDuring": null
-		}
-	],
+				},
+				"operationResult": 2,
+				"graft": null,
+				"operationRemark": null,
+				"beginTime": "2024-06-12 17:57:06",
+				"endTime": "2024-06-12 17:57:06",
+				"during": "0S",
+				"processDuring": null
+			}
+		],
+		"variableData": "{\"amount\":\"555\"}"
+	},
 	"msg": "success"
 }
 ```
