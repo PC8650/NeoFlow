@@ -91,6 +91,8 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
      * @param condition 跳转条件
      * @param flowStatus 流程状态
      * @param graftVersion 移植版本
+     * @param listData 序列化的业务数据
+     * @param variableData 序列化的变动留痕业务数据
      * @param cMap 当前实例节点
      * @param nMap 下一实例节点
      * @return 下一实例节点
@@ -104,9 +106,10 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
         set c.operationBy = $cMap.operationBy, c.endTime = localDateTime($cMap.endTime),
         c.status = $cMap.status, c.operationRemark = $cMap.operationRemark,
         c.during = $cMap.during, c.processDuring = $cMap.processDuring,
-        c.graft = $version + '-->' + $graftVersion,
+        c.variableData = $variableData, c.graft = $version + '-->' + $graftVersion,
         b.status = $flowStatus, b.endTime = localDateTime($cMap.endTime), b.during = $cMap.processDuring,
         b.operationBy = case when $cMap.autoTime is null then $cMap.operationBy else b.operationBy end,
+        b.listData = case when $listData is null then b.listData else $listData end,
         b.key = null
         
         //初始化下一节点
@@ -137,8 +140,8 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
         return id(n)
     """)
     Long updateFlowInstanceByGraft(String processName, Integer version, Long nodeId,
-                            String businessKey, Integer condition, Integer flowStatus, Integer graftVersion,
-                            Map<String, Object> cMap, Map<String, Object> nMap);
+                                   String businessKey, Integer condition, Integer flowStatus, Integer graftVersion,
+                                   String listData, String variableData, Map<String, Object> cMap, Map<String, Object> nMap);
 
     /**
      * 版本移植更新流程实例
@@ -149,6 +152,8 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
      * @param condition 跳转条件
      * @param flowStatus 流程状态
      * @param graftVersion 移植版本
+     * @param listData 序列化的业务数据
+     * @param variableData 序列化的变动留痕业务数据
      * @param cMap 当前实例节点
      * @param nMap 下一实例节点
      * @return 下一实例节点
@@ -170,9 +175,10 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
         set c.operationBy = cMap.operationBy, c.endTime = localDateTime(cMap.endTime),
         c.status = cMap.status, c.operationRemark = cMap.operationRemark,
         c.during = cMap.during, c.processDuring = cMap.processDuring,
-        c.graft = $version + '-->' + $graftVersion,
+        c.variableData = $variableData, c.graft = $version + '-->' + $graftVersion,
         b.status = $flowStatus, b.endTime = localDateTime(cMap.endTime), b.during = cMap.processDuring,
         b.operationBy = case when cMap.autoTime is null then cMap.operationBy else b.operationBy end,
+        b.listData = case when $listData is null then b.listData else $listData end,
         b.key = null
         
         //初始化下一节点
@@ -203,8 +209,8 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
         return id(n)
     """)
     Long updateFlowInstanceByGraftTooLong(String processName, Integer version, Long nodeId, Integer num,
-                                   String businessKey, Integer condition, Integer flowStatus, Integer graftVersion,
-                                   Map<String, Object> cMap, Map<String, Object> nMap);
+                                          String businessKey, Integer condition, Integer flowStatus, Integer graftVersion,
+                                          String listData, String variableData, Map<String, Object> cMap, Map<String, Object> nMap);
 
     /**
      * 更新流程实例
@@ -215,6 +221,7 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
      * @param condition 跳转条件
      * @param flowStatus 流程状态
      * @param listData 序列化的业务数据
+     * @param variableData 序列化的变动留痕业务数据
      * @param cMap 当前实例节点
      * @param nMap 下一实例节点
      * @return 下一实例节点
@@ -230,7 +237,8 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
             set b.status = flowStatus, b.beginTime = localDateTime(cMap.beginTime), b.num = 1,
             b.listData = case when listData is null then b.listData else listData end,
             c += cMap, c.autoTime = date(cMap.autoTime),
-            c.beginTime = localDateTime(cMap.beginTime), c.endTime = localDateTime(cMap.endTime)
+            c.beginTime = localDateTime(cMap.beginTime), c.endTime = localDateTime(cMap.endTime),
+            c.variableData = variableData
             return c, b',
             'optional match (i)-[b:BUSINESS{key:$businessKey,status:1}]->(f:InstanceNode) where f is not null
             optional match (f)-[:NEXT*0..]->(c:InstanceNode) where id(c) = $nodeId
@@ -238,9 +246,10 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
             c.status = cMap.status, c.operationRemark = cMap.operationRemark,
             c.during = cMap.during, c.processDuring = cMap.processDuring,
             b.status = flowStatus, b.endTime = localDateTime(cMap.endTime), b.during = cMap.processDuring,
-            b.operationBy = case when cMap.autoTime is null then cMap.operationBy else b.operationBy end
+            b.operationBy = case when cMap.autoTime is null then cMap.operationBy else b.operationBy end,
+            b.listData = case when listData is null then b.listData else listData end
             return c, b',
-            {i:i, cMap:$cMap, flowStatus:$flowStatus, listData:$listData, businessKey:$businessKey, nodeId:$nodeId}
+            {i:i, cMap:$cMap, flowStatus:$flowStatus, listData:$listData, variableData:$variableData, businessKey:$businessKey, nodeId:$nodeId}
         ) yield value
         
         //初始化下一节点
@@ -263,8 +272,8 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
         return id(n)
     """)
     Long updateFlowInstance(String processName, Integer version, Long nodeId,
-                            String businessKey, Integer condition, Integer flowStatus, String listData,
-                            Map<String, Object> cMap, Map<String, Object> nMap);
+                            String businessKey, Integer condition, Integer flowStatus,
+                            String listData, String variableData, Map<String, Object> cMap, Map<String, Object> nMap);
 
     /**
      * 更新流程实例
@@ -275,6 +284,7 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
      * @param condition 跳转条件
      * @param flowStatus 流程状态
      * @param listData 序列化的业务数据
+     * @param variableData 序列化的变动留痕业务数据
      * @param cMap 当前实例节点
      * @param nMap 下一实例节点
      * @return 下一实例节点
@@ -295,7 +305,7 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
         where id(c) = $nodeId
         set c.operationBy = cMap.operationBy, c.endTime = localDateTime(cMap.endTime),
         c.status = cMap.status, c.operationRemark = cMap.operationRemark,
-        c.during = cMap.during, c.processDuring = cMap.processDuring,
+        c.during = cMap.during, c.processDuring = cMap.processDuring, c.variableData = $variableData,
         b.status = $flowStatus, b.endTime = localDateTime(cMap.endTime), b.during = cMap.processDuring,
         b.operationBy = case when cMap.autoTime is null then cMap.operationBy else b.operationBy end,
         b.listData = case when $listData is null then b.listData else $listData end
@@ -321,7 +331,7 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
     """)
     Long updateFlowInstanceTooLong(String processName, Integer version, Long nodeId,
                                    Integer num, String businessKey, Integer condition,
-                                   Integer flowStatus,String listData,
+                                   Integer flowStatus, String listData, String variableData,
                                    Map<String, Object> cMap, Map<String, Object> nMap);
 
     /**

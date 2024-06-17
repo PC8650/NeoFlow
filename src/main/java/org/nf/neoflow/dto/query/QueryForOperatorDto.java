@@ -49,7 +49,7 @@ public class QueryForOperatorDto {
     private Integer status;
 
     @Schema(name = "已办列表-已办节点列表")
-    List<DoneNode> doneNodes;
+    private List<DoneNode> doneNodes;
 
     @Schema(name = "序列化的流程列表业务数据")
     private String listData;

@@ -226,10 +226,10 @@ public interface QueryRepository extends Neo4jRepository<Instance, Long> {
             limit: 1
         }) yield path
         with nodes(path) as nodes
-        unwind nodes as n
-        with n
-        return n.name as nodeName,
-        n.status as operationResult,
+        unwind range(0,size(nodes)-1) as idx
+        with nodes[idx] as n, idx+1 as num
+        return num, id(n) as nodeId,
+        n.name as nodeName, n.status as operationResult,
         apoc.convert.fromJsonList(n.operationCandidate) as candidate,
         case when n.operationBy is not null then apoc.convert.fromJsonMap(n.operationBy) else {} end as operator,
         n.operationRemark as operationRemark,
@@ -238,6 +238,17 @@ public interface QueryRepository extends Neo4jRepository<Instance, Long> {
         n.during as during, n.processDuring as processDuring
         order by beginTime
     """)
-    List<OperationHistoryDto> queryInstanceOperationHistory(String businessKey, Integer num);
+    List<OperationHistoryDto.ListDto> queryInstanceOperationHistory(String businessKey, Integer num);
+
+    /**
+     * 查询节点变量数据
+     * @param nodeId
+     * @return
+     */
+    @Query("""
+        match (n:InstanceNode) where id(n) = $0
+        return n.variableData as variableData
+    """)
+    String queryNodeVariableData(Long nodeId);
 
 }
