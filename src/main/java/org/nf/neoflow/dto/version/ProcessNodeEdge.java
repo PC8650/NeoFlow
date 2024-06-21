@@ -3,6 +3,7 @@ package org.nf.neoflow.dto.version;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.nf.neoflow.exception.NeoProcessException;
 
@@ -13,8 +14,15 @@ import java.util.List;
  * @author PC8650
  */
 @Data
+@NoArgsConstructor
 @JsonInclude(value = JsonInclude.Include.ALWAYS, content = JsonInclude.Include.ALWAYS)
 public class ProcessNodeEdge {
+
+    public ProcessNodeEdge(String startNode, String endNode, Integer condition) {
+        this.startNode = startNode;
+        this.endNode = endNode;
+        this.condition = condition;
+    }
 
     @Schema(name = "开始节点标识")
     String startNode;

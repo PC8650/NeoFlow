@@ -3,6 +3,7 @@ package org.nf.neoflow.dto.version;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.experimental.Accessors;
 import org.apache.commons.lang3.StringUtils;
 import org.nf.neoflow.constants.NodeLocationType;
 import org.nf.neoflow.dto.user.UserBaseInfo;
@@ -16,6 +17,7 @@ import java.util.Objects;
  * @author PC8650
  */
 @Data
+@Accessors(chain = true)
 @JsonInclude(value = JsonInclude.Include.ALWAYS, content = JsonInclude.Include.ALWAYS)
 public class ModelNodeDto {
 
