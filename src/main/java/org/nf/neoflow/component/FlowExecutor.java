@@ -1498,6 +1498,7 @@ public class FlowExecutor {
 
     /**
      * 正在执行的分配节点数量监控
+     * 采用这种方式是防止频繁的判断未执行的分配节点数量
      * @param getLock 是否获取锁
      * @param assignedFlag 是否开始分配
      * @param assignedPendingFuture 执行中的分配节点数量监控Future
@@ -1606,7 +1607,7 @@ public class FlowExecutor {
             if (end <= size) {
                 subList = autoNodes.subList(start, end);
             } else {
-                subList = autoNodes.subList(i * config.getAutoAssigned(), size);
+                subList = autoNodes.subList(start, size);
             }
 
             autoNodeExecutor.execute(()-> {
