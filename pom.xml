@@ -5,8 +5,12 @@
     <groupId>org.nf.spring.boot</groupId>
     <artifactId>neoflow-spring-boot-starter</artifactId>
     <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
     <name>NeoFlow</name>
     <description>NeoFlow</description>
+    <modules>
+        <module>component</module>
+    </modules>
     <properties>
         <java.version>21</java.version>
     </properties>
