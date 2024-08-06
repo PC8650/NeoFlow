@@ -8,8 +8,6 @@ import org.nf.neoflow.dto.user.UserBaseInfo;
 import org.nf.neoflow.exception.NeoUserException;
 import org.nf.neoflow.interfaces.UserChoose;
 import org.nf.neoflow.utils.JacksonUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -27,9 +25,7 @@ public class BaseUserChoose {
 
     private final NeoFlowConfig config;
 
-    @Autowired
-    @Lazy
-    private UserChoose userChoose;
+    private final UserChoose userChoose;
 
     private final String luceneTemplate = "\\{\"id\"\\:\"%s\" AND \"name\"\\:\"%s\"\\}";
     private final String luceneSpecialReplaceRegex = "([+\\-!(){}\\[\\]^\"~*?:\\\\/]|&&|\\|\\|)";

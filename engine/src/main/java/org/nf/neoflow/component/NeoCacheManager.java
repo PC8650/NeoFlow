@@ -29,44 +29,15 @@ public class NeoCacheManager {
 
     private final NeoFlowConfig config;
 
-    @Autowired
-    @Lazy
-    private CustomizationCache customizationCache;
-
-    private CaffeineCacheManager cacheManager;
+    private final CustomizationCache customizationCache;
 
     private NullFlag nullFlag;
 
     @PostConstruct
     public void initCacheManager () {
-        if (!config.getEnableCache()) {
-            return;
-        }
-        if (config.getCacheNull()) {
+        if (config.getEnableCache() && config.getCacheNull()) {
             nullFlag = new NullFlag();
         }
-
-        cacheManager = new CaffeineCacheManager();
-        cacheManager.setCacheNames(CacheEnums.filterStatistics());
-        cacheManager.setCaffeine(Caffeine.newBuilder()
-                //初始容量
-                .initialCapacity(config.getInitCacheCount())
-                //最大容量
-                .maximumSize(config.getMaxCapacityCount())
-                //单位时间内没被 读/写 则过期
-                .expireAfterAccess(config.getExpire(), TimeUnit.MINUTES)
-                //开启统计
-                .recordStats());
-
-        //单独处理统计缓存
-        cacheManager.registerCustomCache(
-                CacheEnums.C_S.getType(),
-                Caffeine.newBuilder()
-                .initialCapacity(1)
-                .maximumSize(1)
-                //单位时间没被 写 则过期
-                .expireAfterWrite(config.getStatisticExpire(), TimeUnit.SECONDS)
-                .recordStats().build());
     }
 
     /**
@@ -76,26 +47,19 @@ public class NeoCacheManager {
      * @param value 缓存值
      */
     public void setCache(String cacheType, String cacheKey, Object value) {
-        if (config.getEnableCache()) {
-            //自定义策略
-            if (config.getCustomizationCache()) {
-                cacheKey = mergeKey(cacheType, cacheKey);
-                customizationCache.setCache(cacheType, cacheKey, value);
-                return;
-            }
+        if (!config.getEnableCache()) return;
 
-            //默认策略
-            if (value == null
-                    || (value instanceof Collection<?> && CollectionUtils.isEmpty((Collection<?>) value))
-                    || (value instanceof Map<?,?> && CollectionUtils.isEmpty(((Map<?,?>) value)))
-            ) {
-                if (config.getCacheNull()) {
-                    cacheManager.getCache(cacheType).put(cacheKey, nullFlag);
-                }
-            } else {
-                cacheManager.getCache(cacheType).put(cacheKey, value);
-            }
+        if (config.getCacheNull()
+                && (
+                        value == null
+                        || (value instanceof Collection<?> && CollectionUtils.isEmpty((Collection<?>) value))
+                        || (value instanceof Map<?,?> && CollectionUtils.isEmpty(((Map<?,?>) value)))
+                )
+        ) {
+            value = nullFlag;
         }
+
+        customizationCache.setCache(cacheType, cacheKey, value);
     }
 
     /**
@@ -109,21 +73,7 @@ public class NeoCacheManager {
             return new CacheValue<>(false,null);
         }
 
-        //自定义策略
-        if (config.getCustomizationCache()) {
-            return customizationCache.getCache(cacheType, mergeKey(cacheType, cacheKey), clazz);
-        }
-
-        //默认策略
-        Cache cache = cacheManager.getCache(cacheType);
-        if (cache != null) {
-            Cache.ValueWrapper valueWrapper = cache.get(cacheKey);
-            if (valueWrapper != null) {
-                Object value = valueWrapper.get();
-                return value instanceof NullFlag? new CacheValue<T>(true) : new CacheValue<T>(false, (T) value);
-            }
-        }
-        return new CacheValue<T>(false);
+        return customizationCache.getCache(cacheType, cacheKey, clazz);
     }
 
     /**
@@ -132,18 +82,9 @@ public class NeoCacheManager {
      * @param cacheKey 缓存key
      */
     public void deleteCache(String cacheType, String cacheKey) {
-        if (config.getEnableCache()) {
-            //自定义策略
-            if (config.getCustomizationCache()) {
-                customizationCache.deleteCache(cacheType, mergeKey(cacheType, cacheKey));
-                return;
-            }
-            //默认策略
-            Cache cache = cacheManager.getCache(cacheType);
-            if (cache != null) {
-                cache.evict(cacheKey);
-            }
-        }
+        if (!config.getEnableCache()) return;
+
+        customizationCache.deleteCache(cacheType, cacheKey);
     }
 
     /**
@@ -152,24 +93,9 @@ public class NeoCacheManager {
      * @param cacheKeys  缓存key集合，为空删除分类下的所有缓存
      */
     public void deleteCache(String cacheType, List<String> cacheKeys) {
-        if (config.getEnableCache()) {
-            //自定义策略
-            if (config.getCustomizationCache()) {
-                cacheKeys.replaceAll(s -> mergeKey(cacheType, s));
-                customizationCache.deleteCache(cacheType, cacheKeys);
-                return;
-            }
-            //默认策略
-            Cache cache = cacheManager.getCache(cacheType);
-            if (cache != null) {
-                com.github.benmanes.caffeine.cache.Cache nativeCache = (com.github.benmanes.caffeine.cache.Cache) cache.getNativeCache();
-                if (CollectionUtils.isEmpty(cacheKeys)) {
-                    nativeCache.invalidateAll();
-                }else {
-                    nativeCache.invalidateAll(cacheKeys);
-                }
-            }
-        }
+        if (!config.getEnableCache()) return;
+
+        customizationCache.deleteCache(cacheType, cacheKeys);
     }
 
     /**
@@ -177,29 +103,9 @@ public class NeoCacheManager {
      * @param caches Map<cacheType, List<cacheKey>>
      */
     public void deleteCache(Map<String, List<String>> caches) {
-        if (config.getEnableCache()) {
-            //自定义策略
-            if (config.getCustomizationCache()) {
-                caches.keySet().forEach(cacheType -> {
-                    caches.get(cacheType).replaceAll(s -> mergeKey(cacheType, s));
-                });
-                customizationCache.deleteCache(caches);
-                return;
-            }
-            //默认策略
-            caches.keySet().forEach(cacheType -> {
-                Cache cache = cacheManager.getCache(cacheType);
-                if (cache != null) {
-                    com.github.benmanes.caffeine.cache.Cache nativeCache = (com.github.benmanes.caffeine.cache.Cache) cache.getNativeCache();
-                    List<String> keys = caches.get(cacheType);
-                    if (CollectionUtils.isEmpty(keys)) {
-                        nativeCache.invalidateAll();
-                    }else {
-                        nativeCache.invalidateAll(keys);
-                    }
-                }
-            });
-        }
+        if (!config.getEnableCache()) return;
+
+        customizationCache.deleteCache(caches);
     }
 
     /**
@@ -207,30 +113,9 @@ public class NeoCacheManager {
      * @param cacheType 缓存分类
      */
     public void deleteCache(String... cacheType) {
-        if (config.getEnableCache()) {
-            //自定义策略
-            if (config.getCustomizationCache()) {
-                customizationCache.deleteCache(cacheType);
-                return;
-            }
-            //默认策略
-            if (cacheType == null || cacheType.length == 0) {
-                for (String cacheName : cacheManager.getCacheNames()) {
-                    Cache cache = cacheManager.getCache(cacheName);
-                    if (cache != null) {
-                        cache.clear();
-                    }
-                }
-            } else {
-                for (String type : cacheType) {
-                    Cache cache = cacheManager.getCache(type);
-                    if (cache != null) {
-                        com.github.benmanes.caffeine.cache.Cache nativeCache = (com.github.benmanes.caffeine.cache.Cache) cache.getNativeCache();
-                        nativeCache.invalidateAll();
-                    }
-                }
-            }
-        }
+        if (!config.getEnableCache()) return;
+
+        customizationCache.deleteCache(cacheType);
     }
 
     /**
@@ -238,36 +123,9 @@ public class NeoCacheManager {
      * @return Set
      */
     public Object cacheStatistics(){
-        if (!config.getEnableCache()) {
-            return null;
-        }
+        if (!config.getEnableCache()) return null;
 
-        String type = CacheEnums.C_S.getType();
-        String key = "all";
-        if (config.getCustomizationCache()) {
-            return customizationCache.cacheStatistics();
-        }
-
-        CacheValue<Set> cacheValue = getCache(type, key, Set.class);
-        if (cacheValue.filter() || cacheValue.value() != null) {
-            return cacheValue.value();
-        }
-
-        List<CacheStatistics> cacheStatistics = new ArrayList<>();
-        for (String cacheType : cacheManager.getCacheNames()) {
-            CaffeineCache cache = (CaffeineCache) cacheManager.getCache(cacheType);
-            CacheEnums ce = CacheEnums.getByType(cacheType);
-            if (ce != null) {
-                if (cache == null) {
-                   cacheStatistics.add(new CacheStatistics(ce));
-                } else {
-                    com.github.benmanes.caffeine.cache.Cache<Object, Object> nativeCache = cache.getNativeCache();
-                    cacheStatistics.add(new CacheStatistics(ce, nativeCache.stats(), nativeCache.asMap().keySet()));
-                }
-            }
-        }
-        setCache(type, key, cacheStatistics);
-        return cacheStatistics;
+        return customizationCache.cacheStatistics();
     }
 
     /**
@@ -287,7 +145,6 @@ public class NeoCacheManager {
 
         return String.join(String.valueOf(config.getSeparate()), key);
     }
-
 
     /**
      * 空值标记

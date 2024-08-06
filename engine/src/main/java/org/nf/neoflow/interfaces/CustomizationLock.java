@@ -14,16 +14,16 @@ public interface CustomizationLock {
     /**
      * 获取锁
      * @param key 唯一key
-     * @param lockName {@link LockEnums LockEnums} 可以此设计对应的策略
-     * @return Boolean
+     * @param lockName {@link org.nf.neoflow.enums.LockEnums LockEnums} 锁类型 可以此设计对应的策略
+     * @return 获取锁是否成功
      */
     Boolean addAndGetLock(String key, String lockName);
 
     /**
      * 释放锁
      * @param key 唯一key
-     * @param lockName {@link LockEnums LockEnums} 可以此设计对应的策略
-     * @return Boolean
+     * @param lockName {@link org.nf.neoflow.enums.LockEnums LockEnums} 锁类型 可以此设计对应的策略
+     * @return 释放锁是否成功
      */
     Boolean releaseLock(String key, String lockName);
 }

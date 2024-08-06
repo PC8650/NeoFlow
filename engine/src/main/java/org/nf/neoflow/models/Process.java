@@ -28,6 +28,9 @@ public class Process {
     @Schema(name = "流程名称")
     private String name;
 
+    @Schema(name = "流程分组")
+    private String group;
+
     @Schema(name = "是否启用")
     private Boolean active = false;
 
@@ -51,8 +54,9 @@ public class Process {
     @JsonFormat(pattern = TimeFormat.DATE_TIME)
     private LocalDateTime updateTime;
 
-    public Process(String name, String createBy) {
+    public Process(String name, String group, String createBy) {
         this.name = name;
+        this.group = group;
         this.createBy = createBy;
         this.updateBy = createBy;
         LocalDateTime now = LocalDateTime.now();

@@ -15,6 +15,10 @@ public class ProcessCreateForm {
     @Schema(name = "流程名称")
     private String name;
 
+    @NotBlank(message = "流程分组不能为空")
+    @Schema(name = "流程分组")
+    private String group;
+
     @Schema(name = "创建人唯一标识", nullable = true, description = "NeoFlowConfig.baseUserChoose的配置选择")
     private String createBy;
     

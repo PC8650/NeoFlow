@@ -48,9 +48,8 @@ public class FlowBuilderUtil {
     public static class Builder {
 
         private Builder(String processName, Integer iterateFrom) {
-            if (StringUtils.isBlank(processName)) {
-                throw new NeoProcessException("流程名称不能为空");
-            }
+            if (StringUtils.isBlank(processName)) throw new NeoProcessException("流程名称不能为空");
+
             this.processName = processName;
             this.iterateFrom = iterateFrom;
             this.initiatorFlag = 0;
@@ -294,7 +293,7 @@ public class FlowBuilderUtil {
                             .forEach(path -> getNodeAndEdge(path, nodeSet, edgeSet))
                     );
 
-            ModelCheckUtils.validateModel(0,nodeSet, edgeSet);
+            ModelCheckUtils.validateModel(initiatorFlag,nodeSet, edgeSet);
 
             VersionModelCreateForm form = new VersionModelCreateForm();
             form.setNodes(nodeSet);

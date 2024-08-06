@@ -42,6 +42,9 @@ public class ModelNodeDto {
     @Schema(name = "是否只同意通过才执行方法", nullable = true, defaultValue = "true")
     private Boolean onlyPassExecute = true;
 
+    @Schema(name = "是否通过节点方法获取跳转条件", nullable = true, defaultValue = "false")
+    private Boolean conditionByMethod = false;
+
     @Schema(name = "自动执行间隔", description = "只精确到日期（x 天后，x = 0 立即自动执行），有值将忽略操作类型和候选人")
     private Integer autoInterval;
 

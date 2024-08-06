@@ -29,6 +29,7 @@ public interface ProcessRepository extends Neo4jRepository<Process,Long> {
     /**
      * 查询流程列表
      * @param name 流程名称
+     * @param group 流程分组
      * @param createBy 创建人唯一标识
      * @param pageable 分页对象
      * @return 流程列表
@@ -36,6 +37,7 @@ public interface ProcessRepository extends Neo4jRepository<Process,Long> {
     @Query(value = """
         match (p:Process)
         where ($name is null or $name = '' or p.name contains $name)
+        and ($group is null or $group = '' or p.group contains $group)
         and ($createBy is null or $createBy = '' or p.createBy = $createBy)
         with p, p.createTime as createTime
         :#{orderBy(#pageable)}
@@ -46,10 +48,11 @@ public interface ProcessRepository extends Neo4jRepository<Process,Long> {
     countQuery = """
         match (p:Process)
         where ($name is null or $name = '' or p.name contains $name)
+        and ($group is null or $group = '' or p.group contains $group)
         and ($createBy is null or $createBy = '' or p.createBy = $createBy)
         return count(p)
     """)
-    Page<Process> queryProcessList(String name, String createBy, Pageable pageable);
+    Page<Process> queryProcessList(String name, String group, String createBy, Pageable pageable);
 
     /**
      * 变更流程启用状态

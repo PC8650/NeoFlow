@@ -18,7 +18,7 @@ public interface CustomizationCache {
     /**
      * 设置缓存
      * @param cacheType {@link CacheEnums CacheType}缓存类型
-     * @param cacheKey 缓存类型+分隔符+业务key
+     * @param cacheKey 业务key
      * @param value 缓存值
      */
     void setCache(String cacheType, String cacheKey, Object value);
@@ -26,7 +26,7 @@ public interface CustomizationCache {
     /**
      * 获取缓存
      * @param cacheType {@link CacheEnums CacheType}缓存类型
-     * @param cacheKey 缓存类型+分隔符+业务key
+     * @param cacheKey 业务key
      * @return   缓存值
      */
     <T> NeoCacheManager.CacheValue<T> getCache(String cacheType, String cacheKey, Class<T> clazz);
@@ -34,23 +34,23 @@ public interface CustomizationCache {
     /**
      * 删除缓存
      * @param cacheType {@link CacheEnums CacheType}缓存类型
-     * @param cacheKey 缓存类型+分隔符+key
+     * @param cacheKey 业务key
      */
     void deleteCache(String cacheType, String cacheKey);
 
     /**
      * 删除缓存
      * @param cacheType {@link CacheEnums CacheType}缓存类型
-     * @param cacheKeys cacheKey列表 缓存类型+分隔符+key
+     * @param cacheKeys 业务key
      */
     void deleteCache(String cacheType, List<String> cacheKeys);
 
     /**
      * 删除缓存
      * not must：未耦合在逻辑中，根据需求实现扩展
-     * @param caches key-cacheType {@link CacheEnums CacheType}，value-cacheKey列表 缓存类型+分隔符+key
+     * @param caches key: {@link CacheEnums CacheType}，value:cacheKey列表
      */
-    void deleteCache(Map<String, List<String>> caches);
+    default void deleteCache(Map<String, List<String>> caches) {};
 
     /**
      * 删除缓存
@@ -64,5 +64,5 @@ public interface CustomizationCache {
      * not must
      * @return 所有缓存统计信息
      */
-    Object cacheStatistics();
+    default Object cacheStatistics() {return null;};
 }

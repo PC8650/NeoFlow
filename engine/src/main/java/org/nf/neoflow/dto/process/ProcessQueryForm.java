@@ -13,6 +13,9 @@ public class ProcessQueryForm {
     @Schema(name = "流程名称", nullable = true)
     private String name;
 
+    @Schema(name = "流程分组", nullable = true)
+    private String group;
+
     @Schema(name = "创建人唯一标识", nullable = true)
     private String createBy;
 

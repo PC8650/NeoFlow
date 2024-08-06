@@ -18,7 +18,7 @@ public interface UserChoose {
      * 可根据 {@link NeoFlowConfig#getBaseUserChoose()  NeoFlowConfig.baseUserChoose} 选择是否实现
      * @return UserBaseInfo
      */
-    UserBaseInfo getUser();
+    default UserBaseInfo getUser() {return null;}
 
     /**
      * 根据模型节点获取实际候选人
@@ -53,5 +53,5 @@ public interface UserChoose {
      * not must：未耦合在逻辑中，非强制选择
      * @return 返回所有业务涉及到的可选候选人信息
      */
-    Object getCandidateList();
+    default Object getCandidateList() {return null;};
 }

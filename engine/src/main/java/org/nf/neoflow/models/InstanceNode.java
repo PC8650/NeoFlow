@@ -56,6 +56,9 @@ public class InstanceNode {
     @Schema(name = "通过时默认的跳转条件", description = "跳转条件缺失时默认选择改值，配合自动节点")
     private Integer defaultPassCondition;
 
+    @Schema(name = "是否通过节点方法获取跳转条件")
+    private Boolean conditionByMethod;
+
     @Schema(name = "节点位置", description = "1-开始，2-中间，3-完成，4-终止")
     private Integer location;
 

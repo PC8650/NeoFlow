@@ -54,7 +54,7 @@ public class ProcessService {
         String cacheType = CacheEnums.A_P_N.getType();
         cacheManager.deleteCache(cacheType);
 
-        return processRepository.save(new Process(form.getName(), form.getCreateBy()));
+        return processRepository.save(new Process(form.getName(), form.getGroup(), form.getCreateBy()));
     }
 
     /**
@@ -64,7 +64,7 @@ public class ProcessService {
      */
     public Page<Process> processList(ProcessQueryForm form) {
         Pageable pageable = PageUtils.initPageable(form.getPageNumber(), form.getPageSize(), "createTime", form.getDesc());
-        return processRepository.queryProcessList(form.getName(), form.getCreateBy(), pageable);
+        return processRepository.queryProcessList(form.getName(), form.getGroup(), form.getCreateBy(), pageable);
     }
 
     /**
@@ -86,7 +86,6 @@ public class ProcessService {
         } finally {
             lockManager.releaseLock(form.getName(), getLock, lockEnum);
         }
-
     }
 
     /**
