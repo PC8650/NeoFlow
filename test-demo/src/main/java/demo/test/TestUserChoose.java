@@ -1,4 +1,4 @@
-package org.nf.neoflow.dto.test;
+package demo.test;
 
 
 import org.nf.neoflow.dto.user.UserBaseInfo;

@@ -47,7 +47,7 @@ public class FlowExecutor {
     private final BaseUserChoose userChoose;
     private final NeoLockManager lockManager;
     private final NeoCacheManager cacheManager;
-    private final AbstractOperatorManager operatorManager;
+    private final OperatorManager operatorManager;
     private final ModelNodeRepository modelNodeRepository;
     private final InstanceNodeRepository instanceNodeRepository;
     private final TransactionTemplate transactionTemplate;
@@ -546,26 +546,21 @@ public class FlowExecutor {
         try {
             form.check();
             getLock = lockManager.getLock(businessKey, LockEnums.FLOW_EXECUTE);
-            //获取当前节点信息
             ExecuteForm executeForm = new ExecuteForm(form);
-            executeForm.setOperator(userChoose.user(form.getOperator()));
-            NodeQueryDto<InstanceNode> dto = queryCurrentInstanceNode(executeForm);
-            InstanceNode current = dto.getNode();
 
-            //校验候选人
-            inCandidate(executeForm, current, false);
+            //获取当前节点信息
+            NodeQueryDto<InstanceNode> dto = getCurrentInstanceOfGraft(form, executeForm);
+            InstanceNode current = dto.getNode();
 
             //查询移植版本模型节点
             if (StringUtils.isBlank(form.getGraftNodeUid())) {
                 form.setGraftNodeUid(current.getModelNodeUid());
             }
             NodeQueryDto<ModelNode> modeDto = graftVersionModelNode(form);
-            executeForm.setOperationType(InstanceOperationType.PASS);
 
             //执行节点方法
             if (form.getExecuteMethod()) {
-                executeForm.setOperationMethod(current.getOperationMethod());
-                operateMethod(executeForm);
+                executeForm = operatorManager.operate(executeForm);
             }
             //设置跳转条件为移植版本模型节点跳转条件
             executeForm.setCondition(modeDto.getCondition());
@@ -602,13 +597,35 @@ public class FlowExecutor {
      * @param isTerminated 是否为终止操作
      * @return 实例节点查询数据
      */
-    private NodeQueryDto<InstanceNode> getCurrentInstanceAndOperateMethod(ExecuteForm form, Boolean isTerminated) {
+    private NodeQueryDto<InstanceNode> getCurrentInstanceAndOperateMethod(ExecuteForm form, boolean isTerminated) {
         //获取/校验当前用户信息
         form.setOperator(userChoose.user(form.getOperator()));
         //获取实例节点
         NodeQueryDto<InstanceNode> dto = getInstanceNode(form);
+        //判断候选人身份
+        InstanceNode node = dto.getNode();
+        inCandidate(form, node, isTerminated);
         //执行
-        operateMethod(form, dto.getNode(), dto.getTerminatedMethod(), isTerminated);
+        operateMethod(form, node, dto.getTerminatedMethod(), isTerminated);
+
+        return dto;
+    }
+
+    /**
+     * 实例版本移植获取当前实例节点
+     * @param graftForm 移植表单
+     * @param executeForm 执行表单
+     * @return 实例节点查询数据
+     */
+    private NodeQueryDto<InstanceNode> getCurrentInstanceOfGraft(GraftForm graftForm, ExecuteForm executeForm) {
+        //获取/校验当前用户信息
+        executeForm.setOperator(userChoose.user(graftForm.getOperator()));
+        //获取实例节点
+        NodeQueryDto<InstanceNode> dto = queryCurrentInstanceNode(executeForm);
+        setNodeParam(executeForm, dto, dto.getNode());
+        //判断候选人身份
+        InstanceNode node = dto.getNode();
+        inCandidate(executeForm, node, false);
 
         return dto;
     }
@@ -620,102 +637,18 @@ public class FlowExecutor {
      * @param terminatedMethod 终止方法
      * @param isTerminated 是否为终止操作
      */
-    private void operateMethod(ExecuteForm form, InstanceNode current, String terminatedMethod, Boolean isTerminated) {
-        //判断候选人身份
-        inCandidate(form, current, isTerminated);
-
+    private void operateMethod(ExecuteForm form, InstanceNode current, String terminatedMethod, boolean isTerminated) {
         log.info("流程操作类型：{}", form.getOperationType());
 
         //执行节点方法
-        //todo
-//        if (config.getIndependence()) {
-        if (false){
-            log.info("独立部署，跳过流程方法");
-        } else if ((current.getOnlyPassExecute() && form.getOperationType() < InstanceOperationType.REJECTED)
-                || (!current.getOnlyPassExecute() && form.getOperationType() < InstanceOperationType.FORWARD)) {
-            //记录关键数据
-            String businessKey = form.getBusinessKey();
-            String processName = form.getProcessName();
-            Integer version = form.getVersion();
-            Long nodeId = form.getNodeId();
-            Integer num = form.getNum();
-
-            //执行节点方法
-            log.info("集成部署，执行流程方法-{}", form.getOperationMethod());
-            form = operatorManager.operate(form);
-
-            //判断返回的businessKey
-            if (StringUtils.isBlank(form.getBusinessKey())) {
-                log.error("流程执行失败，未设置流程实例业务key：流程 {}-版本 {}", form.getProcessName(), form.getVersion());
-                throw new NeoExecuteException("流程执行失败，未设置流程实例业务key");
-            }
-
-            //校验关键数据一致性
-            if ((StringUtils.isNotBlank(businessKey) && !Objects.equals(form.getBusinessKey(), businessKey)) ||
-                    !Objects.equals(form.getProcessName(), processName) ||
-                    !Objects.equals(form.getVersion(), version) ||
-                    !Objects.equals(form.getNodeId(), nodeId) ||
-                    !Objects.equals(form.getNum(), num)) {
-                log.error("流程执行失败，关键数据不一致：流程 {}-版本 {}-key {}-当前节点位置 {}", processName, version, businessKey, num);
-                throw new NeoExecuteException("流程执行失败，节点方法后关键数据变更");
-            }
-        } else if (isTerminated) {
+        if (isTerminated) {
             log.info("执行流程终止方法-{}", terminatedMethod);
             form.setOperationMethod(terminatedMethod);
             form = operatorManager.operate(form);
-        }
-
-        //发起、通过 必须有跳转条件
-        if (form.getOperationType() < InstanceOperationType.REJECTED && current.getLocation() <= NodeLocationType.MIDDLE) {
-            if (form.getCondition() == null) {
-                if (current.getDefaultPassCondition() == null) {
-                    log.error("流程执行失败，缺失跳转条件：流程 {}-版本 {}-key {}-当前节点位置 {}",
-                            form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNum());
-                    throw new NeoExecuteException("流程执行失败，缺失跳转条件");
-                }
-                form.setCondition(current.getDefaultPassCondition());
-            }
-        }
-    }
-
-    /**
-     * 执行节点方法
-     * @param form 表单
-     */
-    private void operateMethod(ExecuteForm form) {
-        log.info("移植流程实例版本，执行节点方法");
-        //执行节点方法
-        //todo
-//        if (config.getIndependence()) {
-//            log.info("独立部署，跳过流程方法");
-//            return;
-//        }
-
-        //记录关键数据
-        String businessKey = form.getBusinessKey();
-        String processName = form.getProcessName();
-        Integer version = form.getVersion();
-        Long nodeId = form.getNodeId();
-        Integer num = form.getNum();
-
-        //执行节点方法
-        log.info("集成部署，执行流程方法-{}", form.getOperationMethod());
-        form = operatorManager.operate(form);
-
-        //判断返回的businessKey
-        if (StringUtils.isBlank(form.getBusinessKey())) {
-            log.error("流程执行失败，未设置流程实例业务key：流程 {}-版本 {}", form.getProcessName(), form.getVersion());
-            throw new NeoExecuteException("流程执行失败，未设置流程实例业务key");
-        }
-
-        //校验关键数据一致性
-        if (!Objects.equals(form.getBusinessKey(), businessKey) ||
-                !Objects.equals(form.getProcessName(), processName) ||
-                !Objects.equals(form.getVersion(), version) ||
-                !Objects.equals(form.getNodeId(), nodeId) ||
-                !Objects.equals(form.getNum(), num)) {
-            log.error("流程执行失败，关键数据不一致：流程 {}-版本 {}-key {}-当前节点位置 {}", processName, version, businessKey, num);
-            throw new NeoExecuteException("流程执行失败，节点方法后关键数据变更");
+        } else if ((current.getOnlyPassExecute() && form.getOperationType() < InstanceOperationType.REJECTED)
+                || (!current.getOnlyPassExecute() && form.getOperationType() < InstanceOperationType.FORWARD)) {
+            log.info("执行流程节点方法-{}", form.getOperationMethod());
+            form =  operatorManager.operate(form);
         }
     }
 
@@ -994,11 +927,10 @@ public class FlowExecutor {
             currentNode = constructInstanceNode(JacksonUtils.toObj(modelDto.getNodeJson(), ModelNode.class), form);
             dto = new NodeQueryDto<>();
             dto.setNode(currentNode);
-            form.setOperationMethod(currentNode.getOperationMethod());
-            form.setNodeId(currentNode.getId());
-            form.setVersion(modelDto.getVersion());
+            setNodeParam(form, modelDto, currentNode);
         }else {
             dto =queryCurrentInstanceNode(form);
+            setNodeParam(form, dto, dto.getNode());
         }
 
         return dto;
@@ -1043,10 +975,25 @@ public class FlowExecutor {
             throw new NeoExecuteException("流程执行失败，当前节点已执行");
         }
 
-        form.setOperationMethod(dto.getNode().getOperationMethod());
-        form.setVersion(dto.getVersion());
-
         return dto;
+    }
+
+    /**
+     * 设置节点参数
+     * @param form 执行表单
+     * @param dto 节点查询dto
+     * @param current 当前实例节点
+     */
+    private void setNodeParam(ExecuteForm form, NodeQueryDto<?> dto, InstanceNode current) {
+        //节点自身参数
+        form.setLocation(current.getLocation());
+        form.setDefaultPassCondition(current.getDefaultPassCondition());
+        form.setOperationMethod(current.getOperationMethod());
+        form.setNodeId(current.getId());
+        //查询dto参数
+        form.setConditionByMethod(dto.getConditionByMethod());
+        form.setVersion(dto.getVersion());
+        form.setGroup(dto.getGroup());
     }
 
     /**
@@ -1128,6 +1075,7 @@ public class FlowExecutor {
         String candidateJson;
         List<UserBaseInfo> candidate;
         UserBaseInfo user = form.getOperator();
+
         //终止流程
         if (isTerminated) {
             //获取当前流程发起节点，只有流程发起人能终止流程
@@ -1631,13 +1579,17 @@ public class FlowExecutor {
      */
     private ExecuteForm autoForm(AutoNodeDto autoNode) {
         return new ExecuteForm()
+                .setGroup(autoNode.group())
                 .setProcessName(autoNode.processName())
                 .setVersion(autoNode.version())
                 .setBusinessKey(autoNode.businessKey())
-                .setNum(autoNode.location())
+                .setNum(autoNode.num())
                 .setNodeId(autoNode.nodeId())
+                .setLocation(autoNode.location())
+                .setConditionByMethod(autoNode.conditionByMethod())
                 .setOperationMethod(autoNode.operationMethod())
                 .setOperationType(InstanceOperationType.PASS)
+                .setCondition(autoNode.defaultPassCondition())
                 .setOperator(systemOperator);
     }
 

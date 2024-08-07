@@ -1,4 +1,4 @@
-package org.nf.neoflow.dto.test;
+package demo.test;
 
 import org.nf.neoflow.constants.InstanceOperationType;
 import org.nf.neoflow.dto.execute.ExecuteForm;

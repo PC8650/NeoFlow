@@ -29,7 +29,7 @@ import java.util.function.Function;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class BusinessOperatorManager extends AbstractOperatorManager{
+public class BusinessOperatorManager extends OperatorManager {
 
     private final NeoScanConfig config;
 
@@ -162,7 +162,6 @@ public class BusinessOperatorManager extends AbstractOperatorManager{
         operatorMap.put(operatorName,operatorMethodMap);
         ProcessOperatorCount ++;
         ProcessMethodCount += pmc;
-
     }
 
 }

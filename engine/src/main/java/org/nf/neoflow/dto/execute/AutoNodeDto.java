@@ -9,6 +9,10 @@ import java.time.LocalDateTime;
  * @author PC8650
  */
 public record AutoNodeDto (
+
+        @Schema(name = "流程分组")
+        String group,
+
         @Schema(name = "流程名称")
         String processName,
 
@@ -32,6 +36,9 @@ public record AutoNodeDto (
 
         @Schema(name = "节点位置标识")
         Integer location,
+
+        @Schema(name = "是否通过节点方法获取跳转条件")
+        Boolean conditionByMethod,
 
         @Schema(name = "默认通过时的跳转条件")
         Integer defaultPassCondition,

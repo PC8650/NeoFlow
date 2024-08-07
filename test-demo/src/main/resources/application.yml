@@ -16,7 +16,9 @@ neo:
   scan-auto: true
   auto-lock-expired: 20
   auto-lock-check-period: 1
-  independence: true
+  independence: false
+  scan: true
+  scan-package: demo.test.method
 
 logging:
   level:

@@ -41,7 +41,9 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
         optional match (p)-[:VERSION]->(v:Version{version:$1})-[:INSTANCE]->(:Instance)-[:BUSINESS{key:$2,status:1}]->(f:InstanceNode)
         optional match path = (f)-[:NEXT*0..]->(b:InstanceNode)-[:NEXT]->(c:InstanceNode) where id(c) = $3
         return v.version as version,
+        p.group as group,
         v.terminatedMethod as terminatedMethod,
+        c.conditionByMethod as conditionByMethod,
         case when b is null then null
         when b.status = 1 then false
         else true end as before,
@@ -63,17 +65,19 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
         match (p:Process{name:$0})
         optional match (p)-[:VERSION]->(v:Version{version:$1})-[:INSTANCE]->(i:Instance)
         optional match (i)-[:BUSINESS{key:$2,status:1}]->(f:InstanceNode) where f is not null
-        with v, f, $4-2 as length
+        with p.group as group, v, f, $4-2 as length
         call apoc.path.expandConfig(f, {
             relationshipFilter: "NEXT>",
             minLevel: length,
             maxLevel: length,
             limit: 1
         }) yield path
-        with v, last(nodes(path)) as b
+        with group, v, last(nodes(path)) as b
         optional match (b)-[:NEXT]->(c:InstanceNode) where id(c) = $3
-        return v.version as version,
+        return group,
+        v.version as version,
         v.terminatedMethod as terminatedMethod,
+        c.conditionByMethod as conditionByMethod,
         case when b is null then null
         when b.status = 1 then false
         else true end as before,
@@ -392,10 +396,10 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
         match (p:Process)-[:VERSION]->(v:Version)-[:INSTANCE]->(i:Instance),
         path = (i)-[b:BUSINESS{status:1}]->(:InstanceNode)-[*0..]->(n:InstanceNode{status:1})
         where n.autoTime = $0
-        return p.name as processName, v.version as version, b.key as businessKey,
+        return p.group as group, p.name as processName, v.version as version, b.key as businessKey,
         size(nodes(path))-1 as num, id(n) as nodeId, n.beginTime as beginTime,
         n.modelNodeUid as modelNodeUid, n.operationMethod as operationMethod,
-        n.location as location, n.defaultPassCondition as defaultPassCondition
+        n.location as location, n.defaultPassCondition as defaultPassCondition, n.conditionByMethod as conditionByMethod
     """)
     List<AutoNodeDto> queryAutoNodeToDay(LocalDate date);
 
@@ -408,10 +412,10 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
         match (p:Process)-[:VERSION]->(v:Version)-[:INSTANCE]->(i:Instance),
         path = (i)-[b:BUSINESS{status:1}]->(:InstanceNode)-[*0..]->(n:InstanceNode{status:1})
         where n.autoTime <= $0
-        return p.name as processName, v.version as version, b.key as businessKey,
+        return  p.group as group, p.name as processName, v.version as version, b.key as businessKey,
         size(nodes(path))-1 as num, id(n) as nodeId, n.beginTime as beginTime,
         n.modelNodeUid as modelNodeUid, n.operationMethod as operationMethod,
-        n.location as location, n.defaultPassCondition as defaultPassCondition
+        n.location as location, n.defaultPassCondition as defaultPassCondition, n.conditionByMethod
     """)
     List<AutoNodeDto> queryAutoNodeToDayAndBefore(LocalDate date);
 }

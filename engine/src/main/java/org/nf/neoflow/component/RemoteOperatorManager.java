@@ -23,7 +23,7 @@ import java.util.Objects;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(value = "neo.independence", havingValue = "true", matchIfMissing = false)
-public class RemoteOperatorManager extends AbstractOperatorManager{
+public class RemoteOperatorManager extends OperatorManager {
 
     private final RestTemplate restTemplate;
 
@@ -38,6 +38,10 @@ public class RemoteOperatorManager extends AbstractOperatorManager{
      */
     @Override
     public ExecuteForm operate(ExecuteForm form) {
+        if (StringUtils.isBlank(form.getOperationMethod())) {
+            return form;
+        }
+
         String addr = getAddr(form.getGroup());
 
         HttpHeaders headers = new HttpHeaders();

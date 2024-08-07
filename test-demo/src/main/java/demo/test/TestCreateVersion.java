@@ -1,4 +1,4 @@
-package org.nf.neoflow.dto.test;
+package demo.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.nf.neoflow.dto.user.UserBaseInfo;

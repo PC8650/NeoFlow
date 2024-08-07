@@ -66,6 +66,15 @@ public class ExecuteForm {
     @Schema(name = "跳转条件")
     private Integer condition;
 
+    @Schema(name = "是否通过节点方法获取跳转条件")
+    private Boolean conditionByMethod;
+
+    @Schema(name = "节点位置", description = "1-开始，2-中间，3-完成，4-终止")
+    private Integer location;
+
+    @Schema(name = "节点默认通过条件")
+    private Integer defaultPassCondition;
+
     @Schema(name = "操作用户信息")
     private UserBaseInfo operator;
 

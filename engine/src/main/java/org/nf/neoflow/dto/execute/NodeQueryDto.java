@@ -28,4 +28,10 @@ public class NodeQueryDto<T> {
     @Schema(name = "版本对应的终止方法")
     private String terminatedMethod;
 
+    @Schema(name = "流程分组")
+    private String group;
+
+    @Schema(name = "是否通过节点方法获取跳转条件")
+    private Boolean conditionByMethod;
+
 }

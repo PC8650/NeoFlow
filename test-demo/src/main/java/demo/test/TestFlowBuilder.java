@@ -1,7 +1,7 @@
-package org.nf.neoflow.dto.test;
+package demo.test;
 
-import org.nf.neoflow.utils.FlowBuilderUtil;
 import org.nf.neoflow.dto.user.UserBaseInfo;
+import org.nf.neoflow.utils.FlowBuilderUtil;
 import org.nf.neoflow.utils.NodeTemplateUtils;
 
 import java.util.List;
@@ -23,7 +23,7 @@ public class TestFlowBuilder {
                 .newPath()
                 .addNode(1, true, 2,
                         NodeTemplateUtils.middleInit("中间节点1-1", "2")
-                                .setIdentity("middle1-1").setOperationType(2)
+                                .setIdentity("middle1-1").setOperationType(2).setConditionByMethod(true)
                                 .setOperationMethod(verify).setOperationCandidateInfo(candidates))
                 .addNode(1,
                         NodeTemplateUtils.middleInit("中间节点2-1", "3")
@@ -63,7 +63,7 @@ public class TestFlowBuilder {
                                 .setIdentity("terminate").setOperationType(0))
                 .initiatorFlag(0).createBy(user);
 
-        System.out.println(builder.build());
+        builder.printJson();
     }
 
 }

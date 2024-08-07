@@ -61,7 +61,6 @@ public class ExecuteService {
      */
     public void executeAutoNode(LocalDate date){
         flowExecutor.autoScan(date);
-
     }
 
 }

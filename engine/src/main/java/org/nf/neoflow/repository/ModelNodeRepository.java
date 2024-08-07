@@ -18,7 +18,7 @@ public interface ModelNodeRepository extends Neo4jRepository<ModelNode, Long> {
      */
     @Query("""
         match (p:Process{name:$0})-[:ACTIVE]->(v:Version)-[:MODEL]->(f:ModelNode)
-        return v.version as version, apoc.convert.toJson(apoc.map.merge(properties(f),{id:id(f)})) as nodeJson
+        return p.group as group, v.version as version, f.conditionByMethod as conditionByMethod, apoc.convert.toJson(apoc.map.merge(properties(f),{id:id(f)})) as nodeJson
     """)
     NodeQueryDto<ModelNode> queryActiveVersionModelFirstNode(String processName);
 

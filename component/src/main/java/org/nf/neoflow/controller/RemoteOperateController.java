@@ -2,6 +2,7 @@ package org.nf.neoflow.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.nf.neoflow.component.BusinessOperatorManager;
@@ -27,7 +28,7 @@ public class RemoteOperateController {
 
     @Operation(description = "执行业务方法")
     @PostMapping("/execute")
-    public Result<ExecuteForm> execute(@RequestBody ExecuteForm form) {
+    public Result<ExecuteForm> execute(@Valid @RequestBody ExecuteForm form) {
         return Result.success(manager.operate(form));
     }
 }

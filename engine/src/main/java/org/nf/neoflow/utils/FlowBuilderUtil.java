@@ -311,6 +311,13 @@ public class FlowBuilderUtil {
         }
 
         /**
+         * 打印构建的json
+         */
+        public void printJson() {
+            System.out.println(build());
+        }
+
+        /**
          * 收集节点和边
          * @param path 路径
          * @param nodeSet 节点收集set
