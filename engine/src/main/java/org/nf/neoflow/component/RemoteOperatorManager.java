@@ -7,6 +7,7 @@ import org.nf.neoflow.config.NeoRemoteConfig;
 import org.nf.neoflow.dto.execute.ExecuteForm;
 import org.nf.neoflow.dto.response.Result;
 import org.nf.neoflow.exception.NeoExecuteException;
+import org.springframework.beans.BeanUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
@@ -82,7 +83,9 @@ public class RemoteOperatorManager extends OperatorManager {
             throw new NeoExecuteException("流程执行失败，节点方法远程未返回执行表单");
         }
 
-        return r.data();
+        BeanUtils.copyProperties(r.data(), form);
+
+        return form;
     }
 
     /**

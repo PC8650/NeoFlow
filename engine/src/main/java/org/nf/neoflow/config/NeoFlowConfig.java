@@ -29,11 +29,6 @@ public class NeoFlowConfig {
     private Boolean independence = false;
 
     /**
-     * 扫描的包名
-     */
-    private String scanPackage;
-
-    /**
      * 自带接口基路径配置
      * 默认 /neo
      */

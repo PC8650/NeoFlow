@@ -15,6 +15,7 @@
         <module>component</module>
         <module>engine</module>
         <module>test-demo</module>
+        <module>test-demo2</module>
     </modules>
 
     <dependencyManagement>

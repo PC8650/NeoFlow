@@ -1,0 +1,5 @@
+server:
+  port: 8081
+
+neo:
+  scan-package: com.demo.test.method

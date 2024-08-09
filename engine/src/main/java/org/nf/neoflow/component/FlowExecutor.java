@@ -335,11 +335,6 @@ public class FlowExecutor {
                     getLock = lockManager.getLock(form.getBusinessKey(), LockEnums.FLOW_EXECUTE);
                 }
             } else {
-                //todo
-//                if (config.getIndependence()) {
-//                    log.error("流程执行失败，未设置流程实例业务key：流程 {}-版本 {}", form.getProcessName(), form.getVersion());
-//                    throw new NeoExecuteException("流程执行失败，未设置流程实例业务key");
-//                }
                 getLock = getLockByLast;
             }
 
@@ -644,11 +639,11 @@ public class FlowExecutor {
         if (isTerminated) {
             log.info("执行流程终止方法-{}", terminatedMethod);
             form.setOperationMethod(terminatedMethod);
-            form = operatorManager.operate(form);
+            operatorManager.operate(form);
         } else if ((current.getOnlyPassExecute() && form.getOperationType() < InstanceOperationType.REJECTED)
                 || (!current.getOnlyPassExecute() && form.getOperationType() < InstanceOperationType.FORWARD)) {
             log.info("执行流程节点方法-{}", form.getOperationMethod());
-            form =  operatorManager.operate(form);
+           operatorManager.operate(form);
         }
     }
 

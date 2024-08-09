@@ -1,23 +1,16 @@
 package org.nf.neoflow.component;
 
 
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.nf.neoflow.config.NeoFlowConfig;
 import org.nf.neoflow.enums.CacheEnums;
 import org.nf.neoflow.interfaces.CustomizationCache;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.Cache;
-import org.springframework.cache.caffeine.CaffeineCache;
-import org.springframework.cache.caffeine.CaffeineCacheManager;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 缓存管理
@@ -49,14 +42,15 @@ public class NeoCacheManager {
     public void setCache(String cacheType, String cacheKey, Object value) {
         if (!config.getEnableCache()) return;
 
-        if (config.getCacheNull()
-                && (
-                        value == null
-                        || (value instanceof Collection<?> && CollectionUtils.isEmpty((Collection<?>) value))
-                        || (value instanceof Map<?,?> && CollectionUtils.isEmpty(((Map<?,?>) value)))
-                )
+        //缓存值为空
+        if (value == null
+                || (value instanceof Collection<?> && CollectionUtils.isEmpty((Collection<?>) value))
+                || (value instanceof Map<?,?> && CollectionUtils.isEmpty(((Map<?,?>) value)))
         ) {
-            value = nullFlag;
+            //缓存空值
+            if (config.getCacheNull()) value = nullFlag;
+            //不缓存空值直接return
+            else return;
         }
 
         customizationCache.setCache(cacheType, cacheKey, value);

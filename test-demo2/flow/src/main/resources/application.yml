@@ -1,0 +1,16 @@
+neo:
+  independence: true
+  initials-during: true
+  auto-lock-expired: 20
+  auto-lock-check-period: 1
+  remote:
+
+    group:
+      demo: 'http://127.0.0.1:8081'
+
+spring:
+  neo4j:
+    uri: bolt://localhost:7687
+    authentication:
+      username: neo4j
+      password: 12345678
