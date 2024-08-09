@@ -11,6 +11,7 @@ import org.nf.neoflow.constants.InstanceOperationType;
 import org.nf.neoflow.constants.NodeLocationType;
 import org.nf.neoflow.dto.execute.ExecuteForm;
 import org.nf.neoflow.exception.NeoExecuteException;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ import java.util.Objects;
  * 环绕处理流程方法，对部分参数进行前后一致性校验和非空校验
  * 将方法异常控制在业务服务内
  */
+@Order(1)
 @Slf4j
 @Aspect
 @Component
