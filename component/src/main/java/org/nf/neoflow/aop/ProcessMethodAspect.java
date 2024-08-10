@@ -53,7 +53,7 @@ public class ProcessMethodAspect {
         log.info("流程参数非空和一致性校验");
         //判断返回的businessKey
         if (StringUtils.isBlank(form.getBusinessKey())) {
-            log.error("流程执行失败，未设置流程实例业务key：流程 {}-版本 {}", form.getProcessName(), form.getVersion());
+            log.error("流程执行失败，未设置流程实例业务key：流程 {}-版本 {}-key {}-当前节点位置 {}", processName, version, businessKey, num);
             throw new NeoExecuteException("流程执行失败，未设置流程实例业务key");
         }
 

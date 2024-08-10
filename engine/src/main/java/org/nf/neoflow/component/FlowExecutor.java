@@ -342,10 +342,10 @@ public class FlowExecutor {
 
             //获取当前实例节点并执行节点方法
             NodeQueryDto<InstanceNode> dto = getCurrentInstanceAndOperateMethod(form, false);
+            //判断返回的businessKey
+            if (StringUtils.isBlank(form.getBusinessKey())) throw new NeoExecuteException("流程执行失败，未设置流程实例业务key");
             //若发起时未加锁，此时获得businessKey后加锁
-            if (!getLock) {
-                getLock = lockManager.getLock(form.getBusinessKey(), LockEnums.FLOW_EXECUTE);
-            }
+            if (!getLock) getLock = lockManager.getLock(form.getBusinessKey(), LockEnums.FLOW_EXECUTE);
             //判断businessKey是否已存在
             canInitiate(form.getBusinessKey());
             //设置流程实例开始时间缓存
