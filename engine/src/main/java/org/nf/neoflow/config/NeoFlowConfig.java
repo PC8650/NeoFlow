@@ -23,6 +23,12 @@ public class NeoFlowConfig {
     //基础 Basic
 
     /**
+     * 启动时是否创建demo流程
+     * 默认false
+     */
+    private Boolean demo = false;
+
+    /**
      * 是否独立部署，根据部署形式控制相关bean的加载
      * 默认 false
      */

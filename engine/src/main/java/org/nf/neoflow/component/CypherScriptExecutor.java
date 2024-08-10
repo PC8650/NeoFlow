@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
 import org.nf.neoflow.config.NeoFlowConfig;
+import org.nf.neoflow.repository.DemoRepository;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
@@ -27,6 +28,8 @@ public class CypherScriptExecutor {
 
     private final ResourceLoader resourceLoader;
 
+    private final DemoRepository demoRepository;
+
     private final NeoFlowConfig config;
 
     @PostConstruct
@@ -37,13 +40,19 @@ public class CypherScriptExecutor {
         execute(constraintAndIndexFile);
         //全文索引脚本, 由于全文索引名称在查询时需要使用，所以不支持自定义
         execute("classpath:cypher/fullTextIndex.cypher");
+        //创建demo流程
+        if (Boolean.TRUE.equals(config.getDemo())) {
+            log.info("创建demo流程");
+            demoRepository.createDemo();
+            log.info("创建demo流程完成");
+        }
         log.info("===CypherScriptExecutor  end===");
     }
 
     /**
      * 读取脚本文件并执行
      * @param scriptFileClassPath 脚本文件类路径
-     * @throws Exception
+     * @throws Exception Exception
      */
     private void execute(String scriptFileClassPath) throws Exception{
         log.info("读取：{}", scriptFileClassPath);
