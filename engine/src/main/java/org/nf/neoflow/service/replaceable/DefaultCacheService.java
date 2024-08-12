@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(value = "neo.customizationCache", havingValue = "false", matchIfMissing = true)
+@ConditionalOnProperty(value = "neo.customization-cache", havingValue = "false", matchIfMissing = true)
 public class DefaultCacheService implements CustomizationCache {
 
     private final NeoFlowConfig config;

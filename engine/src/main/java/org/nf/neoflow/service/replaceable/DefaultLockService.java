@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(value = "neo.customizationLock", havingValue = "false", matchIfMissing = true)
+@ConditionalOnProperty(value = "neo.customization-lock", havingValue = "false", matchIfMissing = true)
 public class DefaultLockService implements CustomizationLock {
 
     private final String MK = "%s:%s";
