@@ -671,15 +671,9 @@ public class FlowExecutor {
 
         log.info("移植流程版本：流程 {}-版本 {}-key {} -移植版本 {}",
                 executeForm.getProcessName(), executeForm.getVersion(), executeForm.getBusinessKey(), graftForm.getGraftVersion());
-        if (executeForm.getNum() < 5) {
-            nextId = instanceNodeRepository.updateFlowInstanceByGraft(executeForm.getProcessName(), executeForm.getVersion(),
-                    executeForm.getNodeId(), executeForm.getBusinessKey(), executeForm.getCondition(), flowStatus, graftForm.getGraftVersion(),
-                    graftForm.getListData(), graftForm.getVariableData(), cMap, nMap);
-        } else {
-            nextId = instanceNodeRepository.updateFlowInstanceByGraftTooLong(executeForm.getProcessName(), executeForm.getVersion(),
-                    executeForm.getNodeId(), graftForm.getNum(), executeForm.getBusinessKey(), executeForm.getCondition(), flowStatus, graftForm.getGraftVersion(),
-                    graftForm.getListData(), graftForm.getVariableData(), cMap, nMap);
-        }
+        nextId = instanceNodeRepository.updateFlowInstanceByGraft(executeForm.getProcessName(), executeForm.getVersion(),
+                executeForm.getNodeId(), graftForm.getNum(), executeForm.getBusinessKey(), executeForm.getCondition(), flowStatus, graftForm.getGraftVersion(),
+                graftForm.getListData(), graftForm.getVariableData(), cMap, nMap);
         log.info("流程状态移植：流程 {}-版本 {}-key {} -移植版本 {}",
                 executeForm.getProcessName(), executeForm.getVersion(), executeForm.getBusinessKey(), graftForm.getGraftVersion());
 
@@ -719,13 +713,8 @@ public class FlowExecutor {
         Long nextId;
 
         log.info("更新流程状态：流程 {}-版本 {}-key {}", form.getProcessName(), form.getVersion(), form.getBusinessKey());
-        if (form.getNum() < 5) {
-            nextId = instanceNodeRepository.updateFlowInstance(form.getProcessName(), form.getVersion(),
-                    form.getNodeId(), form.getBusinessKey(), form.getCondition(), flowStatus, form.getListData(), form.getVariableData(), cMap, nMap);
-        } else {
-            nextId = instanceNodeRepository.updateFlowInstanceTooLong(form.getProcessName(), form.getVersion(),
-                    form.getNodeId(), form.getNum(), form.getBusinessKey(), form.getCondition(), flowStatus, form.getListData(), form.getVariableData(), cMap, nMap);
-        }
+        nextId = instanceNodeRepository.updateFlowInstance(form.getProcessName(), form.getVersion(),
+                form.getNodeId(), form.getNum(), form.getBusinessKey(), form.getCondition(), flowStatus, form.getListData(), form.getVariableData(), cMap, nMap);
         log.info("流程状态更新：流程 {}-版本 {}-key {}", form.getProcessName(), form.getVersion(), form.getBusinessKey());
 
         //删除实例操作历史缓存i_o_h
@@ -938,11 +927,7 @@ public class FlowExecutor {
      */
     private NodeQueryDto<InstanceNode> queryCurrentInstanceNode(ExecuteForm form) {
         NodeQueryDto<InstanceNode> dto;
-        if (form.getNum() < 5) {
-            dto = instanceNodeRepository.queryCurrentInstanceNode(form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNodeId());
-        }else {
-            dto = instanceNodeRepository.queryCurrentInstanceNodeTooLong(form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNodeId(), form.getNum());
-        }
+        dto = instanceNodeRepository.queryCurrentInstanceNode(form.getProcessName(), form.getVersion(), form.getBusinessKey(), form.getNodeId(), form.getNum());
 
         //查询结果校验
         if (dto == null || StringUtils.isBlank(dto.getNodeJson())) {

@@ -1,5 +1,6 @@
 package org.nf.neoflow.repository;
 
+import org.nf.neoflow.config.NeoFlowConfig;
 import org.nf.neoflow.models.Process;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
@@ -13,7 +14,7 @@ import org.springframework.data.neo4j.repository.query.Query;
 public interface DemoRepository extends Neo4jRepository<Process,Long> {
 
     /**
-     * 一个任何人可发起，无方法，且操作类型(operationType)由发起人审核(发起人审核标识读取配置: {@link  org.nf.neoflow.config.NeoFlowConfig NeoFlowConfig.initiatorFlag})的示范流程模型
+     * 一个任何人可发起，无方法，且操作类型(operationType)由发起人审核(发起人审核标识读取配置: {@link  NeoFlowConfig#getInitiatorFlag()})的示范流程模型
      * 该流程拥有3条中间节点路径，其中 'm1-1', 'm2-2', 'm2-3' 允许拒绝驳回
      */
     @Query("""
@@ -30,7 +31,7 @@ public interface DemoRepository extends Neo4jRepository<Process,Long> {
             activeName: 'Demo',
             activeTime: df
         })],
-        v.version = 1, v.createBy = '-1', v.terminatedMethod = ''
+        v.version = 1, v.createBy = '-1', v.createByName = 'Demo', v.terminatedMethod = ''
     
         create (p)-[a:ACTIVE{createBy:'-1', createTime:date}]->(v)
     

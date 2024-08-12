@@ -34,38 +34,14 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
      * @param version 版本
      * @param businessKey 业务key
      * @param nodeId 节点id
-     * @return NodeQueryDto<InstanceNode>
-     */
-    @Query("""
-        match (p:Process{name:$0})
-        optional match (p)-[:VERSION]->(v:Version{version:$1})-[:INSTANCE]->(:Instance)-[:BUSINESS{key:$2,status:1}]->(f:InstanceNode)
-        optional match path = (f)-[:NEXT*0..]->(b:InstanceNode)-[:NEXT]->(c:InstanceNode) where id(c) = $3
-        return v.version as version,
-        p.group as group,
-        v.terminatedMethod as terminatedMethod,
-        c.conditionByMethod as conditionByMethod,
-        case when b is null then null
-        when b.status = 1 then false
-        else true end as before,
-        case when c is null then null
-        else apoc.convert.toJson(apoc.map.merge(properties(c),{id:id(c)})) end as nodeJson
-    """)
-    NodeQueryDto<InstanceNode> queryCurrentInstanceNode(String processName, Integer version, String businessKey, Long nodeId);
-
-    /**
-     * 查询当前实例节点
-     * @param processName 流程名称
-     * @param version 版本
-     * @param businessKey 业务key
-     * @param nodeId 节点id
      * @param num 当前节点位置
      * @return NodeQueryDto<InstanceNode>
      */
     @Query("""
         match (p:Process{name:$0})
         optional match (p)-[:VERSION]->(v:Version{version:$1})-[:INSTANCE]->(i:Instance)
-        optional match (i)-[:BUSINESS{key:$2,status:1}]->(f:InstanceNode) where f is not null
-        with p.group as group, v, f, $4-2 as length
+        optional match (i)-[:BUSINESS{key:$2,status:1}]->(f:InstanceNode)
+        with p.group as group, v, f, $4-2 as length where f is not null
         call apoc.path.expandConfig(f, {
             relationshipFilter: "NEXT>",
             minLevel: length,
@@ -84,74 +60,14 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
         case when c is null then null
         else apoc.convert.toJson(apoc.map.merge(properties(c),{id:id(c)})) end as nodeJson
     """)
-    NodeQueryDto<InstanceNode> queryCurrentInstanceNodeTooLong(String processName, Integer version, String businessKey, Long nodeId, Integer num);
+    NodeQueryDto<InstanceNode> queryCurrentInstanceNode(String processName, Integer version, String businessKey, Long nodeId, Integer num);
 
     /**
      * 版本移植更新流程实例
      * @param processName 流程名称
      * @param version 版本
      * @param nodeId 当前实例节点id
-     * @param businessKey 业务key
-     * @param condition 跳转条件
-     * @param flowStatus 流程状态
-     * @param graftVersion 移植版本
-     * @param listData 序列化的业务数据
-     * @param variableData 序列化的变动留痕业务数据
-     * @param cMap 当前实例节点
-     * @param nMap 下一实例节点
-     * @return 下一实例节点
-     */
-    @Query("""
-        match (p:Process{name:$processName})
-        optional match (p)-[:VERSION]->(v:Version{version:$version})-[:INSTANCE]->(i:Instance) where i is not null
-        //更新当前节点和流程状态
-        optional match (i)-[b:BUSINESS{key:$businessKey,status:1}]->(f:InstanceNode) where f is not null
-        optional match (f)-[:NEXT*0..]->(c:InstanceNode) where id(c) = $nodeId
-        set c.operationBy = $cMap.operationBy, c.endTime = localDateTime($cMap.endTime),
-        c.status = $cMap.status, c.operationRemark = $cMap.operationRemark,
-        c.during = $cMap.during, c.processDuring = $cMap.processDuring,
-        c.variableData = $variableData, c.graft = $version + '-->' + $graftVersion,
-        b.status = $flowStatus, b.endTime = localDateTime($cMap.endTime), b.during = $cMap.processDuring,
-        b.operationBy = case when $cMap.autoTime is null then $cMap.operationBy else b.operationBy end,
-        b.listData = case when $listData is null then b.listData else $listData end,
-        b.key = null
-        
-        //初始化下一节点
-        with p, i, b, f, c where c is not null
-        call apoc.do.when (
-            $nMap is null,
-            'return null as n',
-            'create (c)-[nr:NEXT]->(n:InstanceNode)
-            set nr.condition = condition,
-            n+= nMap, n.autoTime = date(nMap.autoTime),
-            n.beginTime = localDateTime(nMap.beginTime),
-            b.cycle = case when n.location = 1 then coalesce(b.cycle, 0) + 1 else b.cycle end,
-            b.operationCandidate = nMap.operationCandidate,
-            b.num = b.num + 1, b.currentNodeId = id(n)
-            return n',
-            {c:c, b:b, nMap:$nMap, condition:$condition}
-        ) yield value
-        
-        //新建[:BUSINESS]到移植版本的(Instance)
-        with p, b, f, value.n as n
-        optional match (p)-[:VERSION]-(:Version{version:$graftVersion})-[:INSTANCE]->(gi:Instance)
-        create (gi)-[nb:BUSINESS]->(f)
-        with b, nb, n
-        set nb += b, nb.key = $businessKey
-        delete b
-        with n
-        
-        return id(n)
-    """)
-    Long updateFlowInstanceByGraft(String processName, Integer version, Long nodeId,
-                                   String businessKey, Integer condition, Integer flowStatus, Integer graftVersion,
-                                   String listData, String variableData, Map<String, Object> cMap, Map<String, Object> nMap);
-
-    /**
-     * 版本移植更新流程实例
-     * @param processName 流程名称
-     * @param version 版本
-     * @param nodeId 当前实例节点id
+     * @param num 当前节点在流程中的位置
      * @param businessKey 业务key
      * @param condition 跳转条件
      * @param flowStatus 流程状态
@@ -212,7 +128,7 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
         
         return id(n)
     """)
-    Long updateFlowInstanceByGraftTooLong(String processName, Integer version, Long nodeId, Integer num,
+    Long updateFlowInstanceByGraft(String processName, Integer version, Long nodeId, Integer num,
                                           String businessKey, Integer condition, Integer flowStatus, Integer graftVersion,
                                           String listData, String variableData, Map<String, Object> cMap, Map<String, Object> nMap);
 
@@ -221,6 +137,7 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
      * @param processName 流程名称
      * @param version 版本
      * @param nodeId 当前实例节点id
+     * @param num 当前节点在路径中的位置
      * @param businessKey 业务key
      * @param condition 跳转条件
      * @param flowStatus 流程状态
@@ -245,15 +162,22 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
             c.variableData = variableData
             return c, b',
             'optional match (i)-[b:BUSINESS{key:$businessKey,status:1}]->(f:InstanceNode) where f is not null
-            optional match (f)-[:NEXT*0..]->(c:InstanceNode) where id(c) = $nodeId
+            call apoc.path.expandConfig(f, {
+                relationshipFilter: "NEXT>",
+                        minLevel: l,
+                        maxLevel: l,
+                        limit: 1
+            }) yield path
+            with i, b, last(nodes(path)) as c, $cMap as cMap
+            where id(c) = $nodeId
             set c.operationBy = cMap.operationBy, c.endTime = localDateTime(cMap.endTime),
             c.status = cMap.status, c.operationRemark = cMap.operationRemark,
-            c.during = cMap.during, c.processDuring = cMap.processDuring,
-            b.status = flowStatus, b.endTime = localDateTime(cMap.endTime), b.during = cMap.processDuring,
+            c.during = cMap.during, c.processDuring = cMap.processDuring, c.variableData = $variableData,
+            b.status = $flowStatus, b.endTime = localDateTime(cMap.endTime), b.during = cMap.processDuring,
             b.operationBy = case when cMap.autoTime is null then cMap.operationBy else b.operationBy end,
-            b.listData = case when listData is null then b.listData else listData end
+            b.listData = case when $listData is null then b.listData else $listData end
             return c, b',
-            {i:i, cMap:$cMap, flowStatus:$flowStatus, listData:$listData, variableData:$variableData, businessKey:$businessKey, nodeId:$nodeId}
+            {i:i, cMap:$cMap, flowStatus:$flowStatus, listData:$listData, variableData:$variableData, businessKey:$businessKey, nodeId:$nodeId, l:$num-1}
         ) yield value
         
         //初始化下一节点
@@ -276,67 +200,9 @@ public interface InstanceNodeRepository extends Neo4jRepository<InstanceNode, Lo
         return id(n)
     """)
     Long updateFlowInstance(String processName, Integer version, Long nodeId,
-                            String businessKey, Integer condition, Integer flowStatus,
-                            String listData, String variableData, Map<String, Object> cMap, Map<String, Object> nMap);
-
-    /**
-     * 更新流程实例
-     * @param processName 流程名称
-     * @param version 版本
-     * @param nodeId 当前实例节点id
-     * @param businessKey 业务key
-     * @param condition 跳转条件
-     * @param flowStatus 流程状态
-     * @param listData 序列化的业务数据
-     * @param variableData 序列化的变动留痕业务数据
-     * @param cMap 当前实例节点
-     * @param nMap 下一实例节点
-     * @return 下一实例节点
-     */
-    @Query("""
-        match (p:Process{name:$processName})
-        optional match (p)-[:VERSION]->(v:Version{version:$version})-[:INSTANCE]->(i:Instance) where i is not null
-        //更新当前节点和流程状态
-        with p, i, $num-1 as l
-        optional match (i)-[b:BUSINESS{key:$businessKey,status:1}]->(f:InstanceNode) where f is not null
-        call apoc.path.expandConfig(f, {
-            relationshipFilter: "NEXT>",
-            minLevel: l,
-            maxLevel: l,
-            limit: 1
-        }) yield path
-        with i, b, last(nodes(path)) as c, $cMap as cMap
-        where id(c) = $nodeId
-        set c.operationBy = cMap.operationBy, c.endTime = localDateTime(cMap.endTime),
-        c.status = cMap.status, c.operationRemark = cMap.operationRemark,
-        c.during = cMap.during, c.processDuring = cMap.processDuring, c.variableData = $variableData,
-        b.status = $flowStatus, b.endTime = localDateTime(cMap.endTime), b.during = cMap.processDuring,
-        b.operationBy = case when cMap.autoTime is null then cMap.operationBy else b.operationBy end,
-        b.listData = case when $listData is null then b.listData else $listData end
-
-        //初始化下一节点
-        with i, c, b where c is not null
-        call apoc.do.when (
-            $nMap is null,
-            'return null as n',
-            'create (c)-[nr:NEXT]->(n:InstanceNode)
-            set nr.condition = condition,
-            n+= nMap, n.autoTime = date(nMap.autoTime),
-            n.beginTime = localDateTime(nMap.beginTime),
-            b.cycle = case when n.location = 1 then coalesce(b.cycle, 0) + 1 else b.cycle end,
-            b.operationCandidate = nMap.operationCandidate,
-            b.num = b.num + 1, b.currentNodeId = id(n)
-            return n',
-            {c:c, b:b, nMap:$nMap, condition:$condition}
-        ) yield value
-        
-        with value.n as n
-        return id(n)
-    """)
-    Long updateFlowInstanceTooLong(String processName, Integer version, Long nodeId,
-                                   Integer num, String businessKey, Integer condition,
-                                   Integer flowStatus, String listData, String variableData,
-                                   Map<String, Object> cMap, Map<String, Object> nMap);
+                            Integer num, String businessKey, Integer condition,
+                            Integer flowStatus, String listData, String variableData,
+                            Map<String, Object> cMap, Map<String, Object> nMap);
 
     /**
      * 退回发起人循环次数是否达上限
