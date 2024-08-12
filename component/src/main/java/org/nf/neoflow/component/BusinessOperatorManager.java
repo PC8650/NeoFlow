@@ -10,6 +10,7 @@ import org.nf.neoflow.config.NeoScanConfig;
 import org.nf.neoflow.dto.execute.ExecuteForm;
 import org.nf.neoflow.exception.NeoFlowConfigException;
 import org.nf.neoflow.exception.NeoProcessAnnotationException;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -32,6 +33,8 @@ import java.util.function.Function;
 public class BusinessOperatorManager extends OperatorManager {
 
     private final NeoScanConfig config;
+
+    private final ApplicationContext applicationContext;
 
     private final Map<String,Map<String, Function<ExecuteForm, ExecuteForm>>> operatorMap = new HashMap<>();
 
@@ -124,7 +127,7 @@ public class BusinessOperatorManager extends OperatorManager {
      * @param className
      * @param operator
      */
-    private void DealWithOperator(Class<?> clazz, String className, ProcessOperator operator) throws Exception {
+    private void DealWithOperator(Class<?> clazz, String className, ProcessOperator operator) {
         //判断name是否为空，是否重复
         String operatorName = operator.name();
         if (StringUtils.isBlank(operatorName)) {
@@ -135,7 +138,7 @@ public class BusinessOperatorManager extends OperatorManager {
 
         //获取Operator的方法，处理@ProcessMethod
         Map<String, Function<ExecuteForm, ExecuteForm>> operatorMethodMap = new HashMap<>();
-        Object instance = clazz.getDeclaredConstructor().newInstance();
+        Object instance = applicationContext.getBean(clazz);
         int pmc = 0;
         for (Method method : clazz.getDeclaredMethods()) {
             ProcessMethod pm = method.getDeclaredAnnotation(ProcessMethod.class);
