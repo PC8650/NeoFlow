@@ -17,4 +17,6 @@ public record Result<T>(T data,String msg){
         return new Result<>(data,"fail");
     }
 
+    public boolean isSuccess() {return "success".equals(this.msg());}
+
 }
