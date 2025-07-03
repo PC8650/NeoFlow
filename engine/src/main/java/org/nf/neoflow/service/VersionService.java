@@ -57,8 +57,8 @@ public class VersionService {
      * @return VersionModelViewDto
      */
     public VersionModelViewDto versionView(VersionViewQueryForm form) {
-        String processName = form.processName();
-        Integer version = form.version();
+        String processName = form.getProcessName();
+        Integer version = form.getVersion();
         VersionModelViewDto dto;
 
         //版本为空，返回组件模型
